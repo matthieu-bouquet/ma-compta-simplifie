@@ -360,7 +360,7 @@ export default function PaymentMethodsEvolutionChart({
   }
   if (!chartModel) return null
 
-  const { width, height, pad, ticks, x, y, visibleSeriesMonthly } = chartModel
+  const { width, height, pad, h, ticks, x, y, visibleSeriesMonthly } = chartModel
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
