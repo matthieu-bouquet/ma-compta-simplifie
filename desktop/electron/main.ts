@@ -1,5 +1,7 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import electron from 'electron'
 import type { UtilityProcess } from 'electron'
+
+const { app, BrowserWindow, ipcMain } = electron
 import path from 'path'
 import { spawn, spawnSync, ChildProcessWithoutNullStreams } from 'child_process'
 import type { EventEmitter } from 'events'
@@ -19,10 +21,6 @@ type ElectronLike = typeof import('electron') & {
       }
     ): UtilityProcess
   }
-}
-
-function getElectronModule(): ElectronLike {
-  return require('electron') as ElectronLike
 }
 
 /** Shown in window / HTML shell titles (matches web app branding). */
@@ -53,7 +51,7 @@ delete process.env.ELECTRON_RUN_AS_NODE
 
 ipcMain.handle('desktop:getAppVersion', () => app.getVersion())
 
-let mainWindow: BrowserWindow | null = null
+let mainWindow: InstanceType<typeof BrowserWindow> | null = null
 let nextProcess: ChildProcessWithoutNullStreams | UtilityProcess | null = null
 let logFilePath: string | null = null
 
@@ -63,9 +61,9 @@ function forkUtilityOrSpawnElectronNode(opts: {
   args?: string[]
   env: NodeJS.ProcessEnv
 }) {
-  const electron = getElectronModule()
-  if (electron.utilityProcess) {
-    return electron.utilityProcess.fork(opts.modulePath, opts.args ?? [], {
+  const electronNs = electron as ElectronLike
+  if (electronNs.utilityProcess) {
+    return electronNs.utilityProcess.fork(opts.modulePath, opts.args ?? [], {
       cwd: opts.cwd,
       env: opts.env,
       stdio: 'pipe',
@@ -113,7 +111,7 @@ function initLogging() {
 function logLine(message: string) {
   const line = `[${new Date().toISOString()}] ${message}\n`
   try {
-    // eslint-disable-next-line no-console
+     
     console.log(message)
   } catch {
     // ignore
@@ -129,7 +127,7 @@ function logLine(message: string) {
 function errLine(message: string) {
   const line = `[${new Date().toISOString()}] ERROR ${message}\n`
   try {
-    // eslint-disable-next-line no-console
+     
     console.error(message)
   } catch {
     // ignore
