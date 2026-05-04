@@ -17,11 +17,11 @@
     "test:e2e": "DATABASE_URL=file:./.tmp/e2e.db DOCUMENTS_DIR=./.tmp/documents playwright test",
     "desktop:dev": "concurrently -k \"tsc -p desktop/electron/tsconfig.json --watch\" \"next dev -p 3000\" \"wait-on http://localhost:3000 && wait-on desktop/dist-electron/main.js && ELECTRON_NEXT_URL=http://localhost:3000 electron desktop/dist-electron/main.js\"",
     "desktop:build": "node scripts/build-template-db.mjs && next build && node scripts/fix-standalone-symlinks.mjs && tsc -p desktop/electron/tsconfig.json",
-    "desktop:dist": "npm run desktop:build && ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json",
-    "desktop:dist:mac": "npm run desktop:build && ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --mac",
-    "desktop:dist:win": "npm run desktop:build && ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --win",
-    "desktop:dist:linux": "npm run desktop:build && ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --linux",
-    "desktop:dist:all": "npm run desktop:build && ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --mac --win --linux"
+    "desktop:dist": "npm run desktop:build && cross-env ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json",
+    "desktop:dist:mac": "npm run desktop:build && cross-env ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --mac",
+    "desktop:dist:win": "npm run desktop:build && cross-env ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --win",
+    "desktop:dist:linux": "npm run desktop:build && cross-env ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --linux",
+    "desktop:dist:all": "npm run desktop:build && cross-env ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --mac --win --linux"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -47,6 +47,7 @@
     "@vitest/coverage-v8": "^4.1.5",
     "@vitest/ui": "^4.1.5",
     "concurrently": "^9.2.1",
+    "cross-env": "^7.0.3",
     "dotenv": "^17.4.2",
     "electron": "41.5.0",
     "electron-builder": "^26.8.1",

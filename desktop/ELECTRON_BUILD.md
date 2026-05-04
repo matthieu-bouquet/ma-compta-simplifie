@@ -20,6 +20,8 @@ Ce document enregistre les choix d’architecture et de packaging pour l’app d
 | `npm run desktop:dist:all` | Tente de builder macOS + Windows + Linux (`--mac --win --linux`). |
 | `npm run icons:electron` | Régénère les icônes OS à partir de `public/app-icon.svg` (script `scripts/generate-electron-icons.mjs`). |
 
+Les scripts `desktop:dist*` utilisent **cross-env** pour définir `ELECTRON_BUILDER_CACHE` : sous Windows (cmd/PowerShell), la forme shell Unix `VAR=value commande` n’est pas valide et ferait échouer le packaging avant même `electron-builder`.
+
 Ordre logique : **Next standalone → correctifs symlinks / Prisma dans le bundle → compilation Electron → electron-builder**.
 
 ## Windows + Linux : point important (cross-build)
