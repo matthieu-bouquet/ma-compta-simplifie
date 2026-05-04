@@ -12,17 +12,41 @@
 
 # testing
 /coverage
+playwright-report/
+test-results/
+
+# local test databases and uploads (see scripts/test, playwright.config)
+.tmp/
+
+# Prisma local / generated SQLite (migrations stay tracked)
+/prisma/dev.db
+/prisma/template.db
+/prisma/.tmp/
+/prisma/*.db-journal
+/prisma/*.db-wal
+/prisma/*.db-shm
+
+# editor (do not version workspace or AI tool config)
+.vscode/
+.cursor/
 
 # next.js
 /.next/
+/.next-e2e/
 /out/
 
 # production
 /build
+/dist-desktop
+/dist-electron
+/desktop/dist-electron
 
 # misc
 .DS_Store
 *.pem
+
+# uploaded documents
+/data/uploads
 
 # debug
 npm-debug.log*
@@ -39,3 +63,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# desktop (electron-builder may create these)
+/desktop/node_modules

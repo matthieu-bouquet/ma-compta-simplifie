@@ -1,0 +1,106 @@
+.toolbar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.searchWrap {
+  position: relative;
+  flex: 1 1 320px;
+  min-width: 260px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  line-height: 0;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 32px;
+  padding: 0 0.75rem 0 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color);
+  background-color: white;
+  font-size: 0.92rem;
+  outline: none;
+}
+
+.count {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.empty {
+  color: var(--text-secondary);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.theadRow {
+  border-bottom: 2px solid var(--border-color);
+}
+
+.th {
+  padding: 0.75rem 0;
+}
+
+.thRight {
+  padding: 0.75rem 0;
+  text-align: right;
+  width: 1%;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.tr {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.td {
+  padding: 0.6rem 0;
+}
+
+.tdRight {
+  padding: 0.6rem 0 0.6rem 0.5rem;
+  text-align: right;
+  white-space: nowrap;
+  min-width: 164px;
+}
+
+.docName {
+  font-weight: 600;
+}
+
+.docMeta {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.iconBtn {
+  padding: 0.35rem;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  margin-right: 0.5rem;
+  line-height: 0;
+  border-radius: 0.5rem;
+}
+

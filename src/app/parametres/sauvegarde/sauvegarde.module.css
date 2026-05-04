@@ -1,0 +1,231 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.alertError {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.alertSuccess {
+  border: 1px solid rgba(151, 206, 102, 0.35);
+  background: rgba(151, 206, 102, 0.08);
+}
+
+.card {
+  overflow: hidden;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cardTitle {
+  font-weight: 900;
+  font-size: 1rem;
+}
+
+.cardSubtitle {
+  margin-top: 0.25rem;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+.selectionSummary {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.summaryPill {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.02);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.tree {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 0.85rem;
+}
+
+.exportActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.treeChildren {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.associationBlock {
+  border: 1px solid var(--border-color);
+  border-radius: 0.9rem;
+  background: rgba(15, 23, 42, 0.02);
+  padding: 0.75rem 0.85rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 800;
+}
+
+.rowSmall {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  padding-left: 0.2rem;
+}
+
+.rowTitle {
+  color: var(--text-primary);
+}
+
+.rowMeta {
+  margin-left: auto;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.collapseButton {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  line-height: 0;
+}
+
+.associationSelections {
+  margin-top: 0.65rem;
+  padding-left: 1.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.selectionSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.selectionSection + .selectionSection {
+  border-top: 1px solid var(--border-color);
+  padding-top: 0.65rem;
+}
+
+.selectionSectionTitle {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.emptyHint {
+  margin-top: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.importRow {
+  margin-top: 0.85rem;
+  display: grid;
+  grid-template-columns: 140px 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.importPreview {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
+
+.previewTitle {
+  font-weight: 900;
+  margin-bottom: 0.5rem;
+}
+
+.previewSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.noConflicts {
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.conflictRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 42, 0.02);
+  margin-top: 0.5rem;
+}
+
+.conflictMain {
+  flex: 1 1 auto;
+  color: var(--text-primary);
+}
+
+.conflictHint {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.88em;
+}
+
+.conflictMeta {
+  color: var(--text-secondary);
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding-top: 0.1rem;
+}
+
+.importActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.fileLabel {
+  display: block;
+  font-weight: 800;
+}
+
+.fileInput {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  background: white;
+}
+
+@media (max-width: 740px) {
+  .importRow {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+}
+

@@ -1,0 +1,86 @@
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.noticeCard {
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  background: rgba(79, 70, 229, 0.06);
+}
+
+.noticeText {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.formCard {
+  margin-top: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.classStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.classCard {
+  padding: 0;
+  overflow: hidden;
+}
+
+.classCardHead {
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.6);
+  font-weight: 800;
+}
+
+.iconRow {
+  display: inline-flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.iconBtn {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  padding: 0.4rem 0.6rem;
+  line-height: 0;
+}
+
+.iconBtnDanger {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: var(--danger);
+  background: transparent;
+  padding: 0.4rem 0.6rem;
+  line-height: 0;
+}
+
+.iconBtnSm {
+  padding: 0.4rem 0.6rem;
+  line-height: 0;
+}
+
+.inputTableEdit {
+  padding: 0.45rem 0.6rem;
+  min-height: 38px;
+  font-size: 0.95rem;
+}
+
+.inputTableNum {
+  font-weight: 700;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 2rem 0;
+  color: var(--text-secondary);
+}
+
+.tdEditRight {
+  text-align: right;
+}

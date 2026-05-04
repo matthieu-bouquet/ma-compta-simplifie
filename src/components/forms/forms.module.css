@@ -1,0 +1,252 @@
+/* Shared form layout & controls — single source of truth for app forms */
+
+.alertError {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.alertSuccess {
+  border: 1px solid rgba(151, 206, 102, 0.35);
+  background: rgba(151, 206, 102, 0.08);
+}
+
+.cardForm {
+  margin-bottom: 1.5rem;
+}
+
+.formTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.formSubtitle {
+  color: var(--text-secondary);
+  margin-top: 0.35rem;
+}
+
+.sections {
+  display: grid;
+  gap: 1rem;
+}
+
+.section {
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.02);
+  border-radius: 0.9rem;
+  padding: 1rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.sectionIcon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(79, 70, 229, 0.18);
+  background: rgba(79, 70, 229, 0.08);
+  color: var(--primary);
+  flex: 0 0 auto;
+}
+
+.sectionTitle {
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.sectionDescription {
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+  font-size: 0.92rem;
+}
+
+.sectionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem 1.25rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.fieldFullWidth {
+  grid-column: 1 / -1;
+}
+
+.label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background: white;
+  outline: none;
+  box-sizing: border-box;
+  font-size: 1rem;
+  font-family: inherit;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.input:focus {
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.textarea {
+  composes: input;
+  min-height: 6rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background: white;
+  outline: none;
+  box-sizing: border-box;
+  font-size: 1rem;
+  font-family: inherit;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.select:focus {
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.fileInput {
+  width: 100%;
+  min-width: 200px;
+  min-height: 40px;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background: white;
+  font-size: 0.92rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.fileInput:focus {
+  outline: none;
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.formActionsBar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 1.25rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.formStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fieldHint {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Compact numeric inputs (tables, toolbars) */
+.compactInput {
+  min-width: 6.5rem;
+  max-width: 9rem;
+  min-height: auto;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background: white;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  box-sizing: border-box;
+  outline: none;
+}
+
+.compactInput:focus {
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.compactInput:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.btnSecondary {
+  border: 1px solid var(--border-color);
+  background: transparent;
+}
+
+/** Use on `btn` / `btn btn-primary` when a Lucide icon precedes the label (Plus, etc.) */
+.btnWithLeadingIcon {
+  gap: 0.5rem;
+}
+
+/* Stacking context for react-select so menus paint above neighbors */
+.searchableSelectWrap {
+  position: relative;
+  z-index: 2;
+}
+
+.searchableSelectWrapElevated {
+  z-index: 10;
+}
+
+.detailCardStatic:hover {
+  transform: none;
+  box-shadow: var(--shadow-md);
+}

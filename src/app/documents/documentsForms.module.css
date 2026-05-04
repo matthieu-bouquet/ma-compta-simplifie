@@ -1,0 +1,126 @@
+.uploadRow {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.uploadFile {
+  flex: 1 1 320px;
+  min-width: 260px;
+}
+
+.errorLine {
+  flex-basis: 100%;
+  font-size: 0.9rem;
+}
+
+.linkRoot {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+.linkToolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.searchField {
+  flex: 1;
+  min-width: 260px;
+}
+
+.btnInner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.linkedBox {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.linkedTitle {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.linkedList {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.linkedRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: white;
+  border: 1px solid var(--border-color);
+}
+
+.linkedMain {
+  min-width: 0;
+}
+
+.linkedLine1 {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.linkedLine2 {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.unlinkBtn {
+  padding: 0.35rem;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  line-height: 0;
+}
+
+.sectionTitle {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.lineList {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.lineLabel {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color);
+  background: white;
+  cursor: pointer;
+}
+
+.lineLabelChecked {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.35);
+}
+
+.lineLabelDisabled {
+  cursor: not-allowed;
+}
+
+.lineCheckbox {
+  margin-top: 0.2rem;
+}

@@ -1,0 +1,158 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.headerRow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.descriptionMain {
+  font-weight: 800;
+}
+
+.methodText {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.theadRow {
+  border-bottom: 2px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.th {
+  padding: 0.75rem 0;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.td {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: top;
+}
+
+.numberCell {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Statut immédiatement avant le total, colonnes resserrées */
+.statusHeader,
+.statusCell {
+  text-align: right;
+  white-space: nowrap;
+  width: 1%;
+  padding-right: 0.35rem;
+  vertical-align: middle;
+}
+
+.totalHeader,
+.totalCell {
+  width: 1%;
+  padding-left: 0.35rem;
+  vertical-align: middle;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.statusPillRecorded {
+  border-color: rgba(151, 206, 102, 0.35);
+  color: var(--success);
+  background: rgba(151, 206, 102, 0.12);
+}
+
+.actionsCell {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.deleteCellStack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.deleteError {
+  font-size: 0.85rem;
+  max-width: 220px;
+  text-align: right;
+  line-height: 1.35;
+}
+
+/* Liste : action suppression = icône (cf. prévisionnel / documents) */
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  border-radius: 0.35rem;
+  color: inherit;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.iconBtn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.iconBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.iconBtnDanger {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: var(--danger);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 2rem 0;
+  color: var(--text-secondary);
+}
+

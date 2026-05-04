@@ -1,0 +1,36 @@
+.header {
+  margin-bottom: 1.5rem;
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.titleWrap {
+  min-width: 0;
+}
+
+.title {
+  margin-bottom: 0;
+}
+
+.titleWithDescription {
+  margin-bottom: 0.5rem;
+}
+
+.description {
+  color: var(--text-secondary);
+}
+
+.backButton {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+

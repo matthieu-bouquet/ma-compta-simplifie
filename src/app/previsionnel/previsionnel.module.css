@@ -1,0 +1,577 @@
+/* Liste prévisionnel : actions sur une même ligne (icônes) */
+.listRowActions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.titleRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.primaryActions {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.amountCell {
+  text-align: right;
+  font-weight: 500;
+}
+
+.rowActions {
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.rowActionsInner {
+  display: inline-flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  border-radius: 0.35rem;
+  color: inherit;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.iconBtn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.iconBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.iconBtnDanger {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: var(--danger);
+}
+
+.synthGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.synthCharges {
+  color: var(--danger);
+}
+
+.synthProduits {
+  color: var(--success);
+}
+
+.synthResult {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.sectionGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 960px) {
+  .sectionGridTwo {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.metaForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.formRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.compareBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.prefillDialogBody {
+  padding: 0 1.25rem 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.prefillOpenBtn {
+  border: 1px solid var(--border-color);
+  background: transparent;
+}
+
+.prefillDialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0;
+  width: min(560px, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  background: var(--surface, #fff);
+}
+
+.prefillDialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.dialogPadding {
+  padding: 1.25rem 1.25rem 0 1.25rem;
+}
+
+.dialogTitle {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.dialogDesc {
+  margin: 0.5rem 0 0 0;
+  color: var(--text-secondary);
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.smallHint {
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.resultPositive {
+  color: var(--success);
+}
+
+.resultNegative {
+  color: var(--danger);
+}
+
+/* —— Nouveau prévisionnel (aligné formulaires Paramètres / Bénévolat) —— */
+
+.newBudgetPage {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.newBudgetHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.newBudgetCard {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Avoid hover lift on large forms (rest of app keeps .card interaction). */
+.newBudgetCard:hover {
+  transform: none;
+  box-shadow: var(--shadow-md);
+}
+
+.formSecondaryBtn {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.formSecondaryBtn:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.newBudgetCardInner {
+  padding: 1.5rem;
+}
+
+/* —— Détail prévisionnel (saisie des lignes) —— */
+
+.detailBudgetPage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.detailPageHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0;
+}
+
+.detailPdfDownloadWrap {
+  width: max-content;
+  max-width: 100%;
+}
+
+/* Bloc Informations repliable (<details>) */
+.infoDetailsBlock {
+  padding-bottom: 0.25rem;
+}
+
+.infoSummary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  user-select: none;
+}
+
+.infoSummary::-webkit-details-marker {
+  display: none;
+}
+
+.infoSummaryLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.infoSummaryText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.infoSummaryTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.infoSummaryDesc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.infoChevron {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--text-secondary);
+}
+
+.infoDetailsBody {
+  margin-top: 1rem;
+}
+
+/* Cartes « lourdes » : pas d’effet lift au survol */
+.detailCardStatic:hover {
+  transform: none;
+  box-shadow: var(--shadow-md);
+}
+
+.detailSectionIntro {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.15rem;
+}
+
+.detailSectionHeading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.detailCardBody {
+  padding: 0 0 0.25rem;
+}
+
+.synthCardInner {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.85rem;
+}
+
+.synthPill {
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.synthPillLabel {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.synthPillValue {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.toolbarCard {
+  padding: 1rem 1.25rem;
+}
+
+.toolbarInner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+}
+
+.toolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+  flex: 1;
+  min-width: min(100%, 200px);
+}
+
+.toolbarDeleteWrap {
+  flex-shrink: 0;
+}
+
+.accountCell {
+  display: inline;
+  line-height: 1.45;
+}
+
+.accountNum {
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.accountSep {
+  color: var(--text-secondary);
+  margin: 0 0.35rem;
+}
+
+.addLineSubmitCell {
+  display: flex;
+  align-items: flex-end;
+}
+
+.addLineSubmitBtn {
+  width: 100%;
+}
+
+@media (min-width: 720px) {
+  .addLineSubmitBtn {
+    width: auto;
+    min-width: 11rem;
+  }
+}
+
+.tableWrap {
+  margin-top: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #fff;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+/* Même grille de colonnes sur charges / produits / CVN (alignement des montants + enregistrer) */
+.budgetLinesTable {
+  table-layout: fixed;
+  min-width: 36rem;
+}
+
+.budgetLinesTable[data-variant='solo'] col.budgetColAccount {
+  width: 58%;
+}
+
+.budgetLinesTable[data-variant='solo'] col.budgetColForecast {
+  width: 30%;
+}
+
+.budgetLinesTable[data-variant='solo'] col.budgetColTools {
+  width: 12%;
+}
+
+.budgetLinesTable[data-variant='compare'] col.budgetColAccount {
+  width: 48%;
+}
+
+.budgetLinesTable[data-variant='compare'] col.budgetColForecast {
+  width: 24%;
+}
+
+.budgetLinesTable[data-variant='compare'] col.budgetColRealized {
+  width: 16%;
+}
+
+.budgetLinesTable[data-variant='compare'] col.budgetColTools {
+  width: 12%;
+}
+
+.rowActionsHeader {
+  padding: 0.65rem 0.85rem;
+  text-align: right;
+}
+
+.budgetAmountInput {
+  width: 7.25rem;
+  min-width: 7.25rem;
+  max-width: 7.25rem;
+  flex-shrink: 0;
+}
+
+.compareIconWrap {
+  display: inline-flex;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.compareIconUp {
+  color: var(--success);
+}
+
+.compareIconEqual {
+  color: #2563eb;
+}
+
+.compareIconDown {
+  color: var(--danger);
+}
+
+.table thead {
+  background: rgba(15, 23, 42, 0.045);
+}
+
+.tableHeadRow {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tableTh {
+  padding: 0.65rem 0.85rem;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.tableTd {
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.lineForm {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.saveLineIconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.45rem;
+  line-height: 0;
+}
+
+.emptySectionHint {
+  margin: 0;
+  padding: 1rem 0 0.25rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.addLineCardInner {
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.02);
+  border-radius: 0.9rem;
+  padding: 1rem 1.1rem;
+  margin-top: 0.75rem;
+}
+
+.addLineGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem 1.25rem;
+  align-items: flex-end;
+}
+
+.warnBox {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  margin-top: 0;
+  margin-bottom: 1rem;
+}

@@ -1,0 +1,90 @@
+/* Do not set display:flex on <dialog> — it overrides the UA closed state (dialog stays visible). */
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0;
+  width: min(560px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  min-width: 0;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  background: white;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+.body {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  padding: 1.25rem 2.75rem 1rem 2.75rem;
+  text-align: center;
+}
+
+.closeBtn:global(.btn) {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.35rem;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.description {
+  display: block;
+  margin: 0.75rem 0 0 0;
+  color: var(--text-secondary);
+  width: 100%;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.footer {
+  width: 100%;
+  min-width: 0;
+  padding: 0 1.25rem 1.25rem 1.25rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cancelBtn:global(.btn) {
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+}
+
+.confirmDanger:global(.btn.btn-primary) {
+  background-color: var(--danger);
+  border: 1px solid var(--danger);
+  color: white;
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}

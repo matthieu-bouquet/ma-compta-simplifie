@@ -1,0 +1,73 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.cardLink {
+  display: block;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.cardText {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.cardCtaPrimary {
+  margin-top: 1rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.cardCtaSuccess {
+  margin-top: 1rem;
+  color: var(--success);
+  font-weight: 600;
+}
+
+.cardCtaWarning {
+  margin-top: 1rem;
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.infoCard {
+  margin-top: 1.5rem;
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  background: rgba(79, 70, 229, 0.06);
+}
+
+.infoTitle {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+}
+
+.infoText {
+  color: var(--text-primary);
+}
+
+.iconPrimary {
+  color: var(--primary);
+}
+
+.iconSuccess {
+  color: var(--success);
+}
+
+.iconWarning {
+  color: var(--warning);
+}
+

@@ -1,0 +1,103 @@
+/* Entities list page — table & actions (form primitives: @/components/forms/forms.module.css) */
+
+.headerActions {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.tableCard {
+  padding: 0;
+  overflow: hidden;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.th {
+  padding: 0.9rem 1.25rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.thRight {
+  text-align: right;
+}
+
+.tr {
+  border-top: 1px solid var(--border-color);
+}
+
+.td {
+  padding: 0.95rem 1.25rem;
+}
+
+.tdName {
+  font-weight: 800;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.entityLink {
+  color: var(--text-primary);
+}
+
+.badgeClosed {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--danger);
+}
+
+.tdMuted {
+  color: var(--text-secondary);
+}
+
+.actionsCell {
+  text-align: right;
+}
+
+.iconActions {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.iconButton {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border-color);
+  background: transparent;
+}
+
+.iconButtonDanger {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: var(--danger);
+  background: transparent;
+}
+
+.iconButtonDisabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 2rem 0;
+  color: var(--text-secondary);
+}

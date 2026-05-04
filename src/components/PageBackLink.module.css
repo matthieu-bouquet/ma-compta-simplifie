@@ -1,0 +1,15 @@
+.row {
+  display: flex;
+  align-items: center;
+}
+
+/* :global(.btn) raises specificity so `border` wins over globals `.btn { border: none }` */
+.backLink:global(.btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+}
+

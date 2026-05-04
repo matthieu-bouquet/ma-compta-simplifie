@@ -1,0 +1,253 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Association {
+  id         String   @id @default(uuid())
+  name       String
+  siret      String?  @unique
+  address    String?
+  postalCode String?
+  city       String?
+  email      String?
+  phone      String?
+  legalFormCode  String?
+  legalFormOther String?
+  isClosed   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  fiscalYears FiscalYear[]
+  budgets     Budget[]
+}
+
+model Budget {
+  id            String      @id @default(uuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+
+  name  String
+  notes String?
+
+  // Reference snapshot (informational only) when prefilled
+  sourceFiscalYearId       String?
+  sourceCoefficientPercent Int? // ex: 110 = +10%
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lines BudgetLine[]
+
+  @@index([associationId, updatedAt])
+}
+
+model BudgetLine {
+  id       String @id @default(uuid())
+  budgetId String
+  budget   Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  accountNumber String
+  accountName   String
+  amountCents   Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([budgetId, accountNumber])
+  @@index([budgetId])
+}
+
+model GlobalChartAccount {
+  id        String   @id @default(uuid())
+  number    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([number])
+}
+
+model FiscalYear {
+  id            String   @id @default(uuid())
+  startDate     DateTime
+  endDate       DateTime
+  status        String   // "OPEN" or "CLOSED"
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+
+  accounts   Account[]
+  entries    Entry[]
+  documents  Document[]
+  inKindContributions InKindContribution[]
+
+  @@unique([associationId, startDate, endDate])
+}
+
+model Journal {
+  id      String  @id @default(uuid())
+  code    String  @unique // BQ, AC, VE, OD
+  name    String
+  entries Entry[]
+}
+
+model Account {
+  id           String     @id @default(uuid())
+  number       String
+  name         String
+  fiscalYearId String
+  fiscalYear   FiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+
+  lines EntryLine[]
+
+  @@unique([number, fiscalYearId])
+}
+
+model Entry {
+  id              String     @id @default(uuid())
+  date            DateTime
+  description     String
+  journalId       String
+  journal         Journal    @relation(fields: [journalId], references: [id])
+  fiscalYearId    String
+  fiscalYear      FiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+  lines           EntryLine[]
+
+  referenceNumber   String?
+  referenceSequence Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([fiscalYearId, journalId, date])
+}
+
+model EntryLine {
+  id          String  @id @default(uuid())
+  entryId     String
+  entry       Entry   @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  accountId   String?
+  account     Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  accountNumber String
+  accountName   String
+
+  debitCents  Int @default(0)
+  creditCents Int @default(0)
+
+  documents  DocumentEntryLine[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model JournalSequence {
+  id           String   @id @default(uuid())
+  fiscalYearId String
+  journalId    String
+  nextNumber   Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@unique([fiscalYearId, journalId])
+  @@index([fiscalYearId])
+}
+
+model AuditEvent {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  associationId String?
+  fiscalYearId  String?
+
+  actor      String? // no user system yet (ex: associationId, "system")
+  action     String  // ex: ENTRY_CREATE, ENTRY_REVERSE, FISCAL_YEAR_CLOSE, DOCUMENT_UPLOAD
+  entityType String  // ex: Entry, Document, FiscalYear, Account
+  entityId   String?
+
+  data       String? // JSON string (SQLite)
+
+  @@index([associationId, createdAt])
+  @@index([fiscalYearId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model Document {
+  id           String   @id @default(uuid())
+  fiscalYearId String
+  fiscalYear   FiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+
+  originalName String
+  storedName   String
+  mimeType     String
+  sizeBytes    Int
+  sha256       String?
+
+  relativePath String
+  uploadedAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  lines DocumentEntryLine[]
+  inKindContributions InKindContribution[]
+
+  @@index([fiscalYearId, uploadedAt])
+  @@unique([fiscalYearId, storedName])
+}
+
+model DocumentEntryLine {
+  id          String    @id @default(uuid())
+  documentId  String
+  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  entryLineId String
+  entryLine   EntryLine @relation(fields: [entryLineId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([documentId, entryLineId])
+  @@index([entryLineId])
+  @@index([documentId])
+}
+
+model InKindContribution {
+  id String @id @default(uuid())
+
+  associationId String
+  fiscalYearId  String
+  fiscalYear    FiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+
+  // SQLite connector in this repo does not support Prisma enums.
+  // Values are validated at the application layer.
+  kind String
+
+  date DateTime
+  description String
+  contributorName String?
+
+  quantityMilliUnits Int
+  unit String
+
+  unitValueCents  Int?
+  totalValueCents Int
+  valuationMethod String
+
+  meetsAnc2112Essential Boolean
+  meetsAnc2112Measurable Boolean
+
+  isRecorded Boolean
+  entryId    String?
+
+  documentId String?
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([associationId, fiscalYearId, kind, date])
+  @@index([fiscalYearId, date])
+  @@index([entryId])
+  @@index([documentId])
+}

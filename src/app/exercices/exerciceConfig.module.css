@@ -1,0 +1,96 @@
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  margin: 0;
+}
+
+.configBlock {
+  margin-bottom: 1.5rem;
+}
+
+.summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  user-select: none;
+}
+
+.summaryTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.chevron {
+  color: var(--text-secondary);
+}
+
+.twoCol {
+  margin-top: 1.25rem;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+}
+
+@media (max-width: 900px) {
+  .twoCol {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cardFit {
+  height: fit-content;
+}
+
+.closedNotice {
+  padding: 1rem;
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--text-secondary);
+  border-radius: 0.5rem;
+}
+
+.formStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+}
+
+.submitSpaced {
+  margin-top: 1rem;
+}
+
+.submitSpacedSm {
+  margin-top: 0.5rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tableHeadRow {
+  border-bottom: 2px solid var(--border-color);
+}
+
+.th {
+  padding: 0.75rem 0;
+}
+
+.thRight {
+  text-align: right;
+}

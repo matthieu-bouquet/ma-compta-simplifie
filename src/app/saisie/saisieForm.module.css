@@ -1,0 +1,213 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.modeBar {
+  display: flex;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+
+.modeBtn {
+  border: 1px solid var(--border-color);
+  background: transparent;
+}
+
+.modeBtnActive {
+  border: none;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.quickPanel {
+  display: grid;
+  gap: 1rem;
+  background: rgba(15, 23, 42, 0.02);
+  padding: 1.25rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--border-color);
+}
+
+.quickGridTop {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 2.2fr 1fr;
+  gap: 1rem;
+  align-items: end;
+}
+
+@media (max-width: 1024px) {
+  .quickGridTop {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .quickGridTop {
+    grid-template-columns: 1fr;
+  }
+}
+
+.quickGridAccounts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: end;
+}
+
+@media (max-width: 560px) {
+  .quickGridAccounts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.operationStrip {
+  display: flex;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  min-height: 40px;
+  font-size: 0.9rem;
+}
+
+.operationBtn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 400;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, font-weight 0.15s ease;
+  padding: 0 0.5rem;
+}
+
+.operationBtnBorder {
+  border-left: 1px solid var(--border-color);
+}
+
+.operationBtnDepenseActive {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.operationBtnRecetteActive {
+  background: rgba(151, 206, 102, 0.1);
+  color: var(--success);
+  font-weight: 600;
+}
+
+.operationBtnTransfertActive {
+  background: rgba(124, 58, 237, 0.1);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.advancedHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.advancedTitle {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.journalField {
+  width: min(420px, 100%);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.tableHeadRow {
+  border-bottom: 2px solid var(--border-color);
+  text-align: left;
+}
+
+.thCompte {
+  padding: 0.5rem 0;
+  width: 50%;
+}
+
+.thAmount {
+  width: 20%;
+}
+
+.thActions {
+  width: 10%;
+}
+
+.tableRow {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tdCompte {
+  padding: 0.5rem 0;
+  padding-right: 1rem;
+}
+
+.tdAmount {
+  padding-right: 1rem;
+}
+
+.removeRowBtn {
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.removeRowBtn:disabled {
+  cursor: not-allowed;
+  color: var(--text-secondary);
+}
+
+.removeRowBtn:not(:disabled) {
+  color: var(--danger);
+}
+
+.advancedFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.totals {
+  display: flex;
+  gap: 2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.totalMismatch {
+  color: var(--danger);
+}
+
+.fileHint {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.submitRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}

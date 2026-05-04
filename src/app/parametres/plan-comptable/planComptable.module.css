@@ -1,0 +1,59 @@
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  table-layout: fixed;
+}
+
+.colNumber {
+  width: 140px;
+}
+
+.colActions {
+  width: 140px;
+}
+
+.th {
+  padding: 0.9rem 1.25rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.thActions {
+  text-align: right;
+}
+
+.tdNumber {
+  padding: 0.95rem 1.25rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.tdLabel {
+  padding: 0.95rem 1.25rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tdActions {
+  padding: 0.95rem 1.25rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tdEdit {
+  padding: 0.65rem 1.25rem;
+}
+
+.row {
+  border-top: 1px solid var(--border-color);
+}
+

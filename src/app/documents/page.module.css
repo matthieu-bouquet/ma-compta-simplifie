@@ -1,0 +1,27 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.title {
+  margin: 0;
+}
+
+.zipButton {
+  height: 32px;
+  padding: 0 0.9rem;
+}
+
+.uploadCard {
+  margin-bottom: 1.5rem;
+}
+
+.uploadHelp {
+  margin-top: 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+

@@ -1,0 +1,99 @@
+.topActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.btnSecondary {
+  border: 1px solid var(--border-color);
+  background: transparent;
+}
+
+.closedCard {
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem 1.5rem;
+}
+
+.label {
+  font-weight: 700;
+}
+
+.exercicesCard {
+  margin-top: 1.5rem;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.theadRow {
+  border-bottom: 2px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.th {
+  padding: 0.75rem 0;
+  font-weight: 600;
+}
+
+.tr {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.td {
+  padding: 0.9rem 0;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.statusOpen {
+  background-color: rgba(151, 206, 102, 0.12);
+  color: var(--success);
+}
+
+.statusClosed {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: var(--danger);
+}
+
+.linkPrimary {
+  color: var(--primary);
+  font-weight: 600;
+  margin-right: 0.75rem;
+}
+
+.linkDefault {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.emptyExercices {
+  text-align: center;
+  padding: 2rem 0;
+  color: var(--text-secondary);
+}
+
+.emptyCta {
+  margin-top: 1rem;
+}
+
