@@ -14,9 +14,23 @@ Ce document enregistre les choix d’architecture et de packaging pour l’app d
 |--------|------|
 | `npm run desktop:build` | Génère la DB modèle (`scripts/build-template-db.mjs`), build Next **standalone** (`next build`), exécute `scripts/fix-standalone-symlinks.mjs`, compile le main Electron (`tsc -p desktop/electron/tsconfig.json`). |
 | `npm run desktop:dist` | `desktop:build` puis `electron-builder --projectDir desktop --config electron-builder.json`. |
+| `npm run desktop:dist:mac` | Idem, mais force la cible macOS (`--mac`). |
+| `npm run desktop:dist:win` | Idem, mais force la cible Windows (`--win`). |
+| `npm run desktop:dist:linux` | Idem, mais force la cible Linux (`--linux`). |
+| `npm run desktop:dist:all` | Tente de builder macOS + Windows + Linux (`--mac --win --linux`). |
 | `npm run icons:electron` | Régénère les icônes OS à partir de `public/app-icon.svg` (script `scripts/generate-electron-icons.mjs`). |
 
 Ordre logique : **Next standalone → correctifs symlinks / Prisma dans le bundle → compilation Electron → electron-builder**.
+
+## Windows + Linux : point important (cross-build)
+
+Electron-builder peut accepter `--mac/--win/--linux`, mais **en pratique** :
+
+- **Build macOS** : se fait sur macOS.
+- **Build Windows** : se fait idéalement sur Windows (ou via CI/VM). Le packaging `nsis` demande une toolchain Windows (souvent via Wine si on tente depuis macOS/Linux), et c’est fragile.
+- **Build Linux** : se fait idéalement sur Linux (ou via CI/VM). Certaines cibles (ex. `AppImage`) requièrent des outils système disponibles nativement côté Linux.
+
+Donc la stratégie la plus robuste est : **un job de build par OS** (GitHub Actions / runner dédié), chacun exécutant `npm run desktop:dist:<os>`.
 
 ## Next.js en mode standalone
 

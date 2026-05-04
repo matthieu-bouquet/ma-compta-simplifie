@@ -45,6 +45,9 @@ test-results/
 .DS_Store
 *.pem
 
+# electron-builder cache (avoid sandbox permission issues)
+/.cache/
+
 # uploaded documents
 /data/uploads
 

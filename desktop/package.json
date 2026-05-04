@@ -2,6 +2,12 @@
   "name": "ma-compta-simplifie-desktop",
   "version": "0.1.0",
   "private": true,
+  "description": "Ma Compta Simplifié — application desktop (Electron)",
+  "homepage": "https://github.com/matthieu-bouquet/ma-compta-simplifie",
+  "author": {
+    "name": "Matthieu Bouquet",
+    "email": "matthieu.bouquet@gmail.com"
+  },
   "main": "dist-electron/main.js",
   "dependencies": {}
 }

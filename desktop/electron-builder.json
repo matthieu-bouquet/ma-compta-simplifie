@@ -25,7 +25,20 @@
       "CFBundleDisplayName": "Ma Compta Simplifié"
     }
   },
-  "win": { "target": ["nsis"], "icon": "assets/icon.ico" },
-  "linux": { "target": ["AppImage"], "icon": "assets/icon.png" }
+  "win": {
+    "target": ["nsis"],
+    "icon": "assets/icon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true
+  },
+  "linux": {
+    "target": ["AppImage"],
+    "icon": "assets/icon.png",
+    "maintainer": "Matthieu Bouquet <matthieu.bouquet@gmail.com>",
+    "category": "Office"
+  }
 }
 
