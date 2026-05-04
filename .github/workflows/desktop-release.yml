@@ -9,6 +9,11 @@ permissions:
   contents: read
 
 jobs:
+  # Windows desktop build temporarily disabled (failing on the runner). Restore:
+  # - job `build_win` (checkout, setup-node, npm ci, desktop:dist:win, upload-artifact)
+  # - add `build_win` back to `release.needs`
+  # - restore the "Download Windows artifacts" step in `release`
+
   verify_tag_on_main:
     name: Verify tag on main
     runs-on: ubuntu-latest
@@ -51,32 +56,6 @@ jobs:
           name: desktop-darwin
           path: dist-desktop/
 
-  build_win:
-    name: Build Windows
-    needs: verify_tag_on_main
-    runs-on: windows-latest
-    timeout-minutes: 120
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Package desktop (Windows)
-        run: npm run desktop:dist:win
-        env:
-          ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: desktop-windows
-          path: dist-desktop/
-
   build_linux:
     name: Build Linux
     needs: verify_tag_on_main
@@ -110,7 +89,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [build_mac, build_win, build_linux]
+    needs: [build_mac, build_linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -120,12 +99,6 @@ jobs:
         with:
           name: desktop-darwin
           path: artifacts/darwin
-
-      - name: Download Windows artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: desktop-windows
-          path: artifacts/windows
 
       - name: Download Linux artifacts
         uses: actions/download-artifact@v4
