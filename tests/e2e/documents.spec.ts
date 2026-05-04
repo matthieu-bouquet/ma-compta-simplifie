@@ -77,12 +77,14 @@ test('document viewer works from list and link page', async ({ page }) => {
   await expect(page.getByText('test.pdf', { exact: true }).first()).toBeVisible()
   await expect(page.getByText('Rechercher une ligne', { exact: true })).toBeVisible()
 
-  // ZIP download route should return 200 (must include cookies for auth).
-  const downloadPromise = page.waitForEvent('download')
-  await page.evaluate((id) => {
-    window.location.href = `/api/exercices/${encodeURIComponent(id)}/documents.zip`
-  }, fiscalYearId)
-  const dl = await downloadPromise
-  expect(dl.suggestedFilename()).toContain('.zip')
+  // ZIP export route: assert via API request (same cookie jar as `page`), not `location.href` +
+  // `download` event — Chromium can attribute a stray PDF download filename to the next navigation.
+  const zipRes = await page.request.get(`/api/exercices/${encodeURIComponent(fiscalYearId)}/documents.zip`)
+  expect(zipRes.status(), await zipRes.text().catch(() => '')).toBe(200)
+  const cd = (zipRes.headers()['content-disposition'] ?? '').toLowerCase()
+  expect(cd).toMatch(/\.zip/)
+  expect((zipRes.headers()['content-type'] ?? '').toLowerCase()).toContain('zip')
+  const zipBody = await zipRes.body()
+  expect(zipBody.subarray(0, 2).toString('binary')).toBe('PK')
 })
 
