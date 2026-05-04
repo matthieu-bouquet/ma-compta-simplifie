@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 
 type InputLine = {
@@ -170,65 +170,81 @@ export default function PaymentMethodsEvolutionChart({
     return { startDay, endDay, months, seriesMonthly, min, max }
   }, [dateDebut, dateFin, comptes])
 
-  if (!data) return null
-  if (!data.seriesMonthly.length) {
-    return <div style={{ color: 'var(--text-secondary)' }}>Aucun moyen de paiement (classe 5) sur cet exercice.</div>
-  }
+  const chartModel = useMemo(() => {
+    if (!data || !data.seriesMonthly.length) return null
+    const width = 920
+    const height = 320
+    const pad = { l: 48, r: 16, t: 12, b: 54 }
+    const w = width - pad.l - pad.r
+    const h = height - pad.t - pad.b
 
-  const width = 920
-  const height = 320
-  const pad = { l: 48, r: 16, t: 12, b: 54 }
-  const w = width - pad.l - pad.r
-  const h = height - pad.t - pad.b
+    const minY = data.min
+    const maxY = data.max
+    const span = Math.max(1e-9, maxY - minY)
+    const xStep = data.months.length <= 1 ? 0 : w / (data.months.length - 1)
 
-  const minY = data.min
-  const maxY = data.max
-  const span = Math.max(1e-9, maxY - minY)
-  const xStep = data.months.length <= 1 ? 0 : w / (data.months.length - 1)
+    const x = (i: number) => pad.l + i * xStep
+    const y = (v: number) => pad.t + (1 - (v - minY) / span) * h
 
-  const x = (i: number) => pad.l + i * xStep
-  const y = (v: number) => pad.t + (1 - (v - minY) / span) * h
+    const visibleSeriesMonthly = data.seriesMonthly.filter((s) => !hiddenSeriesIds.has(s.id))
 
-  const visibleSeriesMonthly = data.seriesMonthly.filter((s) => !hiddenSeriesIds.has(s.id))
+    const yTicks = 4
+    const ticks = Array.from({ length: yTicks + 1 }, (_, i) => {
+      const t = i / yTicks
+      const v = maxY - t * (maxY - minY)
+      return { v, y: y(v) }
+    })
+
+    return {
+      data,
+      width,
+      height,
+      pad,
+      w,
+      h,
+      minY,
+      maxY,
+      span,
+      xStep,
+      x,
+      y,
+      visibleSeriesMonthly,
+      ticks,
+    }
+  }, [data, hiddenSeriesIds])
 
   const todayX = useMemo(() => {
-    if (!data.months.length) return null
+    if (!chartModel || !chartModel.data.months.length) return null
+    const { data: d, xStep, x } = chartModel
     const today = parseISO(nowIso) ?? new Date()
-    const start = data.startDay
-    const end = addDays(data.endDay, 1)
+    const start = d.startDay
+    const end = addDays(d.endDay, 1)
     if (today < start || today >= end) return null
 
-    // position intra-mois pour plus de précision
     const mStart = startOfMonth(today)
-    const idx = data.months.findIndex((m) => sameMonth(m, mStart))
+    const idx = d.months.findIndex((m) => sameMonth(m, mStart))
     if (idx < 0) return null
     const mEnd = startOfNextMonth(mStart)
     const frac = clamp((today.getTime() - mStart.getTime()) / Math.max(1, mEnd.getTime() - mStart.getTime()), 0, 1)
     const base = x(idx)
-    if (data.months.length <= 1) return base
-    if (idx >= data.months.length - 1) return base
+    if (d.months.length <= 1) return base
+    if (idx >= d.months.length - 1) return base
     return base + frac * xStep
-  }, [data.months, data.startDay, data.endDay, xStep, nowIso])
-
-  const yTicks = 4
-  const ticks = Array.from({ length: yTicks + 1 }, (_, i) => {
-    const t = i / yTicks
-    const v = maxY - t * (maxY - minY)
-    return { v, y: y(v) }
-  })
+  }, [chartModel, nowIso])
 
   const updateHoverFromClientPoint = (clientX: number, clientY: number) => {
+    if (!chartModel) return
+    const { width, height, pad, xStep, data: d } = chartModel
     const svg = svgRef.current
     if (!svg) return
     const rect = svg.getBoundingClientRect()
     const px = clamp(clientX - rect.left, 0, rect.width)
     const py = clamp(clientY - rect.top, 0, rect.height)
 
-    // Convert to viewBox coordinates (we use fixed viewBox size).
     const vx = (px / rect.width) * width
     const vy = (py / rect.height) * height
 
-    const n = data.months.length
+    const n = d.months.length
     if (n <= 1) {
       setHoverIndex(0)
       setTooltip({ x: vx, y: vy })
@@ -257,12 +273,13 @@ export default function PaymentMethodsEvolutionChart({
   }
 
   // Tooltip du graphe global: mois (1 point par mois)
-  const monthLabelForIndex = (idx: number) => fmtMonth(data.months[idx])
+  const monthLabelForIndex = (idx: number) => (data ? fmtMonth(data.months[idx]) : '')
 
   // Données pour le graphe "détail du mois" (1 point par jour, mois sélectionné)
   const monthOptions = useMemo(() => {
+    if (!data?.seriesMonthly.length) return []
     return data.months.map((m) => ({ key: monthKey(m), label: fmtMonth(m), date: m }))
-  }, [data.months])
+  }, [data])
 
   const defaultMonthKey = useMemo(() => {
     const today = parseISO(nowIso) ?? new Date()
@@ -274,7 +291,7 @@ export default function PaymentMethodsEvolutionChart({
   const effectiveMonthKey = selectedMonthKey ?? defaultMonthKey
 
   const monthDaily = useMemo(() => {
-    if (!effectiveMonthKey) return null
+    if (!data || !effectiveMonthKey) return null
     const m = monthOptions.find((x) => x.key === effectiveMonthKey)?.date
     if (!m) return null
 
@@ -335,7 +352,15 @@ export default function PaymentMethodsEvolutionChart({
     const max = all.length ? Math.max(0, ...all) : 0
 
     return { monthStart: start, days, seriesDaily, min, max }
-  }, [effectiveMonthKey, monthOptions, data.startDay, data.endDay, data.seriesMonthly, comptes])
+  }, [effectiveMonthKey, monthOptions, data, comptes])
+
+  if (!data) return null
+  if (!data.seriesMonthly.length) {
+    return <div style={{ color: 'var(--text-secondary)' }}>Aucun moyen de paiement (classe 5) sur cet exercice.</div>
+  }
+  if (!chartModel) return null
+
+  const { width, height, pad, ticks, x, y, visibleSeriesMonthly } = chartModel
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -479,7 +504,7 @@ export default function PaymentMethodsEvolutionChart({
                   r={hoverIndex === i ? 4.2 : 2.2}
                   fill={color}
                   opacity={0.95}
-                  onMouseEnter={(e) => updateHoverFromClientPoint((e as any).clientX, (e as any).clientY)}
+                  onMouseEnter={(e: MouseEvent<SVGCircleElement>) => updateHoverFromClientPoint(e.clientX, e.clientY)}
                 />
               ))}
             </g>

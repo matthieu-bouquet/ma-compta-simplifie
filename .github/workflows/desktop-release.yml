@@ -1,0 +1,149 @@
+name: Desktop release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  verify_tag_on_main:
+    name: Verify tag on main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure tagged commit is on origin/main
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}" "origin/main"; then
+            echo "::error::Commit ${GITHUB_SHA} is not an ancestor of origin/main. Tag only commits that are on main."
+            exit 1
+          fi
+
+  build_mac:
+    name: Build macOS
+    needs: verify_tag_on_main
+    runs-on: macos-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package desktop (macOS)
+        run: npm run desktop:dist:mac
+        env:
+          ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-darwin
+          path: dist-desktop/
+
+  build_win:
+    name: Build Windows
+    needs: verify_tag_on_main
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package desktop (Windows)
+        run: npm run desktop:dist:win
+        env:
+          ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows
+          path: dist-desktop/
+
+  build_linux:
+    name: Build Linux
+    needs: verify_tag_on_main
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux packaging deps (AppImage)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package desktop (Linux)
+        run: npm run desktop:dist:linux
+        env:
+          ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux
+          path: dist-desktop/
+
+  release:
+    name: Publish GitHub Release
+    needs: [build_mac, build_win, build_linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-darwin
+          path: artifacts/darwin
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-windows
+          path: artifacts/windows
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-linux
+          path: artifacts/linux
+
+      - name: Collect installer files
+        run: |
+          mkdir -p upload
+          find artifacts -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" \) -print -exec cp {} upload/ \;
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: upload/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

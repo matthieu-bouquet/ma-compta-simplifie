@@ -38,7 +38,6 @@ export function normalizeOriginalNameSlug(originalName: string) {
   const base = stripExtension(originalName)
   const ascii = base
     .normalize('NFKD')
-    // eslint-disable-next-line no-control-regex
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
 

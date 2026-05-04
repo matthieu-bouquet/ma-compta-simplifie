@@ -18,7 +18,12 @@ describe('allocateEntryReferenceNumber', () => {
           status: 'OPEN',
         },
       })
-      const journal = await prisma.journal.create({ data: { code: 'OD', name: 'Opérations Diverses' } })
+      // Same SQLite DB is shared across Vitest files; other tests may already upsert global journals (e.g. OD).
+      const journal = await prisma.journal.upsert({
+        where: { code: 'OD' },
+        update: { name: 'Opérations Diverses' },
+        create: { code: 'OD', name: 'Opérations Diverses' },
+      })
 
       const r1 = await prisma.$transaction((tx) =>
         allocateEntryReferenceNumber(tx, { fiscalYearId: fy.id, journalId: journal.id })
