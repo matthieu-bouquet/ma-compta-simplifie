@@ -1,5 +1,7 @@
 # Contribuer
 
+**Node.js** : version **≥ 22.12** (voir `engines` dans [`package.json`](package.json)) — alignée avec la CI GitHub Actions et les contraintes des outils Electron / `npm ci` (lockfile généré avec npm 10.x).
+
 Ce dépôt suit une intégration **trunk-based** sur la branche `main`. La CI (lint, tests unitaires, tests E2E) s’exécute sur les **pull requests** et sur chaque **push** vers `main` (voir [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ## Branches et flux de travail
