@@ -1,6 +1,9 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
+import { useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { setCurrentExerciceId } from '@/actions/contextActions'
 import { CalendarDays } from 'lucide-react'
@@ -15,11 +18,7 @@ export default function ExerciceSwitcher({
   const router = useRouter()
   const pathname = usePathname()
   const [pending, startTransition] = useTransition()
-  const [value, setValue] = useState<string>(currentExerciceId ?? '')
-
-  useEffect(() => {
-    setValue(currentExerciceId ?? '')
-  }, [currentExerciceId])
+  const value = currentExerciceId ?? ''
 
   const hideOnExercices = pathname.startsWith('/exercices')
   const hideOnParametres = pathname.startsWith('/parametres')
@@ -35,7 +34,6 @@ export default function ExerciceSwitcher({
         value={value || exercices[0].id}
         onChange={(e) => {
           const next = e.target.value
-          setValue(next)
           startTransition(async () => {
             await setCurrentExerciceId(next || null)
             router.refresh()

@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { prefillBudgetFromFiscalYear } from '@/actions/budgetActions'

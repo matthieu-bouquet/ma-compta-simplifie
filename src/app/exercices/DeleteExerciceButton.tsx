@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useRef, useState } from 'react'
 import { deleteExercice } from '@/actions/exerciceActions'
 
@@ -15,8 +18,8 @@ export default function DeleteExerciceButton({ id, dateTexte }: { id: string, da
     try {
       await deleteExercice(id)
       close()
-    } catch (e: any) {
-      alert(e.message)
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Erreur')
     }
     setLoading(false)
   }

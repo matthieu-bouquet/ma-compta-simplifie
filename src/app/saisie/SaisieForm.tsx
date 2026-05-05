@@ -1,6 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
+import { useState } from 'react'
 import { createEcriture } from '@/actions/ecritureActions'
 import {
   calendarDateInTimeZone,
@@ -30,9 +33,8 @@ export default function SaisieForm({
   exerciceId: string
 }) {
   const router = useRouter()
-  const [mounted, setMounted] = useState(false)
   const [mode, setMode] = useState<'RAPIDE' | 'AVANCE'>('RAPIDE')
-  const [date, setDate] = useState<Date | null>(null)
+  const [date, setDate] = useState<Date | null>(() => new Date())
   const [libelle, setLibelle] = useState('')
   const [selectedJournalId, setSelectedJournalId] = useState<string>(journaux[0]?.id || '')
 
@@ -50,13 +52,6 @@ export default function SaisieForm({
 
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
-  useEffect(() => {
-    setDate(new Date())
-    setMounted(true)
-  }, [])
-
-  if (!mounted) return null
 
   const totalDebit = lignes.reduce((s, l) => s + (l.debit || 0), 0)
   const totalCredit = lignes.reduce((s, l) => s + (l.credit || 0), 0)

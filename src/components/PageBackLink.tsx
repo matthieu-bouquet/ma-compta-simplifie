@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import styles from './PageBackLink.module.css'

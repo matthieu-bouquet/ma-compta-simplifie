@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { prisma } from '@/lib/prisma'
 import DownloadPdfButton from './DownloadPdfButton'
 import { getCurrentAssociationId } from '@/lib/associationContext'
@@ -133,7 +136,7 @@ export default async function BilanPage({
       </div>
       
       <div className="card" style={{ marginBottom: '2rem' }}>
-        <h2 className="card-title">Synthèse de l'exercice</h2>
+        <h2 className="card-title">Synthèse de l&apos;exercice</h2>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.25rem', fontWeight: 600 }}>
           <span style={{ color: 'var(--danger)' }}>Charges : {totalCharges.toFixed(2)} €</span>
           <span style={{ color: 'var(--success)' }}>Produits : {totalProduits.toFixed(2)} €</span>

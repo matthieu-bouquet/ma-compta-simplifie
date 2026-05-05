@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 export const PLAN_COMPTABLE_ASSOCIATIF = [
   // Classe 1: Comptes de capitaux
   { numero: "102", libelle: "Fonds associatifs sans droit de reprise" },

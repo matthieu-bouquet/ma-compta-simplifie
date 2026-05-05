@@ -1,6 +1,9 @@
 'use client'
 
-import { useRef } from 'react'
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
+import { useCallback, useRef } from 'react'
 import styles from './ConfirmDialog.module.css'
 
 export default function ConfirmDialog({
@@ -24,10 +27,12 @@ export default function ConfirmDialog({
 }) {
   const dialogRef = useRef<HTMLDialogElement | null>(null)
 
-  const open = () => {
+  const open = useCallback(() => {
     if (!disabled) dialogRef.current?.showModal()
-  }
-  const close = () => dialogRef.current?.close()
+  }, [disabled])
+  const close = useCallback(() => {
+    dialogRef.current?.close()
+  }, [])
 
   const onBackdropMouseDown = (e: React.MouseEvent<HTMLDialogElement>) => {
     if (e.target === e.currentTarget && !disabled) close()
@@ -39,6 +44,8 @@ export default function ConfirmDialog({
 
   return (
     <>
+      {/* Consumers use open in event handlers; trigger render prop cannot be proven to defer invocation. */}
+      {/* eslint-disable-next-line react-hooks/refs -- dialogRef is only read when user activates trigger */}
       {trigger({ open })}
 
       <dialog

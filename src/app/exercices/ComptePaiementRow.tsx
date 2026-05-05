@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useState } from 'react'
 import { updateSoldeInitial } from '@/actions/exerciceActions'
 import { deleteCompteForExercice } from '@/actions/compteActions'

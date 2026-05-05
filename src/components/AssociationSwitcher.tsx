@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useEffect, useState, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { getAssociations } from '@/actions/associationActions'
@@ -18,7 +21,7 @@ export default function AssociationSwitcher({ currentAssociationId }: { currentA
   useEffect(() => {
     ;(async () => {
       try {
-        const data: any = await getAssociations()
+        const data = await getAssociations()
         setAssociations(data)
       } catch {
         setAssociations([])

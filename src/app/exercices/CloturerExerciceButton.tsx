@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useState } from 'react'
 import { cloturerExercice } from '@/actions/exerciceActions'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -11,7 +14,7 @@ export default function CloturerExerciceButton({ id }: { id: string }) {
     <div style={{ marginTop: '3rem', padding: '1.5rem', backgroundColor: 'rgba(239, 68, 68, 0.05)', border: '1px solid var(--danger)', borderRadius: '0.5rem' }}>
       <h3 style={{ color: 'var(--danger)', marginBottom: '0.5rem' }}>Zone de danger</h3>
       <p style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>
-        La clôture d'un exercice est définitive. Elle verrouille toutes les écritures et empêche toute modification ultérieure.
+        La clôture d&apos;un exercice est définitive. Elle verrouille toutes les écritures et empêche toute modification ultérieure.
       </p>
       <ConfirmDialog
         title="Clôturer cet exercice ?"
@@ -25,8 +28,8 @@ export default function CloturerExerciceButton({ id }: { id: string }) {
             await cloturerExercice(id)
             close()
             alert("L'exercice a été clôturé avec succès.")
-          } catch (e: any) {
-            alert(e.message)
+          } catch (e: unknown) {
+            alert(e instanceof Error ? e.message : 'Erreur')
           }
           setLoading(false)
         }}

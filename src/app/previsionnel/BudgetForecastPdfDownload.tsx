@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useTransition } from 'react'
 import { FileDown } from 'lucide-react'
 import { getBudgetForecastPdfPayload } from '@/actions/budgetActions'

@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useMemo, useState, useTransition } from 'react'
 import { linkDocumentToLignes, unlinkDocumentFromLigne } from '@/actions/documentActions'
 import ConfirmDialog from '@/components/ConfirmDialog'

@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import AppSearchableSelect from '@/components/forms/AppSearchableSelect'

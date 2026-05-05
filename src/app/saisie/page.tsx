@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { prisma } from '@/lib/prisma'
 import SaisieForm from './SaisieForm'
 import DeleteLigneButton from './DeleteLigneButton'
@@ -47,7 +50,7 @@ export default async function SaisiePage({
       <div>
         <h1 className="page-title">Saisie Comptable</h1>
         <div className="card">
-          <p className="text-warning">Impossible de saisir des écritures : Aucun exercice n'est disponible pour cette association.</p>
+          <p className="text-warning">Impossible de saisir des écritures : Aucun exercice n&apos;est disponible pour cette association.</p>
         </div>
       </div>
     )
@@ -134,7 +137,9 @@ export default async function SaisiePage({
                     <td style={{ padding: '0.75rem 0.5rem', whiteSpace: 'nowrap' }}>
                       {new Date(l.entry.date).toLocaleDateString('fr-FR')}
                     </td>
-                    <td style={{ padding: '0.75rem 0.5rem' }}>{(l.entry as any).libelle ?? l.entry.description}</td>
+                    <td style={{ padding: '0.75rem 0.5rem' }}>
+                      {(l.entry as { description: string; libelle?: string | null }).libelle ?? l.entry.description}
+                    </td>
                     <td style={{ padding: '0.75rem 0.5rem' }}>
                       {l.accountNumber} - {l.accountName}
                     </td>
@@ -169,7 +174,7 @@ export default async function SaisiePage({
                         <AttachDocumentButton
                           ligneId={l.id}
                           ligneSummary={`${new Date(l.entry.date).toLocaleDateString('fr-FR')} · ${
-                            (l.entry as any).libelle ?? l.entry.description
+                            (l.entry as { description: string; libelle?: string | null }).libelle ?? l.entry.description
                           } · ${l.accountNumber} - ${l.accountName}`}
                         />
                       )}

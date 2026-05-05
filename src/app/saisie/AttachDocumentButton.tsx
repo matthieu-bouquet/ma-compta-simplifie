@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useId, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Paperclip } from 'lucide-react'

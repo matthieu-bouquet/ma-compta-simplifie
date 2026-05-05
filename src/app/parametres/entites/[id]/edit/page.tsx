@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
+import { useCallback, useEffect, useState, startTransition } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Building2, Mail, MapPin, Phone } from 'lucide-react'
 import ParametreLayout from '@/components/ParametreLayout'
 import FormSection from '@/components/forms/FormSection'
 import forms from '@/components/forms/forms.module.css'
-import { getAssociation, updateAssociation } from '@/actions/associationActions'
+import { getAssociation, updateAssociation, type AssociationDetail } from '@/actions/associationActions'
 import { LEGAL_FORM_OPTIONS } from '@/lib/legalForms'
 
 export default function EditEntityPage() {
@@ -28,33 +31,39 @@ export default function EditEntityPage() {
     telephone: '',
   })
 
-  useEffect(() => {
-    if (!id) return
-    load(id)
-  }, [id])
-
-  async function load(entityId: string) {
+  const load = useCallback(async (entityId: string) => {
     setLoading(true)
     setError('')
     try {
-      const a: any = await getAssociation(entityId)
+      const a: AssociationDetail | null = await getAssociation(entityId)
+      if (!a) {
+        setError('Entité introuvable')
+        return
+      }
       setFormData({
-        nom: a?.nom || '',
-        siret: a?.siret || '',
-        legalFormCode: a?.legalFormCode || '',
-        legalFormOther: a?.legalFormOther || '',
-        adresse: a?.adresse || '',
-        codePostal: a?.codePostal || '',
-        ville: a?.ville || '',
-        email: a?.email || '',
-        telephone: a?.telephone || '',
+        nom: a.nom || '',
+        siret: a.siret || '',
+        legalFormCode: a.legalFormCode || '',
+        legalFormOther: a.legalFormOther || '',
+        adresse: a.adresse || '',
+        codePostal: a.codePostal || '',
+        ville: a.ville || '',
+        email: a.email || '',
+        telephone: a.telephone || '',
       })
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors du chargement')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erreur lors du chargement')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (!id) return
+    startTransition(() => {
+      void load(id)
+    })
+  }, [id, load])
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target
@@ -81,8 +90,8 @@ export default function EditEntityPage() {
       await updateAssociation(id, form)
       setSuccess('Entité modifiée')
       router.push('/parametres/entites')
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la modification')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la modification')
     }
   }
 

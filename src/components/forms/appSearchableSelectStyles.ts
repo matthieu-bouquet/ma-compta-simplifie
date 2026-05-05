@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import type { StylesConfig, GroupBase } from 'react-select'
 
 /** Shared react-select theme aligned with `forms.module.css` inputs */

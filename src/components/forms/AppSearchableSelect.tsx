@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import Select, { type SingleValue } from 'react-select'
 import { getAppSearchableSelectStyles } from './appSearchableSelectStyles'
 import forms from './forms.module.css'

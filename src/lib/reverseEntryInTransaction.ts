@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import type { Prisma } from '@prisma/client'
 import { allocateEntryReferenceNumber } from '@/lib/journalNumbering'
 import { writeAuditEvent } from '@/lib/audit'

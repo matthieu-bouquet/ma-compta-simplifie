@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { usePathname } from 'next/navigation'
 import ExerciceSwitcher from '@/components/ExerciceSwitcher'
 import AssociationSwitcher from '@/components/AssociationSwitcher'

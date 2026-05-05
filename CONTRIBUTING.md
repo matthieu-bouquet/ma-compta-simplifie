@@ -2,6 +2,21 @@
 
 **Node.js** : version **≥ 22.12** (voir `engines` dans [`package.json`](package.json)) — alignée avec la CI GitHub Actions et les contraintes des outils Electron / `npm ci` (lockfile généré avec npm 10.x).
 
+## Licence des contributions (Licensing of contributions)
+
+By submitting a pull request or otherwise contributing code or documentation to this repository, you agree that:
+
+1. **License (GPL-3.0-or-later)** — your contributions are licensed to the project under the **GNU General Public License v3.0 or later**, the same license as the rest of the codebase (see [`LICENSE`](LICENSE)).
+2. **Relicensing grant (dual-licensing)** — you also grant **Ma Compta Simplifié** a perpetual, worldwide, irrevocable, non-exclusive, royalty-free license to use, modify, sublicense, and distribute your contributions under **any other license** chosen by the copyright holder (including proprietary licenses), without further compensation. This is required so the project can offer commercial licenses while keeping the public tree under GPLv3+.
+
+**Developer Certificate of Origin (DCO)** — use a `Signed-off-by` line in each commit message, for example:
+
+```text
+Signed-off-by: Random J Developer <random@developer.example.org>
+```
+
+This certifies the [Developer Certificate of Origin version 1.1](https://developercertificate.org/) (same idea as the Linux kernel DCO).
+
 Ce dépôt suit une intégration **trunk-based** sur la branche `main`. La CI (lint, tests unitaires, tests E2E) s’exécute sur les **pull requests** et sur chaque **push** vers `main` (voir [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ## Branches et flux de travail

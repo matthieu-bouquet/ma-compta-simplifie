@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import crypto from 'crypto'
 import fs from 'fs'
 import fsp from 'fs/promises'
@@ -131,7 +134,8 @@ export function createReadStreamForRelativePath(relativePath: string) {
 }
 
 export function nodeStreamToWeb(stream: NodeJS.ReadableStream): ReadableStream {
-  return Readable.toWeb(stream as any) as unknown as ReadableStream
+  // Node's stream/web ReadableStream differs from DOM ReadableStream in typings; runtime is compatible.
+  return Readable.toWeb(stream as Readable) as unknown as ReadableStream
 }
 
 export async function deleteStoredFile(relativePath: string) {

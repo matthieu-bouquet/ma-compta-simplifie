@@ -71,4 +71,9 @@ Multi-platform build and packaging: see [`desktop/ELECTRON_BUILD.md`](desktop/EL
 
 ## License
 
-**Private** project — `UNLICENSED` (see `package.json`). Author: Ma Compta Simplifié.
+This project is licensed under the **GNU General Public License v3.0 or later** (`GPL-3.0-or-later`, SPDX). See [`LICENSE`](LICENSE), [`NOTICE`](NOTICE), and [`COPYING`](COPYING).
+
+- **Default (open source)** : you may use, modify, and redistribute the software under GPLv3+; forks that convey the software must remain under GPLv3+ and preserve copyright and license notices (see the license text).
+- **Commercial / proprietary use** : integrating or distributing this code without GPLv3+ obligations may require a **separate commercial license** from the copyright holder (**Ma Compta Simplifié**). Open a GitHub issue or discussion on the [project repository](https://github.com/matthieu-bouquet/ma-compta-simplifie) to discuss licensing.
+
+The `license` field in [`package.json`](package.json) is `GPL-3.0-or-later`. The package remains `"private": true` (this is not an npm-published package).

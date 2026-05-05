@@ -1,6 +1,9 @@
 'use client'
 
-import { useId, useRef } from 'react'
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
+import { useCallback, useId, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
 import DocumentViewer from './DocumentViewer'
@@ -22,8 +25,12 @@ export default function DocumentViewerDialog({
   const dialogRef = useRef<HTMLDialogElement | null>(null)
   const titleId = useId()
 
-  const open = () => dialogRef.current?.showModal()
-  const close = () => dialogRef.current?.close()
+  const open = useCallback(() => {
+    dialogRef.current?.showModal()
+  }, [])
+  const close = useCallback(() => {
+    dialogRef.current?.close()
+  }, [])
 
   const onBackdropMouseDown = (e: React.MouseEvent<HTMLDialogElement>) => {
     if (e.target === e.currentTarget) close()
@@ -31,6 +38,7 @@ export default function DocumentViewerDialog({
 
   return (
     <>
+      {/* eslint-disable-next-line react-hooks/refs -- dialogRef is only read when user activates trigger */}
       {trigger({ open })}
 
       <dialog

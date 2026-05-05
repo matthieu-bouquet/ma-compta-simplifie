@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { nodeStreamToWeb, createReadStreamForRelativePath } from '@/lib/documentsStorage'
@@ -140,7 +143,10 @@ export async function POST(req: Request) {
     prisma.inKindContribution.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
   ])
 
-  const budgetsPayload = budgetsWithLines.map(({ lines: _lines, ...b }) => b)
+  const budgetsPayload = budgetsWithLines.map(({ lines, ...b }) => {
+    void lines
+    return b
+  })
   const budgetLinesPayload = budgetsWithLines.flatMap((b) => b.lines)
 
   const manifest = {

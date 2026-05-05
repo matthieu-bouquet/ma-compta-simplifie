@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 /** IANA timezone used for entry calendar-day rules (French accounting context). */
 export const ENTRY_DATE_TIMEZONE = 'Europe/Paris'
 

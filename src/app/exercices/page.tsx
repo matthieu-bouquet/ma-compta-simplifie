@@ -1,4 +1,7 @@
-import { getExercices, createExercice } from '@/actions/exerciceActions'
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
+import { getExercices } from '@/actions/exerciceActions'
 import Link from 'next/link'
 import ExerciceForm from './ExerciceForm'
 import DeleteExerciceButton from './DeleteExerciceButton'
@@ -40,7 +43,7 @@ export default async function ExercicesPage() {
         <div className="card">
           <h2 className="card-title">Exercices Existants</h2>
           {exercices.length === 0 ? (
-            <p>Aucun exercice comptable n'a été créé.</p>
+            <p>Aucun exercice comptable n&apos;a été créé.</p>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>

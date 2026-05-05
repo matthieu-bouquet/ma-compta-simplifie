@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import styles from './DocumentViewer.module.css'
 import type { ReactNode } from 'react'
 
@@ -39,6 +42,8 @@ export default function DocumentViewer({
         </div>
       ) : isImage(mimeType) ? (
         <div className={styles.frame}>
+          {/* Authenticated API URL — next/image is not applicable; avoid leaking cookies to an optimizer. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className={styles.image} src={viewHref} alt={title ?? 'Document'} />
         </div>
       ) : (

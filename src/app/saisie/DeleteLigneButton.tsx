@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useRef, useState } from 'react'
 import { annulerEcritureByLigneId } from '@/actions/ecritureActions'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -33,8 +36,8 @@ export default function DeleteLigneButton({
           await annulerEcritureByLigneId(ligneId)
           close()
           router.refresh()
-        } catch (e: any) {
-          setError(e?.message || "Erreur lors de l'annulation")
+        } catch (e: unknown) {
+          setError(e instanceof Error ? e.message : "Erreur lors de l'annulation")
         } finally {
           setLoading(false)
           isSubmittingRef.current = false

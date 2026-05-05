@@ -1,5 +1,8 @@
 'use server'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { PLAN_COMPTABLE_ASSOCIATIF } from '@/lib/planComptable'
@@ -110,7 +113,7 @@ export async function getGlobalChartForFiscalYearCreation() {
 
 // Backward-compatible exports (UI still uses FR names).
 // TODO: migrate UI imports to English and remove.
-type LegacyPlanComptableAccount = { id: string; numero: string; libelle: string }
+export type LegacyPlanComptableAccount = { id: string; numero: string; libelle: string }
 
 function toLegacyAccountRow(row: { id: string; number: string; name: string }): LegacyPlanComptableAccount {
   return { id: row.id, numero: row.number, libelle: row.name }

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { findNetCentsForAccount, type FiscalYearNetTotals } from '@/lib/accountTotals'
 
 export type ForecastVsRealizedKind = 'up' | 'equal' | 'down' | null

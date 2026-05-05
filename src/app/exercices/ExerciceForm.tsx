@@ -1,6 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
+import { useState, useEffect, useCallback, startTransition } from 'react'
 import { createExercice } from '@/actions/exerciceActions'
 import { getAssociations } from '@/actions/associationActions'
 import DatePicker from 'react-datepicker'
@@ -11,49 +14,32 @@ import AppSearchableSelect from '@/components/forms/AppSearchableSelect'
 import FormSection from '@/components/forms/FormSection'
 import forms from '@/components/forms/forms.module.css'
 import styles from './exerciceForm.module.css'
+import { getDefaultExercisePeriod } from '@/lib/defaultExercisePeriod'
 
 export default function ExerciceForm({ associationId }: { associationId?: string }) {
-  const [mounted, setMounted] = useState(false)
-  const [dateDebut, setDateDebut] = useState<Date | null>(null)
-  const [dateFin, setDateFin] = useState<Date | null>(null)
-  const [selectedAssociationId, setSelectedAssociationId] = useState<string>(() => associationId ?? '')
+  const [dateDebut, setDateDebut] = useState<Date | null>(() => getDefaultExercisePeriod().dateDebut)
+  const [dateFin, setDateFin] = useState<Date | null>(() => getDefaultExercisePeriod().dateFin)
+  const [internalAssociationId, setInternalAssociationId] = useState('')
   const [associations, setAssociations] = useState<Association[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    loadAssociations()
+  const submitAssociationId = associationId ?? internalAssociationId
 
-    const now = new Date()
-    const currentYear = now.getFullYear()
-    const currentMonth = now.getMonth()
-
-    let startYear = currentYear
-    if (currentMonth < 8) {
-      startYear = currentYear - 1
-    }
-
-    setDateDebut(new Date(startYear, 8, 1))
-    setDateFin(new Date(startYear + 1, 7, 31))
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (associationId) {
-      setSelectedAssociationId(associationId)
-    }
-  }, [associationId])
-
-  async function loadAssociations() {
+  const loadAssociations = useCallback(async () => {
     try {
       const data = await getAssociations()
       setAssociations(data as Association[])
     } catch {
       setError('Erreur lors du chargement des associations')
     }
-  }
+  }, [])
 
-  if (!mounted) return null
+  useEffect(() => {
+    startTransition(() => {
+      void loadAssociations()
+    })
+  }, [loadAssociations])
 
   const associationOptions = associations.map((a: Association & { nom?: string }) => ({
     value: a.id,
@@ -61,19 +47,19 @@ export default function ExerciceForm({ associationId }: { associationId?: string
   }))
 
   const associationValue =
-    selectedAssociationId && associations.some((a) => a.id === selectedAssociationId)
+    submitAssociationId && associations.some((a) => a.id === submitAssociationId)
       ? {
-          value: selectedAssociationId,
+          value: submitAssociationId,
           label:
-            (associations.find((a) => a.id === selectedAssociationId) as Association & { nom?: string })?.nom ??
-            associations.find((a) => a.id === selectedAssociationId)!.name,
+            (associations.find((a) => a.id === submitAssociationId) as Association & { nom?: string })?.nom ??
+            associations.find((a) => a.id === submitAssociationId)!.name,
         }
       : null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!dateDebut || !dateFin) return
-    if (!selectedAssociationId) {
+    if (!submitAssociationId) {
       setError('Veuillez sélectionner une association')
       return
     }
@@ -83,7 +69,7 @@ export default function ExerciceForm({ associationId }: { associationId?: string
     const formData = new FormData()
     formData.append('dateDebut', dateDebut.toISOString().split('T')[0])
     formData.append('dateFin', dateFin.toISOString().split('T')[0])
-    formData.append('associationId', selectedAssociationId)
+    formData.append('associationId', submitAssociationId)
 
     try {
       await createExercice(formData)
@@ -114,7 +100,7 @@ export default function ExerciceForm({ associationId }: { associationId?: string
                 inputId="exercice-new-association"
                 options={associationOptions}
                 value={associationValue}
-                onChange={(v) => setSelectedAssociationId(v ?? '')}
+                onChange={(v) => setInternalAssociationId(v ?? '')}
                 placeholder="Sélectionner une association"
                 isClearable={false}
                 noOptionsMessage={() => 'Aucune entité'}

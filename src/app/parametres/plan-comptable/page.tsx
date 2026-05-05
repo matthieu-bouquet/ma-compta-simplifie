@@ -1,13 +1,17 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useState, useEffect } from 'react'
-import { 
-  getPlanComptableGlobal, 
+import {
+  getPlanComptableGlobal,
   initializePlanComptableGlobal,
   addCompteToPlanGlobal,
   deleteCompteFromPlanGlobal,
   updateCompteInPlanGlobal,
   syncPlanComptableGlobalWithDefault,
+  type LegacyPlanComptableAccount,
 } from '@/actions/planComptableActions'
 import ParametreLayout from '@/components/ParametreLayout'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -18,7 +22,7 @@ import styles from './planComptable.module.css'
 import pageStyles from './planComptablePage.module.css'
 
 export default function PlanComptablePage() {
-  const [planComptable, setPlanComptable] = useState<any[]>([])
+  const [planComptable, setPlanComptable] = useState<LegacyPlanComptableAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
@@ -54,8 +58,8 @@ export default function PlanComptablePage() {
       data = sync.data
       
       setPlanComptable(data)
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors du chargement du plan comptable')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erreur lors du chargement du plan comptable')
     } finally {
       setLoading(false)
     }
@@ -76,8 +80,8 @@ export default function PlanComptablePage() {
       setFormData({ numero: '', libelle: '' })
       setShowForm(false)
       loadPlanComptable()
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de l\'ajout du compte')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erreur lors de l'ajout du compte")
     }
   }
 
@@ -86,8 +90,8 @@ export default function PlanComptablePage() {
       await deleteCompteFromPlanGlobal(id)
       setSuccess('Compte supprimé avec succès')
       loadPlanComptable()
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la suppression du compte')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la suppression du compte')
     }
   }
 
@@ -122,8 +126,8 @@ export default function PlanComptablePage() {
       setSuccess('Compte modifié avec succès')
       cancelEdit()
       await loadPlanComptable()
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la modification du compte')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la modification du compte')
     } finally {
       setSavingEdit(false)
     }
@@ -136,8 +140,8 @@ export default function PlanComptablePage() {
     }))
   }
 
-  function groupByClasse(comptes: any[]) {
-    const grouped: { [key: string]: any[] } = {}
+  function groupByClasse(comptes: LegacyPlanComptableAccount[]) {
+    const grouped: Record<string, LegacyPlanComptableAccount[]> = {}
     comptes.forEach(compte => {
       const classe = compte.numero.charAt(0)
       if (!grouped[classe]) {

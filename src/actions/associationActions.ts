@@ -1,5 +1,8 @@
 'use server'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { writeAuditEvent } from '@/lib/audit'
@@ -53,6 +56,10 @@ export async function getAssociation(id: string) {
     })),
   }
 }
+
+export type AssociationListRow = Awaited<ReturnType<typeof getAssociations>>[number]
+
+export type AssociationDetail = NonNullable<Awaited<ReturnType<typeof getAssociation>>>
 
 export async function createAssociation(formData: FormData) {
   const name = formData.get('nom') as string

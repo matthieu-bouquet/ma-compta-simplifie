@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { classifyAccount } from '@/lib/budgetClassification'
 import type { CompteResultatPdfBody } from '@/lib/compteResultatPdf'
 

@@ -12,7 +12,6 @@ test('document viewer works from list and link page', async ({ page }) => {
   const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
   let associationId: string
   let fiscalYearId: string
-  let documentId: string
 
   try {
     const assoc = await prisma.association.create({ data: { name: 'Association DOC E2E' } })
@@ -37,7 +36,7 @@ test('document viewer works from list and link page', async ({ page }) => {
     await fsp.mkdir(path.dirname(absolutePath), { recursive: true })
     await fsp.writeFile(absolutePath, pdfBytes)
 
-    const doc = await prisma.document.create({
+    await prisma.document.create({
       data: {
         fiscalYearId,
         originalName: fileName,
@@ -49,7 +48,6 @@ test('document viewer works from list and link page', async ({ page }) => {
       },
       select: { id: true },
     })
-    documentId = doc.id
   } finally {
     await prisma.$disconnect()
   }

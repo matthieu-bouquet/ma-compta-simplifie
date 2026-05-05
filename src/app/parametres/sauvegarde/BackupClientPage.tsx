@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, ChevronUp, Download, Upload } from 'lucide-react'
 import styles from './sauvegarde.module.css'
@@ -98,8 +101,8 @@ export default function BackupClientPage() {
           fiscalYearIds: new Set<string>(),
           budgetIds: new Set<string>(),
         })
-      } catch (e: any) {
-        setError(e?.message || 'Erreur lors du chargement des entités/exercices')
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Erreur lors du chargement des entités/exercices')
       } finally {
         setLoading(false)
       }
@@ -147,8 +150,8 @@ export default function BackupClientPage() {
       a.remove()
       URL.revokeObjectURL(url)
       setSuccess('Sauvegarde téléchargée.')
-    } catch (e: any) {
-      setError(e?.message || 'Erreur lors du téléchargement.')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Erreur lors du téléchargement.')
     }
   }
 
@@ -179,8 +182,8 @@ export default function BackupClientPage() {
       setImportToken(data.token)
       setImportPreview({ summary: data.summary, conflicts: data.conflicts })
       setSuccess('Sauvegarde analysée.')
-    } catch (e: any) {
-      setError(e?.message || "Erreur lors de l'analyse.")
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erreur lors de l'analyse.")
     }
   }
 
@@ -218,8 +221,8 @@ export default function BackupClientPage() {
       setOverwriteAssociationIds(new Set())
       setOverwriteFiscalYearIds(new Set())
       setOverwriteBudgetIds(new Set())
-    } catch (e: any) {
-      setError(e?.message || "Erreur lors de l'import.")
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erreur lors de l'import.")
     } finally {
       setImporting(false)
     }

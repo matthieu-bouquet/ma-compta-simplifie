@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import path from 'node:path'
@@ -7,8 +10,25 @@ import JSZip from 'jszip'
 import { toAbsolutePath } from '@/lib/documentsStorage'
 import { writeAuditEvent } from '@/lib/audit'
 import { Prisma } from '@prisma/client'
+import type {
+  BackupAccountJson,
+  BackupAssociationJson,
+  BackupBudgetJson,
+  BackupBudgetLineJson,
+  BackupDocumentEntryLineJson,
+  BackupDocumentJson,
+  BackupEntryJson,
+  BackupEntryLineJson,
+  BackupFiscalYearJson,
+  BackupInKindContributionJson,
+  BackupJournalJson,
+  BackupJournalSequenceJson,
+} from '@/lib/backupSchema'
 
 export const runtime = 'nodejs'
+
+/** Loaded ZIP root (see `JSZip.loadAsync`). */
+type JSZipInstance = Awaited<ReturnType<typeof JSZip.loadAsync>>
 
 type BackupManifest = {
   version: number
@@ -82,22 +102,22 @@ async function readZipBuffer(file: File) {
   return Buffer.from(ab)
 }
 
-async function openZipFromBuffer(buf: Buffer) {
+async function openZipFromBuffer(buf: Buffer): Promise<JSZipInstance> {
   return await JSZip.loadAsync(buf)
 }
 
-async function getZipText(zip: any, entryPath: string) {
+async function getZipText(zip: JSZipInstance, entryPath: string) {
   const entry = zip.file(entryPath)
   if (!entry) throw new Error(`Fichier manquant dans la sauvegarde: ${entryPath}`)
   return await entry.async('string')
 }
 
-async function getZipJson<T>(zip: any, entryPath: string): Promise<T> {
+async function getZipJson<T>(zip: JSZipInstance, entryPath: string): Promise<T> {
   const txt = await getZipText(zip, entryPath)
   return JSON.parse(txt) as T
 }
 
-async function getZipJsonOptional<T>(zip: any, entryPath: string, fallback: T): Promise<T> {
+async function getZipJsonOptional<T>(zip: JSZipInstance, entryPath: string, fallback: T): Promise<T> {
   const entry = zip.file(entryPath)
   if (!entry) return fallback
   const txt = await entry.async('string')
@@ -148,10 +168,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Version de sauvegarde non supportée.' }, { status: 400 })
     }
 
-    const backupAssociations = await getZipJson<any[]>(zip, 'data/associations.json')
-    const backupFiscalYears = await getZipJson<any[]>(zip, 'data/fiscalYears.json')
-    const backupBudgets = await getZipJsonOptional<any[]>(zip, 'data/budgets.json', [])
-    const backupDocuments = await getZipJson<any[]>(zip, 'data/documents.json')
+    const backupAssociations = await getZipJson<BackupAssociationJson[]>(zip, 'data/associations.json')
+    const backupFiscalYears = await getZipJson<BackupFiscalYearJson[]>(zip, 'data/fiscalYears.json')
+    const backupBudgets = await getZipJsonOptional<BackupBudgetJson[]>(zip, 'data/budgets.json', [])
+    const backupDocuments = await getZipJson<BackupDocumentJson[]>(zip, 'data/documents.json')
 
     // Conflicts: associations
     const existingAssociations = await prisma.association.findMany({
@@ -327,18 +347,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Version de sauvegarde non supportée.' }, { status: 400 })
   }
 
-  const associations = await getZipJson<any[]>(zip, 'data/associations.json')
-  const fiscalYears = await getZipJson<any[]>(zip, 'data/fiscalYears.json')
-  const journals = await getZipJson<any[]>(zip, 'data/journals.json')
-  const accounts = await getZipJson<any[]>(zip, 'data/accounts.json')
-  const journalSequences = await getZipJson<any[]>(zip, 'data/journalSequences.json')
-  const entries = await getZipJson<any[]>(zip, 'data/entries.json')
-  const entryLines = await getZipJson<any[]>(zip, 'data/entryLines.json')
-  const documents = await getZipJson<any[]>(zip, 'data/documents.json')
-  const documentEntryLines = await getZipJson<any[]>(zip, 'data/documentEntryLines.json')
-  const inKindContributions = await getZipJson<any[]>(zip, 'data/inKindContributions.json')
-  const budgets = await getZipJsonOptional<any[]>(zip, 'data/budgets.json', [])
-  const budgetLines = await getZipJsonOptional<any[]>(zip, 'data/budgetLines.json', [])
+  const associations = await getZipJson<BackupAssociationJson[]>(zip, 'data/associations.json')
+  const fiscalYears = await getZipJson<BackupFiscalYearJson[]>(zip, 'data/fiscalYears.json')
+  const journals = await getZipJson<BackupJournalJson[]>(zip, 'data/journals.json')
+  const accounts = await getZipJson<BackupAccountJson[]>(zip, 'data/accounts.json')
+  const journalSequences = await getZipJson<BackupJournalSequenceJson[]>(zip, 'data/journalSequences.json')
+  const entries = await getZipJson<BackupEntryJson[]>(zip, 'data/entries.json')
+  const entryLines = await getZipJson<BackupEntryLineJson[]>(zip, 'data/entryLines.json')
+  const documents = await getZipJson<BackupDocumentJson[]>(zip, 'data/documents.json')
+  const documentEntryLines = await getZipJson<BackupDocumentEntryLineJson[]>(zip, 'data/documentEntryLines.json')
+  const inKindContributions = await getZipJson<BackupInKindContributionJson[]>(zip, 'data/inKindContributions.json')
+  const budgets = await getZipJsonOptional<BackupBudgetJson[]>(zip, 'data/budgets.json', [])
+  const budgetLines = await getZipJsonOptional<BackupBudgetLineJson[]>(zip, 'data/budgetLines.json', [])
 
   // Upsert journals by code, and map backup journal IDs -> existing IDs
   const journalIdMap = new Map<string, string>()
@@ -616,7 +636,7 @@ export async function POST(req: Request) {
 
   // Restore files after DB is in place.
   const allFiles: string[] = []
-  zip.forEach((relativePath: string, file: any) => {
+  zip.forEach((relativePath: string, file: JSZip.JSZipObject) => {
     if (!file.dir) allFiles.push(relativePath)
   })
 

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { prisma } from '@/lib/prisma'
 import { addComptePaiement } from '@/actions/exerciceActions'
 import { createCompteForExercice } from '@/actions/compteActions'
@@ -8,6 +11,37 @@ import ComptePaiementRow from '../ComptePaiementRow'
 import CompteRowExercice from '../CompteRowExercice'
 import forms from '@/components/forms/forms.module.css'
 import layout from '../exerciceConfig.module.css'
+import type { Account } from '@prisma/client'
+
+type EcritureLigneConfig = { date: Date; libelle: string }
+
+type LigneComptePaiementConfig = {
+  id: string
+  debitCents: number
+  creditCents: number
+  montantDebit: number
+  montantCredit: number
+  ecriture: EcritureLigneConfig | null
+}
+
+type ComptePaiementAvecLignes = {
+  id: string
+  number: string
+  name: string
+  numero: string
+  libelle: string
+  lignes: LigneComptePaiementConfig[]
+}
+
+type ExerciceConfigView = {
+  id: string
+  dateDebut: Date
+  dateFin: Date
+  statut: 'OUVERT' | 'CLOTURE'
+  comptes: Array<ComptePaiementAvecLignes & { soldeDepart: number }>
+}
+
+type ComptePlanRow = Pick<Account, 'id' | 'number' | 'name' | 'fiscalYearId'> & { numero: string; libelle: string }
 
 export default async function ConfigurationExercicePage({ params }: { params: { id: string } }) {
   const paramObj = await params;
@@ -30,43 +64,38 @@ export default async function ConfigurationExercicePage({ params }: { params: { 
 
   if (!fiscalYear) notFound()
 
-  // Compatibility mapping (UI still expects FR field names).
-  const exercice: any = {
+  // Compatibility mapping (UI still expects FR field names) + solde de départ (écriture d’A-nouveau).
+  const exercice: ExerciceConfigView = {
     id: fiscalYear.id,
     dateDebut: fiscalYear.startDate,
     dateFin: fiscalYear.endDate,
     statut: fiscalYear.status === 'OPEN' ? 'OUVERT' : 'CLOTURE',
-    comptes: fiscalYear.accounts.map((a) => ({
-      ...a,
-      numero: a.number,
-      libelle: a.name,
-      lignes: a.lines.map((l) => ({
-        ...l,
-        montantDebit: l.debitCents,
-        montantCredit: l.creditCents,
-        ecriture: l.entry ? { ...l.entry, libelle: l.entry.description } : null,
-      })),
-    })),
+    comptes: fiscalYear.accounts.map((a) => {
+      const compte: ComptePaiementAvecLignes = {
+        ...a,
+        numero: a.number,
+        libelle: a.name,
+        lignes: a.lines.map((l) => ({
+          ...l,
+          montantDebit: l.debitCents,
+          montantCredit: l.creditCents,
+          ecriture: l.entry ? { date: l.entry.date, libelle: l.entry.description } : null,
+        })),
+      }
+      const ligneANouveau = compte.lignes.find((l) =>
+        String(l.ecriture?.libelle ?? '').startsWith('Opening balance'),
+      )
+      const soldeDepart = ligneANouveau ? (ligneANouveau.montantDebit - ligneANouveau.montantCredit) / 100 : 0
+      return { ...compte, soldeDepart }
+    }),
   }
 
-  // Calcul du solde de départ pour chaque compte (via écriture d'A-nouveau)
-  const comptesAvecSolde = exercice.comptes.map((compte: any) => {
-    // On repère la ligne d'A-Nouveau par son libellé
-    const ligneANouveau = compte.lignes.find((l: any) =>
-      String(l.ecriture?.libelle ?? '').startsWith('Opening balance')
-    )
-    const soldeDepart = ligneANouveau ? (ligneANouveau.montantDebit - ligneANouveau.montantCredit) / 100 : 0
+  const comptesAvecSolde = exercice.comptes
 
-    return {
-      ...compte,
-      soldeDepart
-    }
-  })
-
-  const comptesPlan = (await prisma.account.findMany({
+  const comptesPlan: ComptePlanRow[] = (await prisma.account.findMany({
     where: { fiscalYearId: exerciceId },
     orderBy: { number: 'asc' },
-  })).map((a) => ({ ...a, numero: a.number, libelle: a.name })) as any[]
+  })).map((a) => ({ ...a, numero: a.number, libelle: a.name }))
 
   return (
     <div>
@@ -171,7 +200,7 @@ export default async function ConfigurationExercicePage({ params }: { params: { 
                   </tr>
                 </thead>
                 <tbody>
-                  {comptesAvecSolde.map((compte: any) => (
+                  {comptesAvecSolde.map((compte) => (
                     <ComptePaiementRow 
                       key={compte.id} 
                       compte={compte} 

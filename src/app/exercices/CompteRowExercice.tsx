@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useState } from 'react'
 import { deleteCompteForExercice, updateCompteForExercice } from '@/actions/compteActions'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -23,8 +26,8 @@ export default function CompteRowExercice({
     try {
       await updateCompteForExercice(exerciceId, compte.id, numero, libelle)
       setIsEditing(false)
-    } catch (e: any) {
-      alert(e?.message || 'Erreur lors de la modification')
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Erreur lors de la modification')
     }
     setLoading(false)
   }
@@ -119,8 +122,8 @@ export default function CompteRowExercice({
             setLoading(true)
             try {
               await deleteCompteForExercice(exerciceId, compte.id)
-            } catch (e: any) {
-              alert(e?.message || 'Erreur lors de la suppression')
+            } catch (e: unknown) {
+              alert(e instanceof Error ? e.message : 'Erreur lors de la suppression')
             }
             setLoading(false)
           }}

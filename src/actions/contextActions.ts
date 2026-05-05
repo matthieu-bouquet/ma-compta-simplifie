@@ -1,5 +1,8 @@
 'use server'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 

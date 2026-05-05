@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { RowInput } from 'jspdf-autotable'
@@ -355,8 +358,8 @@ export function downloadCompteResultatStylePdf(
     },
   })
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const afterPlTableY = (doc as any).lastAutoTable?.finalY || startY + 100
+  type JsPdfWithAutoTable = jsPDF & { lastAutoTable?: { finalY: number } }
+  const afterPlTableY = (doc as JsPdfWithAutoTable).lastAutoTable?.finalY ?? startY + 100
 
   doc.setDrawColor(0)
   doc.setFillColor(245, 245, 245)

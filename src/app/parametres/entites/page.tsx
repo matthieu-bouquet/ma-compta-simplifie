@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Building2, Lock, Mail, MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react'
@@ -79,8 +82,8 @@ export default function EntitiesPage() {
       })
       setShowForm(false)
       loadEntities()
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la création')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la création')
     }
   }
 
@@ -301,7 +304,7 @@ export default function EntitiesPage() {
               </tr>
             </thead>
             <tbody>
-              {entities.map((entity: any) => (
+              {entities.map((entity) => (
                 <tr key={entity.id} className={styles.tr}>
                   <td className={`${styles.td} ${styles.tdName}`}>
                     <div className={styles.nameRow}>
@@ -358,8 +361,8 @@ export default function EntitiesPage() {
                               setSuccess('Entité supprimée')
                               await loadEntities()
                               close()
-                            } catch (err: any) {
-                              setError(err.message || 'Erreur lors de la suppression')
+                            } catch (err: unknown) {
+                              setError(err instanceof Error ? err.message : 'Erreur lors de la suppression')
                             }
                           }}
                         />
@@ -390,8 +393,8 @@ export default function EntitiesPage() {
                               setSuccess('Entité clôturée')
                               await loadEntities()
                               close()
-                            } catch (err: any) {
-                              setError(err.message || 'Erreur lors de la clôture')
+                            } catch (err: unknown) {
+                              setError(err instanceof Error ? err.message : 'Erreur lors de la clôture')
                             }
                           }}
                         />

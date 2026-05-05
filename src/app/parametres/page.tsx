@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import Link from "next/link";
 import { Building, DatabaseBackup, Settings } from "lucide-react";
 import styles from "./parametres.module.css";
@@ -58,7 +61,7 @@ export default function ParametresPage() {
       >
         <div className={styles.infoTitle}>Information</div>
         <p className={styles.infoText}>
-          Les paramètres globaux s'appliquent à l'ensemble de l'application. 
+          Les paramètres globaux s&apos;appliquent à l&apos;ensemble de l&apos;application. 
           Le plan comptable configuré ici servira de modèle pour tous les nouveaux exercices créés.
         </p>
       </div>

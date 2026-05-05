@@ -1,5 +1,8 @@
 'use client'
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
 import { useMemo, useRef, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -111,7 +114,6 @@ export default function PaymentMethodsEvolutionChart({
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
-  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null)
   const [tooltipClient, setTooltipClient] = useState<{ x: number; y: number } | null>(null)
   const [hiddenSeriesIds, setHiddenSeriesIds] = useState<Set<string>>(() => new Set())
   const [selectedMonthKey, setSelectedMonthKey] = useState<string | null>(null)
@@ -234,32 +236,28 @@ export default function PaymentMethodsEvolutionChart({
 
   const updateHoverFromClientPoint = (clientX: number, clientY: number) => {
     if (!chartModel) return
-    const { width, height, pad, xStep, data: d } = chartModel
+    const { width, pad, xStep, data: d } = chartModel
     const svg = svgRef.current
     if (!svg) return
     const rect = svg.getBoundingClientRect()
     const px = clamp(clientX - rect.left, 0, rect.width)
-    const py = clamp(clientY - rect.top, 0, rect.height)
 
     const vx = (px / rect.width) * width
-    const vy = (py / rect.height) * height
 
     const n = d.months.length
     if (n <= 1) {
       setHoverIndex(0)
-      setTooltip({ x: vx, y: vy })
+      setTooltipClient({ x: clientX, y: clientY })
       return
     }
 
     const idx = clamp(Math.round((vx - pad.l) / xStep), 0, n - 1)
     setHoverIndex(idx)
-    setTooltip({ x: vx, y: vy })
     setTooltipClient({ x: clientX, y: clientY })
   }
 
   const clearHover = () => {
     setHoverIndex(null)
-    setTooltip(null)
     setTooltipClient(null)
   }
 
@@ -633,7 +631,6 @@ function MonthlyDetailChart({
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
-  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null)
   const [tooltipClient, setTooltipClient] = useState<{ x: number; y: number } | null>(null)
 
   const visible = series.filter((s) => !hiddenSeriesIds.has(s.id))
@@ -658,35 +655,31 @@ function MonthlyDetailChart({
     const idx = days.findIndex((d) => d.getTime() === day.getTime())
     if (idx < 0) return null
     const frac = clamp((today.getTime() - day.getTime()) / 86_400_000, 0, 1)
-    const base = x(idx)
+    const base = pad.l + idx * xStep
     if (days.length <= 1) return base
     if (idx >= days.length - 1) return base
     return base + frac * xStep
-  }, [days, xStep, nowIso])
+  }, [days, xStep, nowIso, pad.l])
 
   const updateHoverFromClientPoint = (clientX: number, clientY: number) => {
     const svg = svgRef.current
     if (!svg) return
     const rect = svg.getBoundingClientRect()
     const px = clamp(clientX - rect.left, 0, rect.width)
-    const py = clamp(clientY - rect.top, 0, rect.height)
     const vx = (px / rect.width) * width
-    const vy = (py / rect.height) * height
     const n = days.length
     if (n <= 1) {
       setHoverIndex(0)
-      setTooltip({ x: vx, y: vy })
+      setTooltipClient({ x: clientX, y: clientY })
       return
     }
     const idx = clamp(Math.round((vx - pad.l) / xStep), 0, n - 1)
     setHoverIndex(idx)
-    setTooltip({ x: vx, y: vy })
     setTooltipClient({ x: clientX, y: clientY })
   }
 
   const clearHover = () => {
     setHoverIndex(null)
-    setTooltip(null)
     setTooltipClient(null)
   }
 

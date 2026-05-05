@@ -9,7 +9,7 @@
     "dev": "prisma generate && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --max-warnings 0",
     "postinstall": "prisma generate",
     "icons:electron": "node scripts/generate-electron-icons.mjs",
     "test": "npm run test:unit && npm run test:e2e",
@@ -62,7 +62,7 @@
     "wait-on": "^9.0.5"
   },
   "author": "Ma Compta Simplifié",
-  "license": "UNLICENSED",
+  "license": "GPL-3.0-or-later",
   "prisma": {
     "seed": "node prisma/seed.mjs"
   }

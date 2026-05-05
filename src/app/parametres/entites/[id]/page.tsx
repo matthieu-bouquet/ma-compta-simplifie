@@ -1,43 +1,36 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Ma Compta Simplifié
+
+import { useCallback, useEffect, useState, startTransition } from 'react'
 import { Plus } from 'lucide-react'
 import ParametreLayout from '@/components/ParametreLayout'
 import forms from '@/components/forms/forms.module.css'
-import { getAssociation } from '@/actions/associationActions'
-import { Association, FiscalYear } from '@prisma/client'
+import { getAssociation, type AssociationDetail } from '@/actions/associationActions'
 import styles from './entityDetail.module.css'
 
-interface EntityWithFiscalYears extends Association {
-  fiscalYears: FiscalYear[]
-  nom?: string
-  cloturee?: boolean
-  adresse?: string | null
-  codePostal?: string | null
-  ville?: string | null
-  telephone?: string | null
-}
-
 export default function EntityDetailPage({ params }: { params: { id: string } }) {
-  const [entity, setEntity] = useState<EntityWithFiscalYears | null>(null)
+  const [entity, setEntity] = useState<AssociationDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    loadEntity()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.id])
-
-  async function loadEntity() {
+  const loadEntity = useCallback(async () => {
     try {
-      const data: any = await getAssociation(params.id)
+      const data = await getAssociation(params.id)
       setEntity(data)
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors du chargement')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erreur lors du chargement')
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id])
+
+  useEffect(() => {
+    startTransition(() => {
+      void loadEntity()
+    })
+  }, [loadEntity])
 
   if (loading) return <div>Chargement...</div>
   if (error) return <div className="text-danger">{error}</div>
