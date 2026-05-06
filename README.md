@@ -1,5 +1,8 @@
 # Ma Compta Simplifié
 
+> **Disclaimer**: this app is **not yet a stable release** and may change at any time.  
+> **No warranty**: provided “as is”, without any express or implied warranties. Use at your own risk (not production-ready).
+
 **Double-entry accounting** for French **associations** (and business-oriented use cases): journal entries, ledgers, supporting documents, budgets, FEC export, document bundles, and more. Designed for **local-first** use (SQLite) with an optional **desktop** build (Electron).
 
 This repository (`accouting-app`) contains the web client (Next.js), the data layer (Prisma), and the desktop shell.
