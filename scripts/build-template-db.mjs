@@ -12,17 +12,35 @@ if (fs.existsSync(outPath)) fs.rmSync(outPath, { force: true });
 
 const dbUrl = pathToFileURL(outPath).href;
 
-const prismaCli = process.platform === "win32" ? "npx.cmd" : "npx";
+const isWindows = process.platform === "win32";
 
 const run = (args) => {
-  console.log(`[template-db] exec: ${prismaCli} prisma ${args.join(" ")}`);
-  const res = spawnSync(prismaCli, ["prisma", ...args], {
-    stdio: "inherit",
-    env: { ...process.env, DATABASE_URL: dbUrl },
-    cwd: root,
-    windowsHide: true,
-  });
+  const env = { ...process.env, DATABASE_URL: dbUrl };
 
+  // On Windows, `.cmd` files are not directly executable by CreateProcess in all cases.
+  // Going through `cmd.exe /c` avoids `spawnSync npx.cmd EINVAL` on GitHub Actions runners.
+  if (isWindows) {
+    const cmd = ["npx", "prisma", ...args].join(" ");
+    console.log(`[template-db] exec: cmd.exe /d /s /c "${cmd}"`);
+    const res = spawnSync("cmd.exe", ["/d", "/s", "/c", cmd], {
+      stdio: "inherit",
+      env,
+      cwd: root,
+      windowsHide: true,
+    });
+    return res;
+  }
+
+  console.log(`[template-db] exec: npx prisma ${args.join(" ")}`);
+  const res = spawnSync("npx", ["prisma", ...args], {
+    stdio: "inherit",
+    env,
+    cwd: root,
+  });
+  return res;
+};
+
+function assertOk(res) {
   if (res.error) {
     console.error("[template-db] spawnSync error:");
     console.error(res.error);
@@ -38,7 +56,7 @@ const run = (args) => {
     console.error(`[template-db] prisma exit status: ${res.status}`);
     process.exit(res.status ?? 1);
   }
-};
+}
 
 try {
   console.log(`[template-db] root=${root}`);
@@ -47,7 +65,7 @@ try {
   console.log(`[template-db] DATABASE_URL=${dbUrl}`);
 
   // Create/migrate the template DB
-  run(["migrate", "deploy", "--schema", schemaPath]);
+  assertOk(run(["migrate", "deploy", "--schema", schemaPath]));
 } catch (err) {
   console.error("[template-db] unhandled error:");
   console.error(err);
