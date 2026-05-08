@@ -43,7 +43,6 @@ export default async function Dashboard() {
   const now = new Date()
 
   if (!associationId) {
-    const entityCount = await prisma.association.count()
     return (
       <div className={styles.wrap}>
         <header className={styles.pageHeader}>
