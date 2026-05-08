@@ -46,7 +46,7 @@ jobs:
         run: npx tsc -p desktop/electron/tsconfig.json --pretty false
 
       - name: Package desktop (Windows)
-        run: electron-builder --projectDir desktop --config electron-builder.json --win
+        run: npx electron-builder --projectDir desktop --config electron-builder.json --win
 
       - name: Upload artifacts (on failure)
         if: failure()
