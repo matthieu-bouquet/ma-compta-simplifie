@@ -169,9 +169,7 @@ export async function syncPlanComptableGlobalWithDefault(templateCode: ChartTemp
 }
 
 export async function initializePlanComptableGlobal(templateCode: ChartTemplateCode): Promise<LegacyPlanComptableAccount[]> {
-  const template = await getOrCreateTemplate(templateCode)
   const rows = await initializeTemplateAccounts(templateCode)
-  // initializeTemplateAccounts returns accounts; but template ordering might differ; re-read.
   return rows.map(toLegacyAccountRow)
 }
 

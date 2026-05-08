@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   addCompteToPlanGlobal,
   deleteCompteFromPlanGlobal,
@@ -37,11 +37,7 @@ export default function PlanComptablePage() {
   const [editingLibelle, setEditingLibelle] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
 
-  useEffect(() => {
-    loadPlanComptable()
-  }, [templateCode])
-
-  async function loadPlanComptable() {
+  const loadPlanComptable = useCallback(async () => {
     try {
       setLoading(true)
       setError('')
@@ -53,14 +49,20 @@ export default function PlanComptablePage() {
         setSuccess(`Plan comptable mis à jour (+${sync.addedCount} compte(s) ajouté(s))`)
       }
       setTemplateId(sync.template.id)
-      
+
       setPlanComptable(sync.data)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement du plan comptable')
     } finally {
       setLoading(false)
     }
-  }
+  }, [templateCode])
+
+  useEffect(() => {
+    // Fetch template rows when the selected model changes (client-side).
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async loader updates list state after server action
+    void loadPlanComptable()
+  }, [loadPlanComptable])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
