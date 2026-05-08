@@ -10,9 +10,8 @@ const schemaPath = path.join(root, "prisma", "schema.prisma");
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 if (fs.existsSync(outPath)) fs.rmSync(outPath, { force: true });
 
-const dbUrl = pathToFileURL(outPath).href;
-
 const isWindows = process.platform === "win32";
+const dbUrl = isWindows ? "file:./prisma/template.db" : pathToFileURL(outPath).href;
 
 const run = (args) => {
   const env = { ...process.env, DATABASE_URL: dbUrl };
