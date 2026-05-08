@@ -7,6 +7,28 @@ function getTestDbUrl() {
   return `file:${p}`
 }
 
+test('benevolat: entity selected but no fiscal year shows empty state', async ({ page }) => {
+  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  let associationId: string
+
+  try {
+    const assoc = await prisma.association.create({
+      data: { name: 'Association BENEVOLAT NO FY E2E', legalFormCode: 'ASSOCIATION' },
+    })
+    associationId = assoc.id
+  } finally {
+    await prisma.$disconnect()
+  }
+
+  await page.context().addCookies([
+    { name: 'currentAssociationId', value: associationId, path: '/', domain: '127.0.0.1' },
+  ])
+
+  await page.goto('/benevolat')
+  await expect(page.getByRole('heading', { name: 'Aucun exercice' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Créer un exercice' })).toBeVisible()
+})
+
 test('saisir du bénévolat et comptabiliser en classe 8', async ({ page }) => {
   const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
 

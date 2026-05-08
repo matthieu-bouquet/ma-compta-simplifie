@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import { prisma } from '@/lib/prisma'
-import { getCurrentAssociationId } from '@/lib/associationContext'
+import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import LinkDocumentToLignesForm from './LinkDocumentToLignesForm'
 import DocumentViewer from '@/components/DocumentViewer'
 import PageBackLink from '@/components/PageBackLink'
@@ -15,7 +15,7 @@ export default async function LierDocumentPage({
   params: Promise<{ id: string }>
 }) {
   const { id: documentId } = await params
-  const associationId = await getCurrentAssociationId()
+  const associationId = await getValidatedCurrentAssociationId()
 
   if (!associationId) {
     return (

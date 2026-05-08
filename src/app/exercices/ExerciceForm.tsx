@@ -15,6 +15,7 @@ import FormSection from '@/components/forms/FormSection'
 import forms from '@/components/forms/forms.module.css'
 import styles from './exerciceForm.module.css'
 import { getDefaultExercisePeriod } from '@/lib/defaultExercisePeriod'
+import { calendarDateInTimeZone, ENTRY_DATE_TIMEZONE } from '@/lib/entryDateValidation'
 
 export default function ExerciceForm({ associationId }: { associationId?: string }) {
   const [dateDebut, setDateDebut] = useState<Date | null>(() => getDefaultExercisePeriod().dateDebut)
@@ -67,8 +68,9 @@ export default function ExerciceForm({ associationId }: { associationId?: string
     setError('')
 
     const formData = new FormData()
-    formData.append('dateDebut', dateDebut.toISOString().split('T')[0])
-    formData.append('dateFin', dateFin.toISOString().split('T')[0])
+    // IMPORTANT: do not use toISOString() for calendar dates (timezone shift).
+    formData.append('dateDebut', calendarDateInTimeZone(dateDebut, ENTRY_DATE_TIMEZONE))
+    formData.append('dateFin', calendarDateInTimeZone(dateFin, ENTRY_DATE_TIMEZONE))
     formData.append('associationId', submitAssociationId)
 
     try {

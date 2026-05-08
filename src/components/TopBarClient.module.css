@@ -1,0 +1,18 @@
+.topbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  align-items: center;
+  width: min(760px, 100%);
+}
+
+.controlsNarrow {
+  width: min(420px, 100%);
+}
+

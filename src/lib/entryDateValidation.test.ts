@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest'
 import {
   calendarDateInTimeZone,
   assertEntryDateNotAfterToday,
+  assertEntryDateWithinFiscalYear,
   isEntryDateAfterToday,
   ENTRY_DATE_TIMEZONE,
 } from '@/lib/entryDateValidation'
@@ -43,5 +44,24 @@ describe('entryDateValidation', () => {
   it('isEntryDateAfterToday is true for a future calendar date', () => {
     const now = new Date('2026-06-15T12:00:00Z')
     expect(isEntryDateAfterToday('2099-12-31', now)).toBe(true)
+  })
+
+  it('assertEntryDateWithinFiscalYear rejects before start and after end (Paris calendar days)', () => {
+    // Use mid-day instants to avoid timezone rollover when formatting to Paris calendar days.
+    const start = new Date('2026-01-01T12:00:00Z')
+    const end = new Date('2026-12-31T12:00:00Z')
+    expect(() => assertEntryDateWithinFiscalYear('2025-12-31', start, end)).toThrow(
+      "La date d'écriture doit être comprise dans l'exercice."
+    )
+    expect(() => assertEntryDateWithinFiscalYear('2027-01-01', start, end)).toThrow(
+      "La date d'écriture doit être comprise dans l'exercice."
+    )
+  })
+
+  it('assertEntryDateWithinFiscalYear allows boundary dates', () => {
+    const start = new Date('2026-01-01T12:00:00Z')
+    const end = new Date('2026-12-31T12:00:00Z')
+    expect(() => assertEntryDateWithinFiscalYear('2026-01-01', start, end)).not.toThrow()
+    expect(() => assertEntryDateWithinFiscalYear('2026-12-31', start, end)).not.toThrow()
   })
 })

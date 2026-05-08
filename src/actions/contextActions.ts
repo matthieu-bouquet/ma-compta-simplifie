@@ -5,6 +5,7 @@
 
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import { prisma } from '@/lib/prisma'
 
 const COOKIE_NAME = 'currentAssociationId'
 const EXERCICE_COOKIE = 'currentExerciceId'
@@ -19,8 +20,37 @@ export async function setCurrentAssociationId(associationId: string | null) {
       path: '/',
       sameSite: 'lax',
     })
-    // Changement de contexte → on reset l'exercice courant
-    store.delete(EXERCICE_COOKIE)
+
+    // Changement de contexte → pré-sélectionner l'exercice le plus proche d'aujourd'hui.
+    const fiscalYears = await prisma.fiscalYear.findMany({
+      where: { associationId },
+      select: { id: true, startDate: true, endDate: true },
+      orderBy: { startDate: 'desc' },
+    })
+
+    const now = new Date()
+    const best = fiscalYears
+      .map((fy) => {
+        const start = fy.startDate.getTime()
+        const end = fy.endDate.getTime()
+        const t = now.getTime()
+        const distanceMs = t >= start && t <= end ? 0 : Math.min(Math.abs(t - start), Math.abs(t - end))
+        return { ...fy, distanceMs }
+      })
+      .sort((a, b) => {
+        if (a.distanceMs !== b.distanceMs) return a.distanceMs - b.distanceMs
+        // tie-breaker: most recent start date
+        return b.startDate.getTime() - a.startDate.getTime()
+      })[0]
+
+    if (best) {
+      store.set(EXERCICE_COOKIE, best.id, {
+        path: '/',
+        sameSite: 'lax',
+      })
+    } else {
+      store.delete(EXERCICE_COOKIE)
+    }
   }
 
   revalidatePath('/')

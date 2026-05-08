@@ -5,24 +5,24 @@ import Link from 'next/link'
 import { ChevronRight, Plus } from 'lucide-react'
 import forms from '@/components/forms/forms.module.css'
 import benevolatStyles from '@/app/benevolat/benevolat.module.css'
-import { getCurrentAssociationId } from '@/lib/associationContext'
+import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import { getCurrentAssociation } from '@/lib/currentAssociation'
 import { getBudgetsForCurrentAssociation } from '@/actions/budgetActions'
 import FloatingTooltipHost from '@/components/FloatingTooltipHost'
 import DeleteBudgetButton from './DeleteBudgetButton'
 import BudgetForecastPdfDownload from './BudgetForecastPdfDownload'
 import styles from './previsionnel.module.css'
+import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
+import { AlertTriangle } from 'lucide-react'
 
 export default async function PrevisionnelListPage() {
-  const associationId = await getCurrentAssociationId()
+  const associationId = await getValidatedCurrentAssociationId()
 
   if (!associationId) {
     return (
       <div className={benevolatStyles.page}>
         <h1 className="page-title">Prévisionnel</h1>
-        <div className="card">
-          <p className="text-warning">Sélectionnez une association (menu en haut à droite).</p>
-        </div>
+        <EntityRequiredEmptyState purpose="previsionnel" />
       </div>
     )
   }
@@ -41,11 +41,21 @@ export default async function PrevisionnelListPage() {
               <Plus size={18} aria-hidden="true" />
               Nouveau prévisionnel
             </Link>
-          ) : (
-            <p className="text-warning">Association clôturée : création de prévisionnels désactivée.</p>
-          )}
+          ) : null}
         </div>
       </div>
+
+      {!canEdit ? (
+        <div className={styles.closedBanner} role="status" aria-live="polite">
+          <AlertTriangle size={18} aria-hidden="true" className={styles.closedBannerIcon} />
+          <div>
+            <p className={styles.closedBannerTitle}>Entité clôturée</p>
+            <p className={styles.closedBannerText}>
+              La création de prévisionnels est désactivée. Vous pouvez consulter les prévisionnels existants.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="card">
         <p>

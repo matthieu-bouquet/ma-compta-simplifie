@@ -2,8 +2,10 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import { prisma } from '@/lib/prisma'
-import { getCurrentAssociationId } from '@/lib/associationContext'
+import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import { getCurrentExerciceId } from '@/lib/exerciceContext'
+import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
+import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
 
 export default async function EcrituresPage({
   searchParams
@@ -13,16 +15,14 @@ export default async function EcrituresPage({
   const params = await searchParams; // Next.js 15: searchParams is a Promise
   const spExerciceId = params?.exerciceId;
 
-  const associationId = await getCurrentAssociationId()
+  const associationId = await getValidatedCurrentAssociationId()
   const cookieExerciceId = await getCurrentExerciceId()
 
   if (!associationId) {
     return (
       <div>
         <h1 className="page-title">Grand Livre</h1>
-        <div className="card">
-          <p className="text-warning">Sélectionnez une association (menu en haut à droite).</p>
-        </div>
+        <EntityRequiredEmptyState purpose="grandLivre" />
       </div>
     )
   }
@@ -36,9 +36,7 @@ export default async function EcrituresPage({
     return (
       <div>
         <h1 className="page-title">Grand Livre</h1>
-        <div className="card">
-          <p>Aucun exercice disponible pour cette association.</p>
-        </div>
+        <FiscalYearRequiredEmptyState purpose="grandLivre" />
       </div>
     );
   }

@@ -34,8 +34,19 @@ export async function createFiscalYear(formData: FormData) {
     throw new Error('Start/end dates and association are required.')
   }
 
+  const isYYYYMMDD = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s)
+  if (!isYYYYMMDD(startDateStr) || !isYYYYMMDD(endDateStr)) {
+    throw new Error('Invalid date format. Expected YYYY-MM-DD.')
+  }
+
   const startDate = new Date(startDateStr)
   const endDate = new Date(endDateStr)
+  if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())) {
+    throw new Error('Invalid date.')
+  }
+  if (endDate.getTime() < startDate.getTime()) {
+    throw new Error('End date cannot be before start date.')
+  }
 
   const existing = await prisma.fiscalYear.findFirst({
     where: {
@@ -135,6 +146,12 @@ export async function addPaymentAccount(formData: FormData) {
   const openingBalanceCents = eurosToCents(openingBalance)
 
   await prisma.$transaction(async (tx) => {
+    const fiscalYear = await tx.fiscalYear.findUnique({
+      where: { id: fiscalYearId },
+      select: { startDate: true },
+    })
+    if (!fiscalYear) throw new Error('Fiscal year not found.')
+
     const account = await tx.account.create({
       data: {
         number,
@@ -157,7 +174,7 @@ export async function addPaymentAccount(formData: FormData) {
 
       await tx.entry.create({
         data: {
-          date: new Date(),
+          date: fiscalYear.startDate,
           description: `Opening balance: ${name}`,
           journalId: journalOD.id,
           fiscalYearId,
@@ -197,6 +214,12 @@ export async function updateOpeningBalance(formData: FormData) {
   await assertFiscalYearWritable({ fiscalYearId, associationId })
 
   await prisma.$transaction(async (tx) => {
+    const fiscalYear = await tx.fiscalYear.findUnique({
+      where: { id: fiscalYearId },
+      select: { startDate: true },
+    })
+    if (!fiscalYear) throw new Error('Fiscal year not found.')
+
     let openingBalanceAccount = await tx.account.findFirst({ where: { fiscalYearId, number: '890' } })
     if (!openingBalanceAccount) {
       openingBalanceAccount = await tx.account.create({
@@ -218,6 +241,11 @@ export async function updateOpeningBalance(formData: FormData) {
        if (openingBalanceCents === 0) {
           await tx.entry.delete({ where: { id: openingEntry.id } })
        } else {
+          await tx.entry.update({
+            where: { id: openingEntry.id },
+            data: { date: fiscalYear.startDate },
+          })
+
           const cashLine = openingEntry.lines.find((l) => l.accountId === accountId)!
           await tx.entryLine.update({
             where: { id: cashLine.id },
@@ -235,7 +263,7 @@ export async function updateOpeningBalance(formData: FormData) {
        
        await tx.entry.create({
          data: {
-           date: new Date(), 
+           date: fiscalYear.startDate,
            description: `Opening balance: ${cashAccount.name}`,
            journalId: journalOD.id,
            fiscalYearId,

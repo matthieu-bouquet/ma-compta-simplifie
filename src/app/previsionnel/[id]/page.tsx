@@ -16,7 +16,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
-import { getCurrentAssociationId } from '@/lib/associationContext'
+import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import { getCurrentAssociation } from '@/lib/currentAssociation'
 import { getFiscalYears } from '@/actions/exerciceActions'
 import { getBudgetDetail, updateBudgetMeta, upsertBudgetLine } from '@/actions/budgetActions'
@@ -92,7 +92,7 @@ export default async function PrevisionnelDetailPage({
   const compareExerciceId =
     compareExerciceIdRaw && compareExerciceIdRaw.length > 0 ? compareExerciceIdRaw : null
 
-  const associationId = await getCurrentAssociationId()
+  const associationId = await getValidatedCurrentAssociationId()
   if (!associationId) {
     return (
       <div className={styles.detailBudgetPage}>

@@ -8,6 +8,8 @@ import { getCurrentAssociation } from '@/lib/currentAssociation'
 import { isAssociationLegalForm } from '@/lib/legalForms'
 import PageBackLink from '@/components/PageBackLink'
 import styles from './page.module.css'
+import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
+import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
 
 export default async function NewVolunteeringPage() {
   const currentAssociation = await getCurrentAssociation()
@@ -24,9 +26,7 @@ export default async function NewVolunteeringPage() {
             Enregistrez une contribution volontaire en nature pour l’annexe et, le cas échéant, la comptabilité.
           </p>
         </header>
-        <div className={styles.noticeCard}>
-          <p className={`${styles.noticeBody} text-warning`}>Sélectionnez une association (menu en haut à droite).</p>
-        </div>
+        <EntityRequiredEmptyState />
       </div>
     )
   }
@@ -71,9 +71,7 @@ export default async function NewVolunteeringPage() {
           <h1 className="page-title no-topbar-pad">Ajouter du bénévolat</h1>
           <p className={styles.lead}>Les saisies sont rattachées à un exercice comptable.</p>
         </header>
-        <div className={styles.noticeCard}>
-          <p className={styles.noticeBody}>Aucun exercice disponible pour cette association.</p>
-        </div>
+        <FiscalYearRequiredEmptyState />
       </div>
     )
   }

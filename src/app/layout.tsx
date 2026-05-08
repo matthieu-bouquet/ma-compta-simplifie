@@ -4,7 +4,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Image from "next/image";
-import { getCurrentAssociationId } from "@/lib/associationContext";
+import { getValidatedCurrentAssociationId } from "@/lib/currentAssociationIdValidated";
 import { getCurrentAssociation } from "@/lib/currentAssociation";
 import { isAssociationLegalForm } from "@/lib/legalForms";
 import TopBar from "@/components/TopBar";
@@ -24,7 +24,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const currentAssociationId = await getCurrentAssociationId();
+  const currentAssociationId = await getValidatedCurrentAssociationId();
+
   const currentAssociation = await getCurrentAssociation();
   const canAccessVolunteering = currentAssociation ? isAssociationLegalForm(currentAssociation.legalFormCode) : false;
   return (

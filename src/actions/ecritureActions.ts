@@ -12,7 +12,7 @@ import { writeAuditEvent } from '@/lib/audit'
 import { eurosToCents } from '@/lib/money'
 import { allocateEntryReferenceNumber } from '@/lib/journalNumbering'
 import { getOrCreateJournalByCode } from '@/lib/journals'
-import { assertEntryDateNotAfterToday } from '@/lib/entryDateValidation'
+import { assertEntryDateNotAfterToday, assertEntryDateWithinFiscalYear } from '@/lib/entryDateValidation'
 import { reverseEntryInTransaction } from '@/lib/reverseEntryInTransaction'
 
 export async function createEntry(data: {
@@ -20,7 +20,7 @@ export async function createEntry(data: {
   description: string,
   journalId?: string | null,
   fiscalYearId: string,
-  lines: { accountId: string, debit: number, credit: number }[],
+  lines: { accountId: string, debit: number, credit: number, documents?: File[] }[],
   documentFile?: File | null
 }) {
   if (!data.fiscalYearId) {
@@ -39,6 +39,7 @@ export async function createEntry(data: {
   if (!fiscalYear) throw new Error('Fiscal year not found.')
 
   assertEntryDateNotAfterToday(data.date)
+  assertEntryDateWithinFiscalYear(data.date, fiscalYear.startDate, fiscalYear.endDate)
 
   const totalDebitCents = data.lines.reduce((sum, l) => sum + eurosToCents(l.debit), 0)
   const totalCreditCents = data.lines.reduce((sum, l) => sum + eurosToCents(l.credit), 0)
@@ -74,6 +75,23 @@ export async function createEntry(data: {
           exerciceId: data.fiscalYearId,
         })
       : null
+
+  const storedLineDocuments = await Promise.all(
+    data.lines.map(async (line) => {
+      const docs = (line.documents ?? []).filter(Boolean)
+      if (docs.length === 0) return []
+      return await Promise.all(
+        docs.map(async (file) => {
+          const stored = await saveUploadedFile({
+            file,
+            associationId: fiscalYear.associationId,
+            exerciceId: data.fiscalYearId,
+          })
+          return { file, stored }
+        })
+      )
+    })
+  )
 
   const created = await prisma.$transaction(async (tx) => {
     const { referenceNumber, referenceSequence } = await allocateEntryReferenceNumber(tx, {
@@ -118,7 +136,35 @@ export async function createEntry(data: {
       }
     }
 
-    return createdEntry
+    const createdDocs: { id: string; entryLineId: string; originalName: string }[] = []
+    for (let lineIndex = 0; lineIndex < storedLineDocuments.length; lineIndex++) {
+      const entryLineId = createdEntry.lines[lineIndex]?.id
+      if (!entryLineId) continue
+
+      for (const docInfo of storedLineDocuments[lineIndex] ?? []) {
+        const doc = await tx.document.create({
+          data: {
+            fiscalYearId: data.fiscalYearId,
+            originalName: docInfo.file.name,
+            storedName: docInfo.stored.storedName,
+            mimeType: docInfo.stored.mimeType,
+            sizeBytes: docInfo.stored.sizeBytes,
+            sha256: docInfo.stored.sha256,
+            relativePath: docInfo.stored.relativePath,
+            uploadedAt: new Date(),
+          },
+          select: { id: true },
+        })
+
+        await tx.documentEntryLine.create({
+          data: { documentId: doc.id, entryLineId },
+        })
+
+        createdDocs.push({ id: doc.id, entryLineId, originalName: docInfo.file.name })
+      }
+    }
+
+    return { entry: createdEntry, createdDocs }
   })
 
   await writeAuditEvent({
@@ -127,8 +173,13 @@ export async function createEntry(data: {
     actor: associationId,
     action: 'ENTRY_CREATE',
     entityType: 'Entry',
-    entityId: created.id,
-    data: { description: data.description, date: data.date, journalId, referenceNumber: created.referenceNumber },
+    entityId: created.entry.id,
+    data: {
+      description: data.description,
+      date: data.date,
+      journalId,
+      referenceNumber: created.entry.referenceNumber,
+    },
   })
 
   if (data.documentFile && storedDoc) {
@@ -139,7 +190,19 @@ export async function createEntry(data: {
       action: 'DOCUMENT_UPLOAD_FROM_SAISIE',
       entityType: 'Document',
       entityId: null,
-      data: { originalName: data.documentFile.name, entryId: created.id },
+      data: { originalName: data.documentFile.name, entryId: created.entry.id },
+    })
+  }
+
+  for (const doc of created.createdDocs) {
+    await writeAuditEvent({
+      associationId,
+      fiscalYearId: data.fiscalYearId,
+      actor: associationId,
+      action: 'DOCUMENT_UPLOAD_FROM_SAISIE_LINE',
+      entityType: 'Document',
+      entityId: doc.id,
+      data: { originalName: doc.originalName, entryId: created.entry.id, entryLineId: doc.entryLineId },
     })
   }
 
@@ -213,13 +276,19 @@ export async function createEcriture(data: {
   exerciceId: string
   lignes: { compteId: string; debit: number; credit: number }[]
   documentFile?: File | null
+  documentsByLine?: File[][] | undefined
 }) {
   return await createEntry({
     date: data.date,
     description: data.libelle,
     journalId: data.journalId,
     fiscalYearId: data.exerciceId,
-    lines: data.lignes.map((l) => ({ accountId: l.compteId, debit: l.debit, credit: l.credit })),
+    lines: data.lignes.map((l, idx) => ({
+      accountId: l.compteId,
+      debit: l.debit,
+      credit: l.credit,
+      documents: data.documentsByLine?.[idx] ?? [],
+    })),
     documentFile: data.documentFile,
   })
 }

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { useState } from 'react'
+import { forwardRef, useId, useState } from 'react'
 import { createEcriture } from '@/actions/ecritureActions'
 import {
   calendarDateInTimeZone,
@@ -13,7 +13,7 @@ import {
 import { useRouter } from 'next/navigation'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
-import { List } from 'lucide-react'
+import { List, Plus, X } from 'lucide-react'
 import AppSearchableSelect from '@/components/forms/AppSearchableSelect'
 import FormSection from '@/components/forms/FormSection'
 import forms from '@/components/forms/forms.module.css'
@@ -23,16 +23,28 @@ type Journal = { id: string; code: string; nom: string }
 type Compte = { id: string; numero: string; libelle: string }
 type LigneForm = { compteId: string; debit: number; credit: number }
 
+const DateInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function DateInput(
+  props,
+  ref
+) {
+  return <input ref={ref} {...props} />
+})
+
 export default function SaisieForm({
   journaux,
   comptes,
   exerciceId,
+  exerciceStartDate,
+  exerciceEndDate,
 }: {
   journaux: Journal[]
   comptes: Compte[]
   exerciceId: string
+  exerciceStartDate: string
+  exerciceEndDate: string
 }) {
   const router = useRouter()
+  const componentId = useId()
   const [mode, setMode] = useState<'RAPIDE' | 'AVANCE'>('RAPIDE')
   const [date, setDate] = useState<Date | null>(() => new Date())
   const [libelle, setLibelle] = useState('')
@@ -48,10 +60,16 @@ export default function SaisieForm({
   const [typeOperation, setTypeOperation] = useState<'DEPENSE' | 'RECETTE' | 'TRANSFERT'>('DEPENSE')
   const [montant, setMontant] = useState<number>(0)
 
-  const [pieceFile, setPieceFile] = useState<File | null>(null)
+  const [quickDocuments, setQuickDocuments] = useState<(File | null)[]>([null])
+  const [lineDocuments, setLineDocuments] = useState<(File | null)[][]>([[null], [null]])
+  const [fileInputsResetKey, setFileInputsResetKey] = useState(0)
 
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const exerciceStart = new Date(exerciceStartDate)
+  const exerciceEnd = new Date(exerciceEndDate)
+  const calendarMaxDate = new Date(Math.min(new Date().getTime(), exerciceEnd.getTime()))
 
   const totalDebit = lignes.reduce((s, l) => s + (l.debit || 0), 0)
   const totalCredit = lignes.reduce((s, l) => s + (l.credit || 0), 0)
@@ -77,6 +95,7 @@ export default function SaisieForm({
 
   const addLigne = () => {
     setLignes([...lignes, { compteId: '', debit: 0, credit: 0 }])
+    setLineDocuments((prev) => [...prev, [null]])
   }
 
   const removeLigne = (index: number) => {
@@ -84,6 +103,11 @@ export default function SaisieForm({
     const newLignes = [...lignes]
     newLignes.splice(index, 1)
     setLignes(newLignes)
+    setLineDocuments((prev) => {
+      const next = [...prev]
+      next.splice(index, 1)
+      return next
+    })
   }
 
   const updateLigne = (index: number, field: keyof LigneForm, value: string | number) => {
@@ -92,6 +116,45 @@ export default function SaisieForm({
     if (field === 'credit' && Number(value) > 0) newLignes[index].debit = 0
     newLignes[index][field] = value as never
     setLignes(newLignes)
+  }
+
+  const addDocumentInputForLine = (lineIndex: number) => {
+    setLineDocuments((prev) => {
+      const next = [...prev]
+      next[lineIndex] = [...(next[lineIndex] ?? [null]), null]
+      return next
+    })
+  }
+
+  const updateDocumentForLine = (lineIndex: number, docIndex: number, file: File | null) => {
+    setLineDocuments((prev) => {
+      const next = [...prev]
+      const docs = [...(next[lineIndex] ?? [null])]
+      docs[docIndex] = file
+      next[lineIndex] = docs
+      return next
+    })
+  }
+
+  const addQuickDocumentInput = () => {
+    setQuickDocuments((prev) => [...prev, null])
+  }
+
+  const updateQuickDocument = (docIndex: number, file: File | null) => {
+    setQuickDocuments((prev) => {
+      const next = [...prev]
+      next[docIndex] = file
+      return next
+    })
+  }
+
+  const removeQuickDocument = (docIndex: number) => {
+    setQuickDocuments((prev) => {
+      if (prev.length <= 1) return [null]
+      const next = [...prev]
+      next.splice(docIndex, 1)
+      return next.length > 0 ? next : [null]
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -164,22 +227,38 @@ export default function SaisieForm({
     }
 
     try {
+      const documentsByLine: File[][] | undefined =
+        mode === 'AVANCE'
+          ? lineDocuments.map((docs) => docs.filter((d): d is File => d != null))
+          : (() => {
+              const docs = quickDocuments.filter((d): d is File => d != null)
+              if (docs.length === 0) return undefined
+
+              // In quick mode we attach docs to the "operation" line (category line),
+              // not the payment method line.
+              const operationLineIndex = typeOperation === 'RECETTE' ? 1 : 0
+              return lignesToSubmit.map((_, idx) => (idx === operationLineIndex ? docs : []))
+            })()
+
       await createEcriture({
         date: dateStr,
         libelle,
         journalId,
         exerciceId,
         lignes: lignesToSubmit,
-        documentFile: pieceFile,
+        documentFile: null,
+        documentsByLine,
       })
       setSuccess('Écriture enregistrée avec succès.')
       setLibelle('')
-      setPieceFile(null)
+      setQuickDocuments([null])
+      setFileInputsResetKey((k) => k + 1)
       if (mode === 'AVANCE') {
         setLignes([
           { compteId: '', debit: 0, credit: 0 },
           { compteId: '', debit: 0, credit: 0 },
         ])
+        setLineDocuments([[null], [null]])
       } else {
         setMontant(0)
         setComptePaiementId(null)
@@ -222,6 +301,44 @@ export default function SaisieForm({
         {error ? <div className={`card ${forms.alertError}`}>{error}</div> : null}
         {success ? <div className={`card ${forms.alertSuccess}`}>{success}</div> : null}
 
+        <div className={styles.commonHeaderGrid}>
+          <div className={forms.field}>
+            <label className={forms.label} htmlFor="saisie-date">
+              Date
+            </label>
+            <DatePicker
+              id="saisie-date"
+              selected={date}
+              onChange={(d: Date | null) => setDate(d)}
+              dateFormat="dd/MM/yyyy"
+              minDate={exerciceStart}
+              maxDate={calendarMaxDate}
+              customInput={<DateInput className={forms.input} />}
+              wrapperClassName="w-full"
+              required
+            />
+          </div>
+
+          <div className={forms.field}>
+            <label className={forms.label} htmlFor="saisie-libelle">
+              Libellé{' '}
+              {mode === 'RAPIDE'
+                ? typeOperation === 'TRANSFERT'
+                  ? '(ex: Retrait caisse)'
+                  : '(ex: Achat matériel)'
+                : '(ex: Facture, don, virement...)'}
+            </label>
+            <input
+              id="saisie-libelle"
+              type="text"
+              value={libelle}
+              onChange={(e) => setLibelle(e.target.value)}
+              required
+              className={forms.input}
+            />
+          </div>
+        </div>
+
         {mode === 'RAPIDE' ? (
           <div className={styles.quickPanel}>
             <div className={styles.quickGridTop}>
@@ -259,34 +376,6 @@ export default function SaisieForm({
                     Virement
                   </button>
                 </div>
-              </div>
-
-              <div className={forms.field}>
-                <label className={forms.label} htmlFor="saisie-date">
-                  Date
-                </label>
-                <DatePicker
-                  selected={date}
-                  onChange={(d: Date | null) => setDate(d)}
-                  dateFormat="dd/MM/yyyy"
-                  maxDate={new Date()}
-                  customInput={<input id="saisie-date" className={forms.input} required />}
-                  wrapperClassName="w-full"
-                />
-              </div>
-
-              <div className={forms.field}>
-                <label className={forms.label} htmlFor="saisie-libelle">
-                  Libellé {typeOperation === 'TRANSFERT' ? '(ex: Retrait caisse)' : '(ex: Achat matériel)'}
-                </label>
-                <input
-                  id="saisie-libelle"
-                  type="text"
-                  value={libelle}
-                  onChange={(e) => setLibelle(e.target.value)}
-                  required
-                  className={forms.input}
-                />
               </div>
 
               <div className={forms.field}>
@@ -342,6 +431,59 @@ export default function SaisieForm({
                 />
               </div>
             </div>
+
+            <div className={forms.field}>
+              <div className={styles.quickDocsHeader}>
+                <label className={forms.label} htmlFor={`${componentId}-saisie-quick-doc-0`}>
+                  Pièces justificatives (optionnel)
+                </label>
+                <button
+                  type="button"
+                  className={styles.addDocBtn}
+                  onClick={addQuickDocumentInput}
+                  title="Ajouter un justificatif"
+                  aria-label="Ajouter un justificatif"
+                >
+                  <Plus size={16} aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className={styles.quickDocsCell}>
+                {quickDocuments.map((file, docIndex) => {
+                  const inputId = `${componentId}-saisie-quick-doc-${docIndex}`
+                  return (
+                    <div key={docIndex} className={styles.quickDocRow}>
+                      <label className="sr-only" htmlFor={inputId}>
+                        Pièce justificative — fichier {docIndex + 1}
+                      </label>
+                      <input
+                        key={`${fileInputsResetKey}-${inputId}`}
+                        id={inputId}
+                        type="file"
+                        accept="application/pdf,image/jpeg,image/png,image/webp"
+                        onChange={(e) => updateQuickDocument(docIndex, e.target.files?.[0] ?? null)}
+                        className={forms.fileInput}
+                      />
+                      <button
+                        type="button"
+                        className={styles.removeDocBtn}
+                        onClick={() => removeQuickDocument(docIndex)}
+                        title="Retirer ce justificatif"
+                        aria-label="Retirer ce justificatif"
+                      >
+                        <X size={16} aria-hidden="true" />
+                      </button>
+                      <div className={styles.quickDocFileNameRow}>
+                        {file?.name ? <span className={styles.docFileName}>{file.name}</span> : null}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <p className={styles.fileHint}>
+                Les justificatifs seront rattachés à la ligne de catégorie de l’écriture.
+              </p>
+            </div>
           </div>
         ) : (
           <FormSection
@@ -373,6 +515,7 @@ export default function SaisieForm({
                   <th className={styles.thCompte}>Compte</th>
                   <th className={styles.thAmount}>Débit (€)</th>
                   <th className={styles.thAmount}>Crédit (€)</th>
+                  <th className={styles.thDocs}>Justificatifs</th>
                   <th className={styles.thActions} />
                 </tr>
               </thead>
@@ -419,6 +562,39 @@ export default function SaisieForm({
                         className={forms.input}
                       />
                     </td>
+                    <td className={styles.tdDocs}>
+                      <div className={styles.docsCell}>
+                        {(lineDocuments[i] ?? [null]).map((file, docIndex) => {
+                          const inputId = `${componentId}-saisie-ligne-doc-${i}-${docIndex}`
+                          return (
+                            <div key={docIndex} className={styles.docRow}>
+                              <label className="sr-only" htmlFor={inputId}>
+                                Pièce justificative ligne {i + 1} — fichier {docIndex + 1}
+                              </label>
+                              <input
+                                key={`${fileInputsResetKey}-${inputId}`}
+                                id={inputId}
+                                type="file"
+                                accept="application/pdf,image/jpeg,image/png,image/webp"
+                                onChange={(e) => updateDocumentForLine(i, docIndex, e.target.files?.[0] ?? null)}
+                                className={forms.fileInput}
+                              />
+                              {file?.name ? <span className={styles.docFileName}>{file.name}</span> : null}
+                            </div>
+                          )
+                        })}
+
+                        <button
+                          type="button"
+                          className={styles.addDocBtn}
+                          onClick={() => addDocumentInputForLine(i)}
+                          title="Ajouter un justificatif"
+                          aria-label="Ajouter un justificatif"
+                        >
+                          <Plus size={16} aria-hidden="true" />
+                        </button>
+                      </div>
+                    </td>
                     <td>
                       <button
                         type="button"
@@ -447,22 +623,6 @@ export default function SaisieForm({
             </div>
           </FormSection>
         )}
-
-        <div className={forms.field}>
-          <label className={forms.label} htmlFor="saisie-piece">
-            Pièce justificative (optionnel)
-          </label>
-          <input
-            id="saisie-piece"
-            type="file"
-            accept="application/pdf,image/jpeg,image/png,image/webp"
-            onChange={(e) => setPieceFile(e.target.files?.[0] || null)}
-            className={forms.fileInput}
-          />
-          <p className={styles.fileHint}>
-            Vous pourrez aussi uploader et lier une pièce plus tard depuis la page Documents.
-          </p>
-        </div>
 
         <div className={styles.submitRow}>
           <button type="submit" className="btn btn-primary" disabled={mode === 'AVANCE' && (!isEquilibre || totalDebit <= 0)}>

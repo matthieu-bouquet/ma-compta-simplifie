@@ -3,10 +3,12 @@
 
 import { prisma } from '@/lib/prisma'
 import DownloadPdfButton from './DownloadPdfButton'
-import { getCurrentAssociationId } from '@/lib/associationContext'
+import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import { getCurrentExerciceId } from '@/lib/exerciceContext'
 import styles from './bilan.module.css'
 import { getNetAccountTotalsForFiscalYear } from '@/lib/accountTotals'
+import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
+import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
 
 export default async function BilanPage({
   searchParams,
@@ -14,16 +16,14 @@ export default async function BilanPage({
   searchParams?: Promise<{ exerciceId?: string }>
 }) {
   const { exerciceId: spExerciceId } = (await searchParams) ?? {}
-  const associationId = await getCurrentAssociationId()
+  const associationId = await getValidatedCurrentAssociationId()
   const cookieExerciceId = await getCurrentExerciceId()
 
   if (!associationId) {
     return (
       <div>
         <h1 className="page-title">Bilan Financier</h1>
-        <div className="card">
-          <p className="text-warning">Sélectionnez une association (menu en haut à droite).</p>
-        </div>
+        <EntityRequiredEmptyState purpose="bilan" />
       </div>
     )
   }
@@ -37,9 +37,7 @@ export default async function BilanPage({
     return (
       <div>
         <h1 className="page-title">Bilan Financier</h1>
-        <div className="card">
-          <p>Aucun exercice disponible pour cette association.</p>
-        </div>
+        <FiscalYearRequiredEmptyState purpose="bilan" />
       </div>
     )
   }

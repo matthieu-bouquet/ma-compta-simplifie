@@ -4,24 +4,23 @@
 import Link from 'next/link'
 import { CalendarRange, FileText, Plus } from 'lucide-react'
 import PageBackLink from '@/components/PageBackLink'
-import { getCurrentAssociationId } from '@/lib/associationContext'
+import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import { getCurrentAssociation } from '@/lib/currentAssociation'
 import { getFiscalYears } from '@/actions/exerciceActions'
 import { createBudget } from '@/actions/budgetActions'
 import forms from '@/components/forms/forms.module.css'
 import styles from '../previsionnel.module.css'
+import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
 
 export default async function NewPrevisionnelPage() {
-  const associationId = await getCurrentAssociationId()
+  const associationId = await getValidatedCurrentAssociationId()
 
   if (!associationId) {
     return (
       <div className={styles.newBudgetPage}>
         <PageBackLink href="/previsionnel" aria-label="Retour à la liste des prévisionnels" />
         <h1 className="page-title no-topbar-pad">Nouveau prévisionnel</h1>
-        <div className="card">
-          <p className="text-warning">Sélectionnez une association (menu en haut à droite).</p>
-        </div>
+        <EntityRequiredEmptyState purpose="previsionnelNew" />
       </div>
     )
   }

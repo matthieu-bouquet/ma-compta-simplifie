@@ -2,12 +2,11 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import { prisma } from '@/lib/prisma'
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
-import forms from '@/components/forms/forms.module.css'
-import { getCurrentAssociationId } from '@/lib/associationContext'
+import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import { getCurrentExerciceId } from '@/lib/exerciceContext'
 import PaymentMethodsEvolutionChart from '@/components/PaymentMethodsEvolutionChart'
+import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
+import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
 import styles from './page.module.css'
 
 type DashboardEcriture = {
@@ -39,25 +38,26 @@ type DashboardExercice = {
 type TreasuryAccountRow = DashboardAccount & { soldeActuel: number }
 
 export default async function Dashboard() {
-  const associationId = await getCurrentAssociationId()
+  const associationId = await getValidatedCurrentAssociationId()
   const currentExerciceId = await getCurrentExerciceId()
   const now = new Date()
 
   if (!associationId) {
+    const entityCount = await prisma.association.count()
     return (
       <div className={styles.wrap}>
         <header className={styles.pageHeader}>
           <h1 className="page-title">Tableau de bord</h1>
-          <p className={styles.lead}>
-            Choisissez une association pour afficher indicateurs et soldes de trésorerie.
-          </p>
         </header>
-        <div className={`card ${styles.centerCardCompact}`}>
-          <h2 className={styles.centerTitle}>Sélectionnez une association</h2>
-          <p className={styles.centerText}>
-            Utilisez le menu en haut à droite pour choisir l’association sur laquelle vous travaillez.
-          </p>
-        </div>
+        {entityCount === 0 ? (
+          <EntityRequiredEmptyState
+            title="Aucune entité"
+            message="Aucune entité n’existe encore. Créez-en une pour commencer."
+            showCreateEntityCta
+          />
+        ) : (
+          <EntityRequiredEmptyState />
+        )}
       </div>
     )
   }
@@ -164,26 +164,10 @@ export default async function Dashboard() {
     <div className={styles.wrap}>
       <header className={styles.pageHeader}>
         <h1 className="page-title">Tableau de bord</h1>
-        <p className={styles.lead}>
-          {exercice
-            ? 'Vue d’ensemble de la trésorerie et des flux par moyen de paiement pour l’exercice sélectionné.'
-            : 'Créez un exercice pour activer les graphiques et le détail des soldes de trésorerie.'}
-        </p>
       </header>
 
       {!exercice ? (
-        <div className={`card ${styles.centerCard}`}>
-          <h2 className={styles.centerTitleLarge}>Bienvenue dans votre outil de comptabilité</h2>
-          <p className={styles.centerTextSpaced}>
-            Pour commencer, vous devez créer votre premier exercice comptable (ex&nbsp;: Saison 2024-2025).
-          </p>
-          <div className={styles.ctaRow}>
-            <Link href="/exercices" className={`btn btn-primary ${forms.btnWithLeadingIcon}`}>
-              <Plus size={18} aria-hidden="true" />
-              Créer un exercice
-            </Link>
-          </div>
-        </div>
+        <FiscalYearRequiredEmptyState />
       ) : (
         <>
           <div className={styles.dashboardGrid}>

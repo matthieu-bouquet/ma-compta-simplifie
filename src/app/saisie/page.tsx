@@ -5,9 +5,11 @@ import { prisma } from '@/lib/prisma'
 import SaisieForm from './SaisieForm'
 import DeleteLigneButton from './DeleteLigneButton'
 import AttachDocumentButton from './AttachDocumentButton'
-import { getCurrentAssociationId } from '@/lib/associationContext'
+import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import { getCurrentExerciceId } from '@/lib/exerciceContext'
 import { Paperclip } from 'lucide-react'
+import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
+import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
 
 export default async function SaisiePage({
   searchParams,
@@ -15,18 +17,14 @@ export default async function SaisiePage({
   searchParams?: Promise<{ exerciceId?: string }>
 }) {
   const { exerciceId: exerciceIdParam } = (await searchParams) ?? {}
-  const associationId = await getCurrentAssociationId()
+  const associationId = await getValidatedCurrentAssociationId()
   const cookieExerciceId = await getCurrentExerciceId()
 
   if (!associationId) {
     return (
       <div>
         <h1 className="page-title">Saisie Comptable</h1>
-        <div className="card">
-          <p className="text-warning">
-            Sélectionnez une association (menu en haut à droite) pour accéder à la saisie.
-          </p>
-        </div>
+        <EntityRequiredEmptyState purpose="saisie" />
       </div>
     )
   }
@@ -49,9 +47,7 @@ export default async function SaisiePage({
     return (
       <div>
         <h1 className="page-title">Saisie Comptable</h1>
-        <div className="card">
-          <p className="text-warning">Impossible de saisir des écritures : Aucun exercice n&apos;est disponible pour cette association.</p>
-        </div>
+        <FiscalYearRequiredEmptyState purpose="saisie" />
       </div>
     )
   }
@@ -104,6 +100,8 @@ export default async function SaisiePage({
           journaux={journaux}
           comptes={comptes}
           exerciceId={exerciceOuvert.id}
+          exerciceStartDate={exerciceOuvert.startDate.toISOString()}
+          exerciceEndDate={exerciceOuvert.endDate.toISOString()}
         />
       </div>
 

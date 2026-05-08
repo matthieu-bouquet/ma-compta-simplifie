@@ -26,6 +26,19 @@
   gap: 1.5rem;
 }
 
+.commonHeaderGrid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
+  align-items: end;
+}
+
+@media (max-width: 560px) {
+  .commonHeaderGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .quickPanel {
   display: grid;
   gap: 1rem;
@@ -148,6 +161,10 @@
   width: 20%;
 }
 
+.thDocs {
+  width: 30%;
+}
+
 .thActions {
   width: 10%;
 }
@@ -163,6 +180,88 @@
 
 .tdAmount {
   padding-right: 1rem;
+}
+
+.tdDocs {
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.docsCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.docRow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.25rem;
+}
+
+.quickDocsCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quickDocsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.quickDocRow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.quickDocFileNameRow {
+  grid-column: 1 / -1;
+}
+
+.removeDocBtn {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 0.5rem;
+  padding: 0.35rem;
+  cursor: pointer;
+}
+
+.removeDocBtn:hover {
+  color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.docFileName {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 320px;
+}
+
+.addDocBtn {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 0.5rem;
+  padding: 0.35rem;
+  cursor: pointer;
+}
+
+.addDocBtn:hover {
+  color: var(--text);
+  border-color: var(--text-secondary);
 }
 
 .removeRowBtn {

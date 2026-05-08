@@ -3,11 +3,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { getAssociations } from '@/actions/associationActions'
 import { setCurrentAssociationId } from '@/actions/contextActions'
 import { Building2 } from 'lucide-react'
+import AppSearchableSelect from '@/components/forms/AppSearchableSelect'
+import styles from './topBarSwitchers.module.css'
 
 type Association = { id: string; nom: string; cloturee?: boolean }
 
@@ -16,7 +18,6 @@ export default function AssociationSwitcher({ currentAssociationId }: { currentA
   const pathname = usePathname()
   const [associations, setAssociations] = useState<Association[]>([])
   const [pending, startTransition] = useTransition()
-  const [value, setValue] = useState<string>(currentAssociationId ?? '')
 
   useEffect(() => {
     ;(async () => {
@@ -29,47 +30,55 @@ export default function AssociationSwitcher({ currentAssociationId }: { currentA
     })()
   }, [])
 
+  // Si une seule entité existe, on la pré-sélectionne automatiquement.
+  useEffect(() => {
+    if (associations.length !== 1) return
+    if (pending) return
+    if (currentAssociationId) return
+
+    const only = associations[0]
+    startTransition(async () => {
+      await setCurrentAssociationId(only.id)
+      if (!pathname.startsWith('/parametres')) router.refresh()
+    })
+  }, [associations, currentAssociationId, pending, pathname, router, startTransition])
+
   // Paramètres ne dépend pas du contexte (mais on laisse visible le sélecteur)
   const isParametres = pathname.startsWith('/parametres')
 
+  const options = useMemo(
+    () => associations.map((a) => ({ value: a.id, label: a.nom })),
+    [associations],
+  )
+  const selectedValue =
+    currentAssociationId && associations.some((a) => a.id === currentAssociationId)
+      ? { value: currentAssociationId, label: associations.find((a) => a.id === currentAssociationId)!.nom }
+      : null
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
-      <span title="Association" aria-label="Association" style={{ display: 'inline-flex', lineHeight: 0, color: 'var(--text-secondary)' }}>
+    <div className={styles.row}>
+      <span title="Association" aria-label="Association" className={styles.icon}>
         <Building2 size={16} aria-hidden="true" />
       </span>
-      <select
-        value={value}
-        onChange={(e) => {
-          const next = e.target.value
-          setValue(next)
-          startTransition(async () => {
-            await setCurrentAssociationId(next || null)
-            // Pour les pages dépendantes, on refresh pour recharger les données filtrées
-            if (!isParametres) router.refresh()
-          })
-        }}
-        disabled={pending}
-        style={{
-          width: '100%',
-          height: '32px',
-          borderRadius: '0.5rem',
-          border: '1px solid var(--border-color)',
-          background: 'white',
-          color: 'var(--text-primary)',
-          padding: '0 0.55rem',
-          outline: 'none',
-          fontSize: '0.92rem',
-        }}
-        aria-label="Sélectionner une association"
-        title="Sélectionner une association"
-      >
-        <option value="">— Choisir —</option>
-        {associations.map((a) => (
-          <option key={a.id} value={a.id}>
-            {a.nom}
-          </option>
-        ))}
-      </select>
+      <div className={styles.selectWrap}>
+        <AppSearchableSelect
+          inputId="topbar-association"
+          aria-label="Sélectionner une association"
+          options={options}
+          value={selectedValue}
+          onChange={(next) => {
+            const nextValue = next ?? ''
+            startTransition(async () => {
+              await setCurrentAssociationId(nextValue || null)
+              if (!isParametres) router.refresh()
+            })
+          }}
+          placeholder={associations.length === 0 ? '—' : associations.length === 1 ? associations[0].nom : 'Choisir…'}
+          isClearable={associations.length > 1}
+          isDisabled={pending || associations.length <= 1}
+          elevatedZIndex
+        />
+      </div>
     </div>
   )
 }

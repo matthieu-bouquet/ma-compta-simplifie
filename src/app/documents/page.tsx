@@ -2,11 +2,13 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import { prisma } from '@/lib/prisma'
-import { getCurrentAssociationId } from '@/lib/associationContext'
+import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import { getCurrentExerciceId } from '@/lib/exerciceContext'
 import UploadDocumentForm from './UploadDocumentForm'
 import DocumentsTableClient from './DocumentsTableClient'
 import styles from './page.module.css'
+import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
+import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
 
 export default async function DocumentsPage({
   searchParams,
@@ -14,16 +16,14 @@ export default async function DocumentsPage({
   searchParams?: Promise<{ exerciceId?: string }>
 }) {
   const { exerciceId: spExerciceId } = (await searchParams) ?? {}
-  const associationId = await getCurrentAssociationId()
+  const associationId = await getValidatedCurrentAssociationId()
   const cookieExerciceId = await getCurrentExerciceId()
 
   if (!associationId) {
     return (
       <div>
         <h1 className="page-title">Documents</h1>
-        <div className="card">
-          <p className="text-warning">Sélectionnez une association (menu en haut à droite) pour accéder aux documents.</p>
-        </div>
+        <EntityRequiredEmptyState purpose="documents" />
       </div>
     )
   }
@@ -37,9 +37,7 @@ export default async function DocumentsPage({
     return (
       <div>
         <h1 className="page-title">Documents</h1>
-        <div className="card">
-          <p>Aucun exercice disponible pour cette association.</p>
-        </div>
+        <FiscalYearRequiredEmptyState purpose="documents" />
       </div>
     )
   }

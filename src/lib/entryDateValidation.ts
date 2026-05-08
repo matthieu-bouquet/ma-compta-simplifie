@@ -34,3 +34,20 @@ export function assertEntryDateNotAfterToday(entryYYYYMMDD: string, now = new Da
     throw new Error("La date d'écriture ne peut pas être dans le futur.")
   }
 }
+
+export function assertEntryDateWithinFiscalYear(
+  entryYYYYMMDD: string,
+  fiscalYearStartDate: Date,
+  fiscalYearEndDate: Date,
+): void {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(entryYYYYMMDD)) {
+    throw new Error('Invalid entry date format.')
+  }
+
+  const start = calendarDateInTimeZone(fiscalYearStartDate, ENTRY_DATE_TIMEZONE)
+  const end = calendarDateInTimeZone(fiscalYearEndDate, ENTRY_DATE_TIMEZONE)
+
+  if (entryYYYYMMDD < start || entryYYYYMMDD > end) {
+    throw new Error("La date d'écriture doit être comprise dans l'exercice.")
+  }
+}

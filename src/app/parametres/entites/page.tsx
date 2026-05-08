@@ -14,6 +14,7 @@ import { LEGAL_FORM_OPTIONS } from '@/lib/legalForms'
 import FormSection from '@/components/forms/FormSection'
 import forms from '@/components/forms/forms.module.css'
 import styles from './entites.module.css'
+import { useSearchParams } from 'next/navigation'
 
 type EntityRow = Association & {
   nom?: string
@@ -26,8 +27,10 @@ type EntityRow = Association & {
 }
 
 export default function EntitiesPage() {
+  const searchParams = useSearchParams()
+  const shouldOpenForm = searchParams.get('create') === '1'
   const [entities, setEntities] = useState<EntityRow[]>([])
-  const [showForm, setShowForm] = useState(false)
+  const [showForm, setShowForm] = useState(shouldOpenForm)
   const [loading, setLoading] = useState(true)
   const [formData, setFormData] = useState({
     nom: '',

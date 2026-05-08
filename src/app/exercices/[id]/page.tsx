@@ -106,7 +106,7 @@ export default async function ConfigurationExercicePage({ params }: { params: { 
         <PageBackLink href="/exercices" aria-label="Retour à la liste des exercices" />
       </div>
 
-      <details className={`card config-toggle ${layout.configBlock}`}>
+      <details open className={`card config-toggle ${layout.configBlock}`}>
         <summary className={layout.summary}>
           <span className={layout.summaryTitle}>Moyens de paiement (classe 5)</span>
           <svg

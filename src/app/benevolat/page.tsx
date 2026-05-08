@@ -10,6 +10,8 @@ import { isAssociationLegalForm } from '@/lib/legalForms'
 import forms from '@/components/forms/forms.module.css'
 import styles from './benevolat.module.css'
 import DeleteContributionButton from './DeleteContributionButton'
+import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
+import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
 
 function formatDateFr(d: Date) {
   return d.toLocaleDateString('fr-FR')
@@ -33,9 +35,7 @@ export default async function VolunteeringPage({
     return (
       <div className={styles.page}>
         <h1 className="page-title">Bénévolat</h1>
-        <div className="card">
-          <p className="text-warning">Sélectionnez une association (menu en haut à droite).</p>
-        </div>
+        <EntityRequiredEmptyState purpose="default" />
       </div>
     )
   }
@@ -61,9 +61,7 @@ export default async function VolunteeringPage({
     return (
       <div className={styles.page}>
         <h1 className="page-title">Bénévolat</h1>
-        <div className="card">
-          <p>Aucun exercice disponible pour cette association.</p>
-        </div>
+        <FiscalYearRequiredEmptyState purpose="default" />
       </div>
     )
   }

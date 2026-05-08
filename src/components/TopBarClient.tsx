@@ -6,6 +6,7 @@
 import { usePathname } from 'next/navigation'
 import ExerciceSwitcher from '@/components/ExerciceSwitcher'
 import AssociationSwitcher from '@/components/AssociationSwitcher'
+import styles from './TopBarClient.module.css'
 
 export default function TopBarClient({
   currentAssociationId,
@@ -23,16 +24,8 @@ export default function TopBarClient({
   const isExercices = pathname.startsWith('/exercices')
 
   return (
-    <div className="topbar" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-      <div
-        style={{
-          width: isExercices ? 'min(420px, 100%)' : 'min(760px, 100%)',
-          display: 'flex',
-          gap: '0.75rem',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-        }}
-      >
+    <div className={styles.topbar}>
+      <div className={[styles.controls, isExercices ? styles.controlsNarrow : ''].filter(Boolean).join(' ')}>
         {!isExercices && <ExerciceSwitcher currentExerciceId={currentExerciceId} exercices={exercices} />}
         <AssociationSwitcher currentAssociationId={currentAssociationId} />
       </div>

@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { writeAuditEvent } from '@/lib/audit'
 import { validateLegalForm } from '@/lib/legalForms'
+import { setCurrentAssociationId } from '@/actions/contextActions'
 
 export async function getAssociations() {
   const rows = await prisma.association.findMany({
@@ -104,6 +105,9 @@ export async function createAssociation(formData: FormData) {
       legalFormOther: validatedLegalForm.legalFormOther,
     }
   })
+
+  // Default-select the newly created entity for the user.
+  await setCurrentAssociationId(association.id)
 
   revalidatePath('/parametres/associations')
   revalidatePath('/parametres/entites')

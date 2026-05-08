@@ -5,35 +5,59 @@ import { getExercices } from '@/actions/exerciceActions'
 import Link from 'next/link'
 import ExerciceForm from './ExerciceForm'
 import DeleteExerciceButton from './DeleteExerciceButton'
-import { getCurrentAssociationId } from '@/lib/associationContext'
+import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
+import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
+import { prisma } from '@/lib/prisma'
+import { AlertTriangle } from 'lucide-react'
+import styles from './page.module.css'
 
 export default async function ExercicesPage() {
-  const associationId = await getCurrentAssociationId()
+  const associationId = await getValidatedCurrentAssociationId()
 
   if (!associationId) {
     return (
       <div>
         <h1 className="page-title">Exercices Comptables</h1>
-        <div className="card">
-          <p className="text-warning">
-            Sélectionnez une association (menu en haut à droite) pour voir et créer les exercices.
-          </p>
-        </div>
+        <EntityRequiredEmptyState purpose="exercices" />
       </div>
     )
   }
+
+  const association = await prisma.association.findUnique({
+    where: { id: associationId },
+    select: { isClosed: true },
+  })
+  const canCreateFiscalYear = Boolean(association && !association.isClosed)
 
   const exercices = await getExercices(associationId)
 
   return (
     <div>
       <h1 className="page-title">Exercices Comptables</h1>
+
+      {!canCreateFiscalYear ? (
+        <div className={styles.closedBanner} role="status" aria-live="polite">
+          <AlertTriangle size={18} aria-hidden="true" className={styles.closedBannerIcon} />
+          <div>
+            <p className={styles.closedBannerTitle}>Entité clôturée</p>
+            <p className={styles.closedBannerText}>
+              La création d’un nouvel exercice est désactivée. Vous pouvez consulter les exercices existants.
+            </p>
+          </div>
+        </div>
+      ) : null}
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
         {/* Formulaire de création */}
         <div className="card">
           <h2 className="card-title">Nouvel Exercice</h2>
-          <ExerciceForm associationId={associationId} />
+          {canCreateFiscalYear ? (
+            <ExerciceForm associationId={associationId} />
+          ) : (
+            <div className={styles.disabledNotice}>
+              Cette entité est clôturée : la création d’un nouvel exercice est désactivée.
+            </div>
+          )}
           <p style={{ marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
             Note: Lors de la création, le plan comptable associatif standard sera automatiquement copié et affecté à ce nouvel exercice.
           </p>
@@ -50,7 +74,7 @@ export default async function ExercicesPage() {
                 <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
                   <th style={{ padding: '0.75rem 0' }}>Période</th>
                   <th>Statut</th>
-                  <th>Actions</th>
+                  <th aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
@@ -100,42 +124,6 @@ export default async function ExercicesPage() {
                           />
                         </svg>
                         <span>Configurer</span>
-                      </Link>
-                      <Link
-                        href={`/ecritures?exerciceId=${ex.id}`}
-                        className="btn"
-                        style={{
-                          border: '1px solid var(--border-color)',
-                          backgroundColor: 'transparent',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                        }}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                          <path
-                            d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M6 22V4a2 2 0 0 1 2-2h12v20"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M8 6h8M8 10h8M8 14h6"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <span>Grand Livre</span>
                       </Link>
                       {ex.status === 'OPEN' && (
                         <DeleteExerciceButton id={ex.id} dateTexte={`${new Date(ex.startDate).getFullYear()}-${new Date(ex.endDate).getFullYear()}`} />
