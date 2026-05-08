@@ -87,13 +87,45 @@ jobs:
           name: desktop-linux
           path: dist-desktop/
 
+  build_win:
+    name: Build Windows
+    needs: verify_tag_on_main
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package desktop (Windows)
+        run: npm run desktop:dist:win
+        env:
+          ELECTRON_BUILDER_CACHE: ${{ github.workspace }}\.cache\electron-builder
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-win
+          path: dist-desktop/
+
   release:
     name: Publish GitHub Release
-    needs: [build_mac, build_linux]
+    needs: [build_mac, build_linux, build_win]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-win
+          path: artifacts/win
+
       - name: Download macOS artifacts
         uses: actions/download-artifact@v4
         with:
