@@ -43,7 +43,7 @@ jobs:
         run: node scripts/fix-standalone-symlinks.mjs
 
       - name: Build Electron main (tsc)
-        run: tsc -p desktop/electron/tsconfig.json --pretty false
+        run: npx tsc -p desktop/electron/tsconfig.json --pretty false
 
       - name: Package desktop (Windows)
         run: electron-builder --projectDir desktop --config electron-builder.json --win
