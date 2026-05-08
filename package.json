@@ -21,7 +21,8 @@
     "desktop:dist:mac": "npm run desktop:build && cross-env ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --mac",
     "desktop:dist:win": "npm run desktop:build && cross-env ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --win",
     "desktop:dist:linux": "npm run desktop:build && cross-env ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --linux",
-    "desktop:dist:all": "npm run desktop:build && cross-env ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --mac --win --linux"
+    "desktop:dist:all": "npm run desktop:build && cross-env ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json --mac --win --linux",
+    "release:prepare-pr": "node scripts/release/prepare-release-pr.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
