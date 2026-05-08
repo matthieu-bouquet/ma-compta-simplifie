@@ -141,7 +141,13 @@ jobs:
       - name: Collect installer files
         run: |
           mkdir -p upload
-          find artifacts -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" \) -print -exec cp {} upload/ \;
+          # Keep release assets user-facing only:
+          # - macOS: .dmg
+          # - Linux: .AppImage
+          # - Windows: NSIS installer only (Setup*.exe). Exclude helper binaries (elevate.exe, prisma engines, unpacked app exe…)
+          find artifacts -type f -name "*.dmg" -print -exec cp {} upload/ \;
+          find artifacts -type f -name "*.AppImage" -print -exec cp {} upload/ \;
+          find artifacts -type f \( -iname "*setup*.exe" -o -iname "*installer*.exe" \) -print -exec cp {} upload/ \;
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
