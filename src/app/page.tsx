@@ -49,15 +49,7 @@ export default async function Dashboard() {
         <header className={styles.pageHeader}>
           <h1 className="page-title">Tableau de bord</h1>
         </header>
-        {entityCount === 0 ? (
-          <EntityRequiredEmptyState
-            title="Aucune entité"
-            message="Aucune entité n’existe encore. Créez-en une pour commencer."
-            showCreateEntityCta
-          />
-        ) : (
-          <EntityRequiredEmptyState />
-        )}
+        <EntityRequiredEmptyState purpose="dashboard" />
       </div>
     )
   }
