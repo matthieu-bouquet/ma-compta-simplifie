@@ -1,0 +1,59 @@
+name: Desktop Windows debug
+
+on:
+  workflow_dispatch:
+    inputs:
+      loglevel:
+        description: "npm loglevel (info|verbose|silly)"
+        required: false
+        default: "verbose"
+
+permissions:
+  contents: read
+
+jobs:
+  build_win_debug:
+    name: Build Windows (debug)
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      CI: true
+      NEXT_TELEMETRY_DISABLED: "1"
+      npm_config_loglevel: ${{ inputs.loglevel }}
+      DEBUG: electron-builder,electron-builder:*
+      ELECTRON_BUILDER_CACHE: ${{ github.workspace }}\.cache\electron-builder
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build template DB (Prisma)
+        run: node scripts/build-template-db.mjs
+
+      - name: Next build (standalone)
+        run: next build
+
+      - name: Fix standalone symlinks (Prisma toolchain)
+        run: node scripts/fix-standalone-symlinks.mjs
+
+      - name: Build Electron main (tsc)
+        run: tsc -p desktop/electron/tsconfig.json --pretty false
+
+      - name: Package desktop (Windows)
+        run: electron-builder --projectDir desktop --config electron-builder.json --win
+
+      - name: Upload artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-debug-artifacts
+          if-no-files-found: ignore
+          path: |
+            .next/**
+            dist-desktop/**

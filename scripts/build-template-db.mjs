@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 
 const root = process.cwd();
 const outPath = path.join(root, "prisma", "template.db");
@@ -9,7 +10,7 @@ const schemaPath = path.join(root, "prisma", "schema.prisma");
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 if (fs.existsSync(outPath)) fs.rmSync(outPath, { force: true });
 
-const dbUrl = `file:${outPath}`;
+const dbUrl = pathToFileURL(outPath).href;
 
 const prismaCli = process.platform === "win32" ? "npx.cmd" : "npx";
 
@@ -29,4 +30,5 @@ run(["migrate", "deploy", "--schema", schemaPath]);
 // run(["db", "seed"]);
 
 console.log(`[template-db] generated ${outPath}`);
+console.log(`[template-db] DATABASE_URL=${dbUrl}`);
 

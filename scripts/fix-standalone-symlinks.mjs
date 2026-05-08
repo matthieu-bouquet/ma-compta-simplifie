@@ -1,21 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 
+const LOG_PREFIX = "[fix-standalone]";
+
+function cpDir(src, dest) {
+  // Node 22: fs.cpSync is faster and more robust cross-platform.
+  fs.cpSync(src, dest, { recursive: true, force: true, dereference: false });
+}
+
 function copyDir(src, dest) {
-  fs.mkdirSync(dest, { recursive: true });
-  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    const s = path.join(src, entry.name);
-    const d = path.join(dest, entry.name);
-    if (entry.isDirectory()) copyDir(s, d);
-    else if (entry.isSymbolicLink()) {
-      const real = fs.realpathSync(s);
-      const stat = fs.statSync(real);
-      if (stat.isDirectory()) copyDir(real, d);
-      else fs.copyFileSync(real, d);
-    } else {
-      fs.copyFileSync(s, d);
-    }
-  }
+  cpDir(src, dest);
 }
 
 function replaceSymlinkWithCopy(linkPath) {
@@ -115,19 +109,22 @@ function bundlePrismaDependencyClosure(root, standaloneNm) {
 
 function bundlePrismaCliIntoStandalone(root) {
   const standaloneNm = path.join(root, ".next", "standalone", "node_modules");
-  if (!fs.existsSync(standaloneNm)) return;
+  if (!fs.existsSync(standaloneNm)) {
+    console.log(`${LOG_PREFIX} .next/standalone/node_modules missing, skipping`);
+    return;
+  }
 
   const prismaProjectDest = path.join(root, ".next", "standalone", "prisma");
   const prismaProjectSrc = path.join(root, "prisma");
   if (fs.existsSync(prismaProjectSrc)) {
     rmIfExists(prismaProjectDest);
     copyDir(prismaProjectSrc, prismaProjectDest);
-    console.log(`[fix-standalone] bundled prisma project -> ${prismaProjectDest}`);
+    console.log(`${LOG_PREFIX} bundled prisma project -> ${prismaProjectDest}`);
   }
 
   const copiedScopes = bundlePrismaDependencyClosure(root, standaloneNm);
   console.log(
-    `[fix-standalone] bundled scoped prisma toolchain packages: ${Array.from(copiedScopes).sort().join(", ")}`
+    `${LOG_PREFIX} bundled scoped prisma toolchain packages: ${Array.from(copiedScopes).sort().join(", ")}`
   );
 
   const copies = [["prisma", path.join(root, "node_modules", "prisma")]];
@@ -139,7 +136,7 @@ function bundlePrismaCliIntoStandalone(root) {
     const destPath = path.join(standaloneNm, destName);
     rmIfExists(destPath);
     copyDir(srcPath, destPath);
-    console.log(`[fix-standalone] bundled ${destName} -> ${destPath}`);
+    console.log(`${LOG_PREFIX} bundled ${destName} -> ${destPath}`);
   }
 
   const prismaBinSrc = path.join(root, "node_modules", ".bin", "prisma");
@@ -153,7 +150,7 @@ function bundlePrismaCliIntoStandalone(root) {
     } catch {
       // ignore
     }
-    console.log(`[fix-standalone] bundled prisma bin -> ${prismaBinDest}`)
+    console.log(`${LOG_PREFIX} bundled prisma bin -> ${prismaBinDest}`)
   }
 }
 
@@ -166,12 +163,15 @@ if (fs.existsSync(prismaDir)) {
       const st = fs.lstatSync(full);
       if (st.isSymbolicLink()) {
         replaceSymlinkWithCopy(full);
-        console.log(`[fix-standalone] replaced symlink: ${full}`);
+        console.log(`${LOG_PREFIX} replaced symlink: ${full}`);
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.warn(`${LOG_PREFIX} failed while processing: ${full}`);
+      console.warn(err);
     }
   }
+} else {
+  console.log(`${LOG_PREFIX} no @prisma dir inside standalone, skipping symlink rewrite`);
 }
 
 bundlePrismaCliIntoStandalone(root)
