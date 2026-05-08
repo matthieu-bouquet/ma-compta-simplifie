@@ -37,7 +37,7 @@ jobs:
         run: node scripts/build-template-db.mjs
 
       - name: Next build (standalone)
-        run: next build
+        run: npm run build
 
       - name: Fix standalone symlinks (Prisma toolchain)
         run: node scripts/fix-standalone-symlinks.mjs
