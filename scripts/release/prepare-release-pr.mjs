@@ -1,4 +1,6 @@
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 
 function run(cmd, args, opts = {}) {
   const res = spawnSync(cmd, args, { stdio: "inherit", ...opts });
@@ -28,6 +30,7 @@ if (!version) {
 }
 
 const branch = `chore/bump-v${version}`;
+const root = process.cwd();
 
 // Preconditions: clean tree, on main, up-to-date.
 const status = runCapture("git", ["status", "--porcelain=v1"]).trim();
@@ -48,7 +51,20 @@ run("git", ["switch", "-c", branch]);
 // Bump version files without tagging.
 run("npm", ["version", version, "--no-git-tag-version"]);
 
-run("git", ["add", "package.json", "package-lock.json"]);
+// electron-builder uses `--projectDir desktop`, so the Windows/mac/linux artifact version
+// comes from `desktop/package.json`. Keep it in sync with the root version.
+const desktopPkgPath = path.join(root, "desktop", "package.json");
+try {
+  const raw = fs.readFileSync(desktopPkgPath, "utf8");
+  const json = JSON.parse(raw);
+  json.version = version;
+  fs.writeFileSync(desktopPkgPath, JSON.stringify(json, null, 2) + "\n");
+} catch (err) {
+  console.error(`Failed to update ${desktopPkgPath}`);
+  throw err;
+}
+
+run("git", ["add", "package.json", "package-lock.json", "desktop/package.json"]);
 run("git", ["commit", "-m", `chore(release): v${version}`]);
 run("git", ["push", "-u", "origin", "HEAD"]);
 
