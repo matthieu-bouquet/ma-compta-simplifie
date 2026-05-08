@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { updateSoldeInitial } from '@/actions/exerciceActions'
 import { deleteCompteForExercice } from '@/actions/compteActions'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -24,6 +24,16 @@ export default function ComptePaiementRow({
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const amountInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!isEditing) return
+    // focus after render; select to speed up overwrite
+    queueMicrotask(() => {
+      amountInputRef.current?.focus()
+      amountInputRef.current?.select()
+    })
+  }, [isEditing])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -59,11 +69,12 @@ export default function ComptePaiementRow({
               name="soldeInitial"
               defaultValue={soldeDepart}
               className={`${forms.input} ${styles.soldeInput}`}
+              ref={amountInputRef}
             />
             <button
               type="submit"
               disabled={loading}
-              className={`btn btn-primary ${styles.iconBtn}`}
+              className={`btn btn-primary ${styles.iconBtnPrimary}`}
               title="Valider"
               aria-label="Valider"
             >
