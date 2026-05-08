@@ -16,6 +16,7 @@ export async function getCurrentAssociation() {
       isClosed: true,
       legalFormCode: true,
       legalFormOther: true,
+      chartTemplateId: true,
     },
   })
 }

@@ -5,51 +5,89 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { PLAN_COMPTABLE_ASSOCIATIF } from '@/lib/planComptable'
+import { defaultAccountsForTemplate, type ChartTemplateCode } from '@/lib/planComptable'
 
-export async function getGlobalChartOfAccounts() {
-  return await prisma.globalChartAccount.findMany({
-    orderBy: { number: 'asc' }
+export async function getChartTemplates() {
+  return await prisma.chartTemplate.findMany({ orderBy: { code: 'asc' } })
+}
+
+async function getOrCreateTemplate(code: ChartTemplateCode) {
+  const name = code === 'TPE' ? 'Entreprise / TPE (modèle)' : 'Association (modèle)'
+  return await prisma.chartTemplate.upsert({
+    where: { code },
+    update: { name },
+    create: { code, name },
   })
 }
 
-export async function syncGlobalChartWithDefault() {
-  const existing = await prisma.globalChartAccount.findMany({
-    select: { number: true },
+export async function getTemplateAccounts(templateId: string) {
+  return await prisma.chartTemplateAccount.findMany({
+    where: { chartTemplateId: templateId },
+    orderBy: { number: 'asc' },
   })
-  const existingSet = new Set(existing.map((c) => c.number))
-
-  const missing = PLAN_COMPTABLE_ASSOCIATIF.filter((c) => !existingSet.has(c.numero))
-
-  if (missing.length > 0) {
-    await prisma.globalChartAccount.createMany({
-      data: missing.map((c) => ({ number: c.numero, name: c.libelle })),
-    })
-    revalidatePath('/parametres/plan-comptable')
-  }
-
-  return { data: await getGlobalChartOfAccounts(), addedCount: missing.length }
 }
 
-export async function initializeGlobalChartOfAccounts() {
-  const existingCount = await prisma.globalChartAccount.count()
-  
+export async function getTemplateAccountsForFiscalYearCreation(code: ChartTemplateCode) {
+  const template = await getOrCreateTemplate(code)
+  // Ensure the template has at least the default seed.
+  await initializeTemplateAccounts(code)
+  return await prisma.chartTemplateAccount.findMany({
+    where: { chartTemplateId: template.id },
+    select: { number: true, name: true },
+    orderBy: { number: 'asc' },
+  })
+}
+
+export async function initializeTemplateAccounts(code: ChartTemplateCode) {
+  const template = await getOrCreateTemplate(code)
+  const existingCount = await prisma.chartTemplateAccount.count({
+    where: { chartTemplateId: template.id },
+  })
   if (existingCount > 0) {
-    return await getGlobalChartOfAccounts()
+    return await getTemplateAccounts(template.id)
   }
 
-  await prisma.globalChartAccount.createMany({
-    data: PLAN_COMPTABLE_ASSOCIATIF.map(c => ({
+  const defaults = defaultAccountsForTemplate(code)
+  await prisma.chartTemplateAccount.createMany({
+    data: defaults.map((c) => ({
+      chartTemplateId: template.id,
       number: c.numero,
-      name: c.libelle
-    }))
+      name: c.libelle,
+    })),
   })
 
   revalidatePath('/parametres/plan-comptable')
-  return await getGlobalChartOfAccounts()
+  return await getTemplateAccounts(template.id)
 }
 
-export async function addAccountToGlobalChart(formData: FormData) {
+export async function syncTemplateWithDefault(code: ChartTemplateCode) {
+  const template = await getOrCreateTemplate(code)
+  const existing = await prisma.chartTemplateAccount.findMany({
+    where: { chartTemplateId: template.id },
+    select: { number: true },
+  })
+  const existingSet = new Set(existing.map((c) => c.number))
+  const defaults = defaultAccountsForTemplate(code)
+  const missing = defaults.filter((c) => !existingSet.has(c.numero))
+  if (missing.length > 0) {
+    await prisma.chartTemplateAccount.createMany({
+      data: missing.map((c) => ({
+        chartTemplateId: template.id,
+        number: c.numero,
+        name: c.libelle,
+      })),
+    })
+    revalidatePath('/parametres/plan-comptable')
+  }
+  const rows = await getTemplateAccounts(template.id)
+  return {
+    data: rows.map(toLegacyAccountRow),
+    addedCount: missing.length,
+    template,
+  }
+}
+
+export async function addAccountToTemplate(templateId: string, formData: FormData) {
   const number = formData.get('numero') as string
   const name = formData.get('libelle') as string
 
@@ -57,22 +95,22 @@ export async function addAccountToGlobalChart(formData: FormData) {
     throw new Error('Account number and name are required.')
   }
 
-  const existing = await prisma.globalChartAccount.findUnique({
-    where: { number }
+  const existing = await prisma.chartTemplateAccount.findUnique({
+    where: { chartTemplateId_number: { chartTemplateId: templateId, number } },
   })
 
   if (existing) {
     throw new Error('An account with this number already exists.')
   }
 
-  await prisma.globalChartAccount.create({
-    data: { number, name }
+  await prisma.chartTemplateAccount.create({
+    data: { chartTemplateId: templateId, number, name },
   })
 
   revalidatePath('/parametres/plan-comptable')
 }
 
-export async function updateAccountInGlobalChart(id: string, formData: FormData) {
+export async function updateAccountInTemplate(templateId: string, id: string, formData: FormData) {
   const number = formData.get('numero') as string
   const name = formData.get('libelle') as string
 
@@ -80,9 +118,10 @@ export async function updateAccountInGlobalChart(id: string, formData: FormData)
     throw new Error('Account number and name are required.')
   }
 
-  const existing = await prisma.globalChartAccount.findFirst({
+  const existing = await prisma.chartTemplateAccount.findFirst({
     where: { 
-      number,
+      chartTemplateId: templateId,
+      number: number,
       id: { not: id }
     }
   })
@@ -91,7 +130,7 @@ export async function updateAccountInGlobalChart(id: string, formData: FormData)
     throw new Error('An account with this number already exists.')
   }
 
-  await prisma.globalChartAccount.update({
+  await prisma.chartTemplateAccount.update({
     where: { id },
     data: { number, name }
   })
@@ -99,16 +138,12 @@ export async function updateAccountInGlobalChart(id: string, formData: FormData)
   revalidatePath('/parametres/plan-comptable')
 }
 
-export async function deleteAccountFromGlobalChart(id: string) {
-  await prisma.globalChartAccount.delete({
+export async function deleteAccountFromTemplate(id: string) {
+  await prisma.chartTemplateAccount.delete({
     where: { id }
   })
 
   revalidatePath('/parametres/plan-comptable')
-}
-
-export async function getGlobalChartForFiscalYearCreation() {
-  return await initializeGlobalChartOfAccounts()
 }
 
 // Backward-compatible exports (UI still uses FR names).
@@ -119,25 +154,28 @@ function toLegacyAccountRow(row: { id: string; number: string; name: string }): 
   return { id: row.id, numero: row.number, libelle: row.name }
 }
 
-export async function getPlanComptableGlobal(): Promise<LegacyPlanComptableAccount[]> {
-  const rows = await getGlobalChartOfAccounts()
+export async function getPlanComptableGlobal(templateCode: ChartTemplateCode): Promise<LegacyPlanComptableAccount[]> {
+  const template = await getOrCreateTemplate(templateCode)
+  const rows = await getTemplateAccounts(template.id)
   return rows.map(toLegacyAccountRow)
 }
 
-export async function syncPlanComptableGlobalWithDefault(): Promise<{
+export async function syncPlanComptableGlobalWithDefault(templateCode: ChartTemplateCode): Promise<{
   data: LegacyPlanComptableAccount[]
   addedCount: number
 }> {
-  const res = await syncGlobalChartWithDefault()
-  return { addedCount: res.addedCount, data: res.data.map(toLegacyAccountRow) }
+  const res = await syncTemplateWithDefault(templateCode)
+  return { addedCount: res.addedCount, data: res.data }
 }
 
-export async function initializePlanComptableGlobal(): Promise<LegacyPlanComptableAccount[]> {
-  const rows = await initializeGlobalChartOfAccounts()
+export async function initializePlanComptableGlobal(templateCode: ChartTemplateCode): Promise<LegacyPlanComptableAccount[]> {
+  const template = await getOrCreateTemplate(templateCode)
+  const rows = await initializeTemplateAccounts(templateCode)
+  // initializeTemplateAccounts returns accounts; but template ordering might differ; re-read.
   return rows.map(toLegacyAccountRow)
 }
 
-export const addCompteToPlanGlobal = addAccountToGlobalChart
-export const updateCompteInPlanGlobal = updateAccountInGlobalChart
-export const deleteCompteFromPlanGlobal = deleteAccountFromGlobalChart
-export const getPlanComptableForExerciceCreation = getGlobalChartForFiscalYearCreation
+// Backward-compat convenience exports used by the settings UI (now multi-template).
+export const addCompteToPlanGlobal = addAccountToTemplate
+export const updateCompteInPlanGlobal = updateAccountInTemplate
+export const deleteCompteFromPlanGlobal = deleteAccountFromTemplate

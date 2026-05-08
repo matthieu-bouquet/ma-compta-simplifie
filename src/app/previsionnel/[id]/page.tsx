@@ -121,7 +121,23 @@ export default async function PrevisionnelDetailPage({
     compareTotals = await getNetAccountTotalsForFiscalYear(compareExerciceId)
   }
 
-  const globalAccounts = await prisma.globalChartAccount.findMany({
+  const templateCode =
+    association?.legalFormCode && association.legalFormCode !== 'ASSOCIATION' ? 'TPE' : 'ASSOCIATION'
+
+  const template =
+    association?.chartTemplateId
+      ? await prisma.chartTemplate.findUnique({ where: { id: association.chartTemplateId } })
+      : await prisma.chartTemplate.upsert({
+          where: { code: templateCode },
+          update: { name: templateCode === 'TPE' ? 'Entreprise / TPE (modèle)' : 'Association (modèle)' },
+          create: { code: templateCode, name: templateCode === 'TPE' ? 'Entreprise / TPE (modèle)' : 'Association (modèle)' },
+        })
+  if (!template) {
+    throw new Error('Plan comptable modèle introuvable.')
+  }
+
+  const globalAccounts = await prisma.chartTemplateAccount.findMany({
+    where: { chartTemplateId: template.id },
     orderBy: { number: 'asc' },
   })
 

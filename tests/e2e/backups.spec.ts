@@ -15,7 +15,12 @@ test('export zip from settings backup page', async ({ page }) => {
   let fiscalYearId: string
 
   try {
-    const assoc = await prisma.association.create({ data: { name: 'Association BACKUP E2E' } })
+    const assoc = await prisma.association.create({
+      data: {
+        name: 'Association BACKUP E2E',
+        chartTemplateId: '00000000-0000-0000-0000-000000000001',
+      },
+    })
     associationId = assoc.id
     const fy = await prisma.fiscalYear.create({
       data: {

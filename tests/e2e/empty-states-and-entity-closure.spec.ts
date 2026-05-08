@@ -59,7 +59,12 @@ test('empty state: entity selected but no fiscal year shows CTA to create fiscal
   const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
   let associationId: string
   try {
-    const assoc = await prisma.association.create({ data: { name: 'Association NO FY E2E' } })
+    const assoc = await prisma.association.create({
+      data: {
+        name: 'Association NO FY E2E',
+        chartTemplateId: '00000000-0000-0000-0000-000000000001',
+      },
+    })
     associationId = assoc.id
   } finally {
     await prisma.$disconnect()
@@ -82,7 +87,13 @@ test('closed entity: banners shown and creation CTAs disabled', async ({ page })
   const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
   let associationId: string
   try {
-    const assoc = await prisma.association.create({ data: { name: 'Association CLOSED E2E', isClosed: true } })
+    const assoc = await prisma.association.create({
+      data: {
+        name: 'Association CLOSED E2E',
+        isClosed: true,
+        chartTemplateId: '00000000-0000-0000-0000-000000000001',
+      },
+    })
     associationId = assoc.id
   } finally {
     await prisma.$disconnect()

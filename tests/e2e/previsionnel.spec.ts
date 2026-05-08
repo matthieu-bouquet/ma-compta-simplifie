@@ -12,12 +12,27 @@ test('budget prévisionnel: pré-remplir, comparer, modifier, supprimer', async 
     datasources: { db: { url: getTestDbUrl() } },
   })
 
+  const ASSOCIATION_TEMPLATE_ID = '00000000-0000-0000-0000-000000000001'
+
   let associationId: string
   let fiscalYearId: string
   let budgetId: string
 
   try {
-    const association = await prisma.association.create({ data: { name: 'Association Prévisionnel E2E' } })
+    // Seed the chart template + a couple of accounts without relying on Prisma model typings.
+    // (Some TS environments may still have an older generated Prisma client.)
+    await prisma.$executeRaw`
+      INSERT OR IGNORE INTO "ChartTemplate" ("id","code","name","createdAt","updatedAt")
+      VALUES (${ASSOCIATION_TEMPLATE_ID}, 'ASSOCIATION', 'Association (modèle)', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `
+
+    const association = await prisma.association.create({
+      data: {
+        name: 'Association Prévisionnel E2E',
+        legalFormCode: 'ASSOCIATION',
+        chartTemplateId: ASSOCIATION_TEMPLATE_ID,
+      },
+    })
     associationId = association.id
 
     const fy = await prisma.fiscalYear.create({
@@ -70,16 +85,14 @@ test('budget prévisionnel: pré-remplir, comparer, modifier, supprimer', async 
       },
     })
 
-    for (const row of [
-      { number: '606', name: 'Achats non stockés' },
-      { number: '740', name: 'Subventions' },
-    ]) {
-      await prisma.globalChartAccount.upsert({
-        where: { number: row.number },
-        update: { name: row.name },
-        create: row,
-      })
-    }
+    // Ensure at least a minimal template account set exists for the previsionnel UI.
+    // Use SQL to avoid dependency on Prisma's generated model types.
+    await prisma.$executeRaw`
+      INSERT OR IGNORE INTO "ChartTemplateAccount" ("id","chartTemplateId","number","name","createdAt","updatedAt")
+      VALUES
+        (lower(hex(randomblob(16))), ${ASSOCIATION_TEMPLATE_ID}, '606', 'Achats non stockés', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+        (lower(hex(randomblob(16))), ${ASSOCIATION_TEMPLATE_ID}, '740', 'Subventions', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `
 
     const budget = await prisma.budget.create({
       data: {

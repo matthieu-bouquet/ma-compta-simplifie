@@ -35,7 +35,13 @@ test("bénévolat n'est pas accessible pour une entité non-association", async 
 
   let associationId: string
   try {
-    const assoc = await prisma.association.create({ data: { name: 'Entreprise SAS E2E', legalFormCode: 'SAS' } })
+    const assoc = await prisma.association.create({
+      data: {
+        name: 'Entreprise SAS E2E',
+        legalFormCode: 'SAS',
+        chartTemplateId: '00000000-0000-0000-0000-000000000002',
+      },
+    })
     associationId = assoc.id
   } finally {
     await prisma.$disconnect()

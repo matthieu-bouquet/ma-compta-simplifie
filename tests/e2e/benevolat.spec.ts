@@ -13,7 +13,11 @@ test('benevolat: entity selected but no fiscal year shows empty state', async ({
 
   try {
     const assoc = await prisma.association.create({
-      data: { name: 'Association BENEVOLAT NO FY E2E', legalFormCode: 'ASSOCIATION' },
+      data: {
+        name: 'Association BENEVOLAT NO FY E2E',
+        legalFormCode: 'ASSOCIATION',
+        chartTemplateId: '00000000-0000-0000-0000-000000000001',
+      },
     })
     associationId = assoc.id
   } finally {
@@ -36,7 +40,13 @@ test('saisir du bénévolat et comptabiliser en classe 8', async ({ page }) => {
   let fiscalYearId: string
 
   try {
-    const assoc = await prisma.association.create({ data: { name: 'Association BENEVOLAT E2E', legalFormCode: 'ASSOCIATION' } })
+    const assoc = await prisma.association.create({
+      data: {
+        name: 'Association BENEVOLAT E2E',
+        legalFormCode: 'ASSOCIATION',
+        chartTemplateId: '00000000-0000-0000-0000-000000000001',
+      },
+    })
     associationId = assoc.id
 
     const fy = await prisma.fiscalYear.create({

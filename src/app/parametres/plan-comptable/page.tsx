@@ -5,23 +5,24 @@
 
 import { useState, useEffect } from 'react'
 import {
-  getPlanComptableGlobal,
-  initializePlanComptableGlobal,
   addCompteToPlanGlobal,
   deleteCompteFromPlanGlobal,
   updateCompteInPlanGlobal,
-  syncPlanComptableGlobalWithDefault,
   type LegacyPlanComptableAccount,
+  syncTemplateWithDefault,
 } from '@/actions/planComptableActions'
 import ParametreLayout from '@/components/ParametreLayout'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { Hash, Pencil, Plus, Trash2 } from 'lucide-react'
 import FormSection from '@/components/forms/FormSection'
+import type { ChartTemplateCode } from '@/lib/planComptable'
 import forms from '@/components/forms/forms.module.css'
 import styles from './planComptable.module.css'
 import pageStyles from './planComptablePage.module.css'
 
 export default function PlanComptablePage() {
+  const [templateCode, setTemplateCode] = useState<ChartTemplateCode>('ASSOCIATION')
+  const [templateId, setTemplateId] = useState<string | null>(null)
   const [planComptable, setPlanComptable] = useState<LegacyPlanComptableAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -38,26 +39,22 @@ export default function PlanComptablePage() {
 
   useEffect(() => {
     loadPlanComptable()
-  }, [])
+  }, [templateCode])
 
   async function loadPlanComptable() {
     try {
-      let data = await getPlanComptableGlobal()
-      
-      // Si le plan comptable est vide, l'initialiser avec les comptes par défaut
-      if (data.length === 0) {
-        data = await initializePlanComptableGlobal()
-        setSuccess('Plan comptable initialisé avec les comptes par défaut')
-      }
+      setLoading(true)
+      setError('')
+      setSuccess('')
 
-      // S'assurer que le plan comptable contient les comptes par défaut (ex: classe 8)
-      const sync = await syncPlanComptableGlobalWithDefault()
+      // S'assurer que le template existe et contient les comptes par défaut (sync additive).
+      const sync = await syncTemplateWithDefault(templateCode)
       if (sync.addedCount > 0) {
         setSuccess(`Plan comptable mis à jour (+${sync.addedCount} compte(s) ajouté(s))`)
       }
-      data = sync.data
+      setTemplateId(sync.template.id)
       
-      setPlanComptable(data)
+      setPlanComptable(sync.data)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement du plan comptable')
     } finally {
@@ -71,11 +68,12 @@ export default function PlanComptablePage() {
     setSuccess('')
 
     try {
+      if (!templateId) throw new Error('Template non chargé.')
       const form = new FormData()
       form.append('numero', formData.numero)
       form.append('libelle', formData.libelle)
 
-      await addCompteToPlanGlobal(form)
+      await addCompteToPlanGlobal(templateId, form)
       setSuccess('Compte ajouté avec succès')
       setFormData({ numero: '', libelle: '' })
       setShowForm(false)
@@ -119,10 +117,11 @@ export default function PlanComptablePage() {
     setError('')
     setSuccess('')
     try {
+      if (!templateId) throw new Error('Template non chargé.')
       const form = new FormData()
       form.append('numero', editingNumero)
       form.append('libelle', editingLibelle)
-      await updateCompteInPlanGlobal(compteId, form)
+      await updateCompteInPlanGlobal(templateId, compteId, form)
       setSuccess('Compte modifié avec succès')
       cancelEdit()
       await loadPlanComptable()
@@ -158,10 +157,26 @@ export default function PlanComptablePage() {
 
   return (
     <ParametreLayout 
-      title="Plan Comptable Global"
-      description="Configurer le plan comptable utilisé comme template pour la création des exercices"
+      title="Plans Comptables Modèles"
+      description="Configurer les plans modèles utilisés comme templates lors de la création des exercices"
     >
       <div className={pageStyles.toolbar}>
+        <div className={pageStyles.toolbarLeft}>
+          <div className={forms.field}>
+            <label className={forms.label} htmlFor="chart-template-code">
+              Modèle
+            </label>
+            <select
+              id="chart-template-code"
+              className={forms.select}
+              value={templateCode}
+              onChange={(e) => setTemplateCode(e.target.value as ChartTemplateCode)}
+            >
+              <option value="ASSOCIATION">Association</option>
+              <option value="TPE">Entreprise / TPE</option>
+            </select>
+          </div>
+        </div>
         <button type="button" onClick={() => setShowForm(!showForm)} className={`btn btn-primary ${forms.btnWithLeadingIcon}`}>
           <Plus size={18} aria-hidden="true" />
           Ajouter un compte

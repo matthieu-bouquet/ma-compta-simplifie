@@ -16,7 +16,12 @@ test('grand livre shows injected entry', async ({ page }) => {
   let fiscalYearId: string
 
   try {
-    const association = await prisma.association.create({ data: { name: 'Association GL E2E' } })
+    const association = await prisma.association.create({
+      data: {
+        name: 'Association GL E2E',
+        chartTemplateId: '00000000-0000-0000-0000-000000000001',
+      },
+    })
     associationId = association.id
 
     const fy = await prisma.fiscalYear.create({
