@@ -9,6 +9,7 @@ import { Building2, Mail, MapPin, Phone } from 'lucide-react'
 import ParametreLayout from '@/components/ParametreLayout'
 import FormSection from '@/components/forms/FormSection'
 import forms from '@/components/forms/forms.module.css'
+import styles from '../../entites.module.css'
 import { getAssociation, updateAssociation, type AssociationDetail } from '@/actions/associationActions'
 import { LEGAL_FORM_OPTIONS } from '@/lib/legalForms'
 
@@ -29,6 +30,7 @@ export default function EditEntityPage() {
     ville: '',
     email: '',
     telephone: '',
+    vatLiable: false,
   })
 
   const load = useCallback(async (entityId: string) => {
@@ -50,6 +52,7 @@ export default function EditEntityPage() {
         ville: a.ville || '',
         email: a.email || '',
         telephone: a.telephone || '',
+        vatLiable: Boolean(a.vatLiable),
       })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement')
@@ -86,7 +89,11 @@ export default function EditEntityPage() {
     setSuccess('')
     try {
       const form = new FormData()
-      Object.entries(formData).forEach(([key, value]) => form.append(key, value))
+      for (const [key, value] of Object.entries(formData)) {
+        if (key === 'vatLiable') continue
+        form.append(key, value as string)
+      }
+      form.append('vatLiable', formData.vatLiable ? 'on' : '')
       await updateAssociation(id, form)
       setSuccess('Entité modifiée')
       router.push('/parametres/entites')
@@ -179,6 +186,26 @@ export default function EditEntityPage() {
                     />
                   </div>
                 ) : null}
+
+                <div className={forms.field}>
+                  <div className={styles.checkboxRow}>
+                    <input
+                      id="entity-edit-vat-liable"
+                      type="checkbox"
+                      checked={formData.vatLiable}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, vatLiable: e.target.checked }))
+                      }
+                    />
+                    <label htmlFor="entity-edit-vat-liable">
+                      Assujetti à la TVA
+                      <span className={forms.fieldHint}>
+                        {' '}
+                        (hors franchise en base de TVA). Permet la ventilation TVA à la saisie.
+                      </span>
+                    </label>
+                  </div>
+                </div>
               </div>
             </FormSection>
 

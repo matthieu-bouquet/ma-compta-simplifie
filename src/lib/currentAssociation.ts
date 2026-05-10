@@ -17,6 +17,7 @@ export async function getCurrentAssociation() {
       legalFormCode: true,
       legalFormOther: true,
       chartTemplateId: true,
+      vatLiable: true,
     },
   })
 }

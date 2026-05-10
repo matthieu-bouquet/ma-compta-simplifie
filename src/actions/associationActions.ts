@@ -8,6 +8,8 @@ import { revalidatePath } from 'next/cache'
 import { writeAuditEvent } from '@/lib/audit'
 import { validateLegalForm } from '@/lib/legalForms'
 import { setCurrentAssociationId } from '@/actions/contextActions'
+import { syncTemplateWithDefault } from '@/actions/planComptableActions'
+import { ensureVatAccountsForAssociation } from '@/lib/vatAccounts'
 
 function inferTemplateCodeFromLegalForm(legalFormCode: string | null): 'ASSOCIATION' | 'TPE' {
   if (!legalFormCode) return 'ASSOCIATION'
@@ -70,6 +72,7 @@ export type AssociationDetail = NonNullable<Awaited<ReturnType<typeof getAssocia
 export async function createAssociation(formData: FormData) {
   const name = formData.get('nom') as string
   const siret = formData.get('siret') as string
+  const vatLiable = formData.get('vatLiable') === 'on'
   const legalFormCode = formData.get('legalFormCode') as string
   const legalFormOther = formData.get('legalFormOther') as string
   const address = formData.get('adresse') as string
@@ -116,8 +119,14 @@ export async function createAssociation(formData: FormData) {
       legalFormCode: validatedLegalForm.legalFormCode,
       legalFormOther: validatedLegalForm.legalFormOther,
       chartTemplateId: template.id,
+      vatLiable,
     }
   })
+
+  if (vatLiable) {
+    await syncTemplateWithDefault(templateCode)
+    await ensureVatAccountsForAssociation(prisma, association.id)
+  }
 
   // Default-select the newly created entity for the user.
   await setCurrentAssociationId(association.id)
@@ -130,6 +139,7 @@ export async function createAssociation(formData: FormData) {
 export async function updateAssociation(id: string, formData: FormData) {
   const name = formData.get('nom') as string
   const siret = formData.get('siret') as string
+  const vatLiable = formData.get('vatLiable') === 'on'
   const legalFormCode = formData.get('legalFormCode') as string
   const legalFormOther = formData.get('legalFormOther') as string
   const address = formData.get('adresse') as string
@@ -167,6 +177,11 @@ export async function updateAssociation(id: string, formData: FormData) {
     create: { code: templateCode, name: templateCode === 'TPE' ? 'Entreprise / TPE (modèle)' : 'Association (modèle)' },
   })
 
+  const previous = await prisma.association.findUnique({
+    where: { id },
+    select: { vatLiable: true },
+  })
+
   const association = await prisma.association.update({
     where: { id },
     data: {
@@ -180,8 +195,14 @@ export async function updateAssociation(id: string, formData: FormData) {
       legalFormCode: validatedLegalForm.legalFormCode,
       legalFormOther: validatedLegalForm.legalFormOther,
       chartTemplateId: template.id,
+      vatLiable,
     }
   })
+
+  if (vatLiable && !previous?.vatLiable) {
+    await syncTemplateWithDefault(templateCode)
+    await ensureVatAccountsForAssociation(prisma, id)
+  }
 
   revalidatePath('/parametres/associations')
   revalidatePath('/parametres/entites')

@@ -1,5 +1,15 @@
 /* Entities list page — table & actions (form primitives: @/components/forms/forms.module.css) */
 
+.checkboxRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.checkboxRow input[type='checkbox'] {
+  margin-top: 0.2rem;
+}
+
 .headerActions {
   display: flex;
   justify-content: flex-start;
