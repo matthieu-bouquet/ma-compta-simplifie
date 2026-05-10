@@ -12,9 +12,11 @@ interface ParametreLayoutProps {
   children: ReactNode;
   title: string;
   description?: string;
+  /** Shown at the top right of the header (e.g. entity switcher on /parametres/tiers). */
+  headerActions?: ReactNode;
 }
 
-export default function ParametreLayout({ children, title, description }: ParametreLayoutProps) {
+export default function ParametreLayout({ children, title, description, headerActions }: ParametreLayoutProps) {
   return (
     <div>
       <div className={styles.header}>
@@ -30,15 +32,18 @@ export default function ParametreLayout({ children, title, description }: Parame
             {description && <p className={styles.description}>{description}</p>}
           </div>
 
-          <Link
-            href="/parametres"
-            className={`btn ${styles.backButton}`}
-            title="Retour aux paramètres"
-            aria-label="Retour aux paramètres"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Retour
-          </Link>
+          <div className={styles.headerEnd}>
+            {headerActions}
+            <Link
+              href="/parametres"
+              className={`btn ${styles.backButton}`}
+              title="Retour aux paramètres"
+              aria-label="Retour aux paramètres"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Retour
+            </Link>
+          </div>
         </div>
       </div>
 

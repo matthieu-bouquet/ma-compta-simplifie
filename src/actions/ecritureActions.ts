@@ -20,6 +20,7 @@ export async function createEntry(data: {
   description: string,
   journalId?: string | null,
   fiscalYearId: string,
+  counterpartyId?: string | null,
   lines: { accountId: string, debit: number, credit: number, documents?: File[] }[],
   documentFile?: File | null
 }) {
@@ -37,6 +38,22 @@ export async function createEntry(data: {
   })
 
   if (!fiscalYear) throw new Error('Fiscal year not found.')
+
+  const counterpartyId: string | null = data.counterpartyId ?? null
+  let descriptionFinal = data.description.trim()
+  if (counterpartyId) {
+    const cp = await prisma.counterparty.findUnique({
+      where: { id: counterpartyId },
+      select: { associationId: true, name: true },
+    })
+    if (!cp) throw new Error('Tiers introuvable.')
+    if (cp.associationId !== fiscalYear.associationId) {
+      throw new Error('Ce tiers ne correspond pas à cette entité.')
+    }
+    if (!descriptionFinal.includes(cp.name)) {
+      descriptionFinal = `${descriptionFinal} — ${cp.name}`
+    }
+  }
 
   assertEntryDateNotAfterToday(data.date)
   assertEntryDateWithinFiscalYear(data.date, fiscalYear.startDate, fiscalYear.endDate)
@@ -102,9 +119,10 @@ export async function createEntry(data: {
     const createdEntry = await tx.entry.create({
       data: {
         date: new Date(data.date),
-        description: data.description,
+        description: descriptionFinal,
         journalId,
         fiscalYearId: data.fiscalYearId,
+        counterpartyId,
         referenceNumber,
         referenceSequence,
         lines: {
@@ -175,10 +193,11 @@ export async function createEntry(data: {
     entityType: 'Entry',
     entityId: created.entry.id,
     data: {
-      description: data.description,
+      description: descriptionFinal,
       date: data.date,
       journalId,
       referenceNumber: created.entry.referenceNumber,
+      counterpartyId,
     },
   })
 
@@ -209,6 +228,7 @@ export async function createEntry(data: {
   revalidatePath('/saisie')
   revalidatePath('/')
   revalidatePath('/documents')
+  revalidatePath('/parametres/tiers')
   return { success: true }
 }
 
@@ -274,6 +294,7 @@ export async function createEcriture(data: {
   libelle: string
   journalId?: string | null
   exerciceId: string
+  counterpartyId?: string | null
   lignes: { compteId: string; debit: number; credit: number }[]
   documentFile?: File | null
   documentsByLine?: File[][] | undefined
@@ -283,6 +304,7 @@ export async function createEcriture(data: {
     description: data.libelle,
     journalId: data.journalId,
     fiscalYearId: data.exerciceId,
+    counterpartyId: data.counterpartyId ?? null,
     lines: data.lignes.map((l, idx) => ({
       accountId: l.compteId,
       debit: l.debit,

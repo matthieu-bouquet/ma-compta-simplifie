@@ -81,6 +81,19 @@ export default async function SaisiePage({
     orderBy: { number: 'asc' }
   })).map((a) => ({ ...a, numero: a.number, libelle: a.name }))
 
+  const [fournisseurs, clients] = await Promise.all([
+    prisma.counterparty.findMany({
+      where: { associationId, kind: 'SUPPLIER' },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, kind: true },
+    }),
+    prisma.counterparty.findMany({
+      where: { associationId, kind: 'CUSTOMER' },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, kind: true },
+    }),
+  ])
+
   const lignesRecentes = await prisma.entryLine.findMany({
     where: {
       entry: { fiscalYearId: exerciceOuvert.id },
@@ -99,6 +112,8 @@ export default async function SaisiePage({
         <SaisieForm
           journaux={journaux}
           comptes={comptes}
+          fournisseurs={fournisseurs}
+          clients={clients}
           exerciceId={exerciceOuvert.id}
           exerciceStartDate={exerciceOuvert.startDate.toISOString()}
           exerciceEndDate={exerciceOuvert.endDate.toISOString()}

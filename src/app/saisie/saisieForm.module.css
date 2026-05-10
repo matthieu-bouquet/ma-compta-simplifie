@@ -13,7 +13,23 @@
 
 .modeBtn {
   border: 1px solid var(--border-color);
+  /* Explicit label color: inactive buttons must stay readable without relying on UA `button` defaults */
+  color: var(--text-primary);
+}
+
+/* Do not use `background: transparent` on the selected tab: it resets `background-color` from globals
+   `.btn-primary`, yielding white-on-white label text from `.modeBtn:global(.btn-primary)`. */
+.modeBtn:not(:global(.btn-primary)) {
   background: transparent;
+}
+
+.modeBtn:global(.btn-primary) {
+  color: #fff;
+  background-color: var(--primary);
+}
+
+.modeBtn:not(:global(.btn-primary)):hover {
+  background: rgba(15, 23, 42, 0.06);
 }
 
 .modeBtnActive {
@@ -309,4 +325,127 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 1rem;
+}
+
+.operationStripWrap {
+  display: flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  min-height: 40px;
+  font-size: 0.85rem;
+}
+
+.operationStripWrap .operationBtn {
+  flex: 1 1 auto;
+  min-width: 7rem;
+}
+
+.operationField {
+  grid-column: 1 / -1;
+}
+
+.operationBtnReglementActive {
+  background: rgba(59, 130, 246, 0.12);
+  color: rgb(37, 99, 235);
+  font-weight: 600;
+}
+
+.operationBtnEncaissementActive {
+  background: rgba(14, 165, 233, 0.12);
+  color: rgb(3, 105, 161);
+  font-weight: 600;
+}
+
+.paidRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  border-top: 1px dashed var(--border-color);
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.paidToggle {
+  display: inline-flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.paidBtn {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  border-radius: 0.45rem;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.paidBtnActive {
+  border-color: var(--primary);
+  background: rgba(124, 58, 237, 0.08);
+  font-weight: 600;
+}
+
+.settlementPanel {
+  padding: 0.85rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.settlementBalance {
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+}
+
+.movementsBox {
+  margin-top: 0.5rem;
+}
+
+.movementsTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: var(--text-secondary);
+}
+
+.movementsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.82rem;
+}
+
+.movementsItem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.movementsDesc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tiersRow {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.tiersSelect {
+  flex: 1;
+  min-width: 200px;
+}
+
+.requiredMark {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 0.85rem;
 }
