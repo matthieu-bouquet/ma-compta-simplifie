@@ -5,6 +5,12 @@
   margin-bottom: 1.25rem;
 }
 
+.toolbarLeft {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
 .noticeCard {
   border: 1px solid rgba(79, 70, 229, 0.25);
   background: rgba(79, 70, 229, 0.06);

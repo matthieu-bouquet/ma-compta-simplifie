@@ -18,6 +18,8 @@ model Association {
   phone      String?
   legalFormCode  String?
   legalFormOther String?
+  chartTemplateId String?
+  chartTemplate   ChartTemplate? @relation(fields: [chartTemplateId], references: [id], onDelete: SetNull)
   isClosed   Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -62,14 +64,29 @@ model BudgetLine {
   @@index([budgetId])
 }
 
-model GlobalChartAccount {
+model ChartTemplate {
   id        String   @id @default(uuid())
+  code      String   @unique // ex: ASSOCIATION, TPE
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts  ChartTemplateAccount[]
+  associations Association[]
+}
+
+model ChartTemplateAccount {
+  id              String        @id @default(uuid())
+  chartTemplateId String
+  chartTemplate   ChartTemplate @relation(fields: [chartTemplateId], references: [id], onDelete: Cascade)
+
   number    String
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([number])
+  @@unique([chartTemplateId, number])
+  @@index([chartTemplateId, number])
 }
 
 model FiscalYear {

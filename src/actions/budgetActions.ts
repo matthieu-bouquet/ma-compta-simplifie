@@ -226,12 +226,29 @@ export async function upsertBudgetLine(formData: FormData) {
 
   let accountName = String(formData.get('accountName') ?? '').trim()
   if (!accountName) {
-    const global = await prisma.globalChartAccount.findUnique({
-      where: { number: accountNumber },
+    const association = await prisma.association.findUnique({
+      where: { id: associationId },
+      select: { chartTemplateId: true, legalFormCode: true },
+    })
+    const templateCode =
+      association?.legalFormCode && association.legalFormCode !== 'ASSOCIATION' ? 'TPE' : 'ASSOCIATION'
+
+    const template =
+      association?.chartTemplateId
+        ? await prisma.chartTemplate.findUnique({ where: { id: association.chartTemplateId } })
+        : await prisma.chartTemplate.upsert({
+            where: { code: templateCode },
+            update: { name: templateCode === 'TPE' ? 'Entreprise / TPE (modèle)' : 'Association (modèle)' },
+            create: { code: templateCode, name: templateCode === 'TPE' ? 'Entreprise / TPE (modèle)' : 'Association (modèle)' },
+          })
+    if (!template) throw new Error('Plan comptable modèle introuvable.')
+
+    const tmplAcc = await prisma.chartTemplateAccount.findUnique({
+      where: { chartTemplateId_number: { chartTemplateId: template.id, number: accountNumber } },
       select: { name: true },
     })
-    if (!global) throw new Error('Compte inconnu dans le plan comptable global.')
-    accountName = global.name
+    if (!tmplAcc) throw new Error('Compte inconnu dans le plan comptable modèle.')
+    accountName = tmplAcc.name
   }
 
   const amountEuros = Number.parseFloat(String(formData.get('amountEuros') ?? '0'))

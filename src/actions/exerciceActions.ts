@@ -5,7 +5,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { getGlobalChartForFiscalYearCreation } from '@/actions/planComptableActions'
+import { getTemplateAccountsForFiscalYearCreation } from '@/actions/planComptableActions'
 import { getCurrentAssociationId } from '@/lib/associationContext'
 import {
   assertFiscalYearBelongsToCurrentAssociation,
@@ -71,9 +71,31 @@ export async function createFiscalYear(formData: FormData) {
     throw new Error('Cannot create fiscal year: association is closed.')
   }
 
-  const globalChart = await getGlobalChartForFiscalYearCreation()
+  const inferredTemplateCode =
+    association.legalFormCode && association.legalFormCode !== 'ASSOCIATION' ? 'TPE' : 'ASSOCIATION'
+
+  let chartAccounts: { number: string; name: string }[] = []
+
+  if (association.chartTemplateId) {
+    chartAccounts = await prisma.chartTemplateAccount.findMany({
+      where: { chartTemplateId: association.chartTemplateId },
+      select: { number: true, name: true },
+      orderBy: { number: 'asc' },
+    })
+
+    if (chartAccounts.length === 0) {
+      const template = await prisma.chartTemplate.findUnique({
+        where: { id: association.chartTemplateId },
+        select: { code: true },
+      })
+      const code = (template?.code === 'TPE' ? 'TPE' : 'ASSOCIATION') as 'ASSOCIATION' | 'TPE'
+      chartAccounts = await getTemplateAccountsForFiscalYearCreation(code)
+    }
+  } else {
+    chartAccounts = await getTemplateAccountsForFiscalYearCreation(inferredTemplateCode)
+  }
   
-  if (globalChart.length === 0) {
+  if (chartAccounts.length === 0) {
     throw new Error('Global chart of accounts is empty. Please configure it first.')
   }
 
@@ -84,7 +106,7 @@ export async function createFiscalYear(formData: FormData) {
       status: 'OPEN',
       associationId,
       accounts: {
-        create: globalChart.map((a: { number: string; name: string }) => ({
+        create: chartAccounts.map((a: { number: string; name: string }) => ({
           number: a.number,
           name: a.name,
         }))

@@ -9,6 +9,11 @@ import { writeAuditEvent } from '@/lib/audit'
 import { validateLegalForm } from '@/lib/legalForms'
 import { setCurrentAssociationId } from '@/actions/contextActions'
 
+function inferTemplateCodeFromLegalForm(legalFormCode: string | null): 'ASSOCIATION' | 'TPE' {
+  if (!legalFormCode) return 'ASSOCIATION'
+  return legalFormCode === 'ASSOCIATION' ? 'ASSOCIATION' : 'TPE'
+}
+
 export async function getAssociations() {
   const rows = await prisma.association.findMany({
     orderBy: { name: 'asc' },
@@ -92,6 +97,13 @@ export async function createAssociation(formData: FormData) {
     legalFormOther: legalFormOther || null,
   })
 
+  const templateCode = inferTemplateCodeFromLegalForm(validatedLegalForm.legalFormCode)
+  const template = await prisma.chartTemplate.upsert({
+    where: { code: templateCode },
+    update: { name: templateCode === 'TPE' ? 'Entreprise / TPE (modèle)' : 'Association (modèle)' },
+    create: { code: templateCode, name: templateCode === 'TPE' ? 'Entreprise / TPE (modèle)' : 'Association (modèle)' },
+  })
+
   const association = await prisma.association.create({
     data: {
       name,
@@ -103,6 +115,7 @@ export async function createAssociation(formData: FormData) {
       phone: phone || null,
       legalFormCode: validatedLegalForm.legalFormCode,
       legalFormOther: validatedLegalForm.legalFormOther,
+      chartTemplateId: template.id,
     }
   })
 
@@ -147,6 +160,13 @@ export async function updateAssociation(id: string, formData: FormData) {
     legalFormOther: legalFormOther || null,
   })
 
+  const templateCode = inferTemplateCodeFromLegalForm(validatedLegalForm.legalFormCode)
+  const template = await prisma.chartTemplate.upsert({
+    where: { code: templateCode },
+    update: { name: templateCode === 'TPE' ? 'Entreprise / TPE (modèle)' : 'Association (modèle)' },
+    create: { code: templateCode, name: templateCode === 'TPE' ? 'Entreprise / TPE (modèle)' : 'Association (modèle)' },
+  })
+
   const association = await prisma.association.update({
     where: { id },
     data: {
@@ -159,6 +179,7 @@ export async function updateAssociation(id: string, formData: FormData) {
       phone: phone || null,
       legalFormCode: validatedLegalForm.legalFormCode,
       legalFormOther: validatedLegalForm.legalFormOther,
+      chartTemplateId: template.id,
     }
   })
 
