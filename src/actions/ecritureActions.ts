@@ -24,6 +24,8 @@ export async function createEntry(data: {
   counterpartyId?: string | null,
   lines: { accountId: string, debit: number, credit: number, documents?: File[] }[],
   documentFile?: File | null,
+  /** Each file is attached to every line of the entry (same as a single `documentFile`). */
+  entryDocuments?: File[],
   quickVat?: QuickVatInput | null,
   documentsByLine?: File[][],
 }) {
@@ -114,6 +116,21 @@ export async function createEntry(data: {
         })
       : null
 
+  const entryDocsFiles = (data.entryDocuments ?? []).filter(Boolean)
+  const storedEntryDocuments =
+    entryDocsFiles.length === 0
+      ? []
+      : await Promise.all(
+          entryDocsFiles.map(async (file) => ({
+            file,
+            stored: await saveUploadedFile({
+              file,
+              associationId: fiscalYear.associationId,
+              exerciceId: data.fiscalYearId,
+            }),
+          })),
+        )
+
   const storedLineDocuments = await Promise.all(
     resolvedLines.map(async (line) => {
       const docs = (line.documents ?? []).filter(Boolean)
@@ -175,6 +192,29 @@ export async function createEntry(data: {
       }
     }
 
+    const createdEntryLevelDocIds: { id: string; originalName: string }[] = []
+    for (const docInfo of storedEntryDocuments) {
+      const doc = await tx.document.create({
+        data: {
+          fiscalYearId: data.fiscalYearId,
+          originalName: docInfo.file.name,
+          storedName: docInfo.stored.storedName,
+          mimeType: docInfo.stored.mimeType,
+          sizeBytes: docInfo.stored.sizeBytes,
+          sha256: docInfo.stored.sha256,
+          relativePath: docInfo.stored.relativePath,
+          uploadedAt: new Date(),
+        },
+        select: { id: true },
+      })
+      if (createdEntry.lines.length > 0) {
+        await tx.documentEntryLine.createMany({
+          data: createdEntry.lines.map((l) => ({ documentId: doc.id, entryLineId: l.id })),
+        })
+      }
+      createdEntryLevelDocIds.push({ id: doc.id, originalName: docInfo.file.name })
+    }
+
     const createdDocs: { id: string; entryLineId: string; originalName: string }[] = []
     for (let lineIndex = 0; lineIndex < storedLineDocuments.length; lineIndex++) {
       const entryLineId = createdEntry.lines[lineIndex]?.id
@@ -203,7 +243,7 @@ export async function createEntry(data: {
       }
     }
 
-    return { entry: createdEntry, createdDocs }
+    return { entry: createdEntry, createdDocs, createdEntryLevelDocIds }
   })
 
   await writeAuditEvent({
@@ -231,6 +271,18 @@ export async function createEntry(data: {
       entityType: 'Document',
       entityId: null,
       data: { originalName: data.documentFile.name, entryId: created.entry.id },
+    })
+  }
+
+  for (const ed of created.createdEntryLevelDocIds) {
+    await writeAuditEvent({
+      associationId,
+      fiscalYearId: data.fiscalYearId,
+      actor: associationId,
+      action: 'DOCUMENT_UPLOAD_FROM_SAISIE',
+      entityType: 'Document',
+      entityId: ed.id,
+      data: { originalName: ed.originalName, entryId: created.entry.id },
     })
   }
 
@@ -318,6 +370,7 @@ export async function createEcriture(data: {
   counterpartyId?: string | null
   lignes: { compteId: string; debit: number; credit: number }[]
   documentFile?: File | null
+  entryDocuments?: File[]
   documentsByLine?: File[][] | undefined
   quickVat?: QuickVatInput | null
 }) {
@@ -337,6 +390,7 @@ export async function createEcriture(data: {
             documents: data.documentsByLine?.[idx] ?? [],
           })),
     documentFile: data.documentFile,
+    entryDocuments: data.entryDocuments,
     quickVat: data.quickVat ?? undefined,
     documentsByLine: data.documentsByLine,
   })

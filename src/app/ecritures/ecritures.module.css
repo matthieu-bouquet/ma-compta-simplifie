@@ -1,0 +1,181 @@
+.pageHeader {
+  margin-bottom: 1.25rem;
+}
+
+.pageTitle {
+  margin: 0;
+}
+
+.toolbar {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toolbarBtn {
+  height: 32px;
+  padding: 0 0.9rem;
+}
+
+.vatCsvLink {
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.vatCsvLink:hover {
+  filter: brightness(0.97);
+}
+
+.tableWrap {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.thRow {
+  border-bottom: 2px solid var(--border-color);
+  background-color: var(--bg-color);
+}
+
+.thCell {
+  padding: 0.75rem;
+}
+
+.thRight {
+  text-align: right;
+}
+
+.thRightPad {
+  text-align: right;
+  padding-right: 0.75rem;
+}
+
+.trEven {
+  border-bottom: 1px solid var(--border-color);
+  background-color: transparent;
+}
+
+.trOdd {
+  border-bottom: 1px solid var(--border-color);
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.trInner {
+  border-bottom: none;
+}
+
+.tdPad {
+  padding: 0.5rem 0.75rem;
+}
+
+.tdAccount {
+  padding: 0.5rem 0;
+  font-weight: 500;
+}
+
+.cellDebit {
+  text-align: right;
+}
+
+.cellCredit {
+  text-align: right;
+  padding-right: 0.75rem;
+}
+
+.amountCell {
+  color: var(--text-primary);
+}
+
+.amountCellEmpty {
+  color: transparent;
+}
+
+.journalCode {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.libelle {
+  font-style: italic;
+}
+
+/* VAT PDF dialog — do not set display:flex on <dialog> */
+.vatDialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0;
+  width: min(420px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  min-width: 0;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  background: var(--card-bg, white);
+}
+
+.vatDialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.vatPanel {
+  padding: 1.25rem 1.5rem 1rem;
+  position: relative;
+}
+
+.vatCloseBtn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.35rem;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.vatTitle {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  padding-right: 2rem;
+}
+
+.vatIntro {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-weight: 400;
+}
+
+.vatError {
+  margin-top: 0.75rem;
+}
+
+.vatFields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.vatFooter {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.pdfBtnIcon {
+  margin-right: 0.35rem;
+}

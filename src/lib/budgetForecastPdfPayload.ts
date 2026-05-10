@@ -16,6 +16,7 @@ type BudgetLineRow = { accountNumber: string; accountName: string; amountCents: 
 export function buildBudgetForecastPdfPayload(
   budget: { name: string; updatedAt: Date; lines: BudgetLineRow[] },
   associationName: string,
+  includeClass8CvnSection: boolean,
 ): BudgetForecastPdfPayload {
   const chargesLines = budget.lines.filter((l) => classifyAccount(l.accountNumber) === 'CHARGE')
   const produitsLines = budget.lines.filter((l) => classifyAccount(l.accountNumber) === 'PRODUIT')
@@ -62,6 +63,7 @@ export function buildBudgetForecastPdfPayload(
     associationName,
     budgetName: budget.name,
     updatedAtIso: budget.updatedAt.toISOString(),
+    includeClass8CvnSection,
     comptesCharges,
     comptesProduits,
     totalCharges,

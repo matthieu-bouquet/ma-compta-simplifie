@@ -9,6 +9,7 @@ import styles from './bilan.module.css'
 import { getNetAccountTotalsForFiscalYear } from '@/lib/accountTotals'
 import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
 import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
+import { showClass8CvnForLegalForm } from '@/lib/legalForms'
 
 export default async function BilanPage({
   searchParams,
@@ -60,7 +61,7 @@ export default async function BilanPage({
     }),
     prisma.association.findUnique({
       where: { id: associationId },
-      select: { name: true },
+      select: { name: true, legalFormCode: true },
     }),
   ])
 
@@ -108,6 +109,8 @@ export default async function BilanPage({
   const resultat = totalProduits - totalCharges
   const cvnIsBalanced = Math.abs(totalCvnEmplois - totalCvnContributions) < 0.01
 
+  const includeClass8CvnSection = showClass8CvnForLegalForm(association?.legalFormCode)
+
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
@@ -117,6 +120,7 @@ export default async function BilanPage({
         <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-start' }}>
           <DownloadPdfButton
             associationName={association?.name ?? 'Association'}
+            includeClass8CvnSection={includeClass8CvnSection}
             comptesCharges={comptesCharges}
             comptesProduits={comptesProduits}
             totalCharges={totalCharges}
@@ -196,75 +200,71 @@ export default async function BilanPage({
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: '2rem' }}>
-        <div className={styles.cvnHeader}>
+      {includeClass8CvnSection ? (
+        <div className="card" style={{ marginTop: '2rem' }}>
           <h2 className={`card-title ${styles.noMargin}`}>Contributions volontaires en nature (Classe 8)</h2>
-          <div className={styles.cvnTotals}>
-            <span>Emplois (86) : {totalCvnEmplois.toFixed(2)} €</span>
-            <span>Contributions (87) : {totalCvnContributions.toFixed(2)} €</span>
+
+          {!cvnIsBalanced ? (
+            <div className={`card ${styles.cvnWarning}`}>
+              Totaux non équilibrés (86 ≠ 87). Vérifiez les écritures de classe 8 (elles doivent présenter deux colonnes de totaux égaux).
+            </div>
+          ) : null}
+
+          <div className={styles.cvnGrid}>
+            <div>
+              <h3 className={styles.noTopMargin}>Emplois (86)</h3>
+              {cvnEmploisRows.length === 0 ? (
+                <p>Aucun emploi de contribution volontaire en nature.</p>
+              ) : (
+                <table className={styles.cvnTable}>
+                  <thead>
+                    <tr className={styles.cvnTheadRow}>
+                      <th className={styles.cvnTh}>Compte</th>
+                      <th className={styles.cvnTh}>Libellé</th>
+                      <th className={`${styles.cvnTh} ${styles.cvnAmount}`}>Montant</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cvnEmploisRows.map((r) => (
+                      <tr key={r.numero}>
+                        <td className={styles.cvnTd}><strong>{r.numero}</strong></td>
+                        <td className={styles.cvnTd}>{r.libelle}</td>
+                        <td className={`${styles.cvnTd} ${styles.cvnAmount}`}>{r.montant.toFixed(2)} €</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div>
+              <h3 className={styles.noTopMargin}>Contributions (87)</h3>
+              {cvnContributionRows.length === 0 ? (
+                <p>Aucune contribution volontaire en nature.</p>
+              ) : (
+                <table className={styles.cvnTable}>
+                  <thead>
+                    <tr className={styles.cvnTheadRow}>
+                      <th className={styles.cvnTh}>Compte</th>
+                      <th className={styles.cvnTh}>Libellé</th>
+                      <th className={`${styles.cvnTh} ${styles.cvnAmount}`}>Montant</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cvnContributionRows.map((r) => (
+                      <tr key={r.numero}>
+                        <td className={styles.cvnTd}><strong>{r.numero}</strong></td>
+                        <td className={styles.cvnTd}>{r.libelle}</td>
+                        <td className={`${styles.cvnTd} ${styles.cvnAmount}`}>{r.montant.toFixed(2)} €</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
-
-        {!cvnIsBalanced ? (
-          <div className={`card ${styles.cvnWarning}`}>
-            Totaux non équilibrés (86 ≠ 87). Vérifiez les écritures de classe 8 (elles doivent présenter deux colonnes de totaux égaux).
-          </div>
-        ) : null}
-
-        <div className={styles.cvnGrid}>
-          <div>
-            <h3 className={styles.noTopMargin}>Emplois (86)</h3>
-            {cvnEmploisRows.length === 0 ? (
-              <p>Aucun emploi de contribution volontaire en nature.</p>
-            ) : (
-              <table className={styles.cvnTable}>
-                <thead>
-                  <tr className={styles.cvnTheadRow}>
-                    <th className={styles.cvnTh}>Compte</th>
-                    <th className={styles.cvnTh}>Libellé</th>
-                    <th className={`${styles.cvnTh} ${styles.cvnAmount}`}>Montant</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cvnEmploisRows.map((r) => (
-                    <tr key={r.numero}>
-                      <td className={styles.cvnTd}><strong>{r.numero}</strong></td>
-                      <td className={styles.cvnTd}>{r.libelle}</td>
-                      <td className={`${styles.cvnTd} ${styles.cvnAmount}`}>{r.montant.toFixed(2)} €</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          <div>
-            <h3 className={styles.noTopMargin}>Contributions (87)</h3>
-            {cvnContributionRows.length === 0 ? (
-              <p>Aucune contribution volontaire en nature.</p>
-            ) : (
-              <table className={styles.cvnTable}>
-                <thead>
-                  <tr className={styles.cvnTheadRow}>
-                    <th className={styles.cvnTh}>Compte</th>
-                    <th className={styles.cvnTh}>Libellé</th>
-                    <th className={`${styles.cvnTh} ${styles.cvnAmount}`}>Montant</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cvnContributionRows.map((r) => (
-                    <tr key={r.numero}>
-                      <td className={styles.cvnTd}><strong>{r.numero}</strong></td>
-                      <td className={styles.cvnTd}>{r.libelle}</td>
-                      <td className={`${styles.cvnTd} ${styles.cvnAmount}`}>{r.montant.toFixed(2)} €</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-      </div>
+      ) : null}
     </div>
   )
 }

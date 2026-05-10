@@ -35,10 +35,20 @@
   border-radius: 0.75rem;
   padding: 0;
   width: min(560px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
   max-height: calc(100vh - 2rem);
-  overflow: auto;
+  /* Vertical scroll only — overflow-x:hidden was clipping wrapped summary text in some browsers. */
+  overflow-y: auto;
+  overflow-x: visible;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
   background: white;
+  box-sizing: border-box;
+}
+
+.dialogForm {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .dialogHeader {
@@ -47,17 +57,30 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
+  min-width: 0;
+}
+
+.dialogHeaderLead {
+  min-width: 0;
+  flex: 1;
+  max-width: 100%;
 }
 
 .dialogTitle {
   margin: 0;
   font-size: 1.1rem;
+  overflow-wrap: break-word;
 }
 
 .dialogSummary {
   margin: 0.4rem 0 0 0;
   color: var(--text-secondary);
   font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  max-width: 100%;
 }
 
 .closeButton {
@@ -68,6 +91,7 @@
   align-items: center;
   justify-content: center;
   line-height: 0;
+  flex-shrink: 0;
 }
 
 .body {
@@ -75,12 +99,32 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  min-width: 0;
+}
+
+.fileInputShell {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Beats shared `.fileInput` min-width (native file control can still be wide). */
+input.attachDocFileInput {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .help {
   margin: 0;
   color: var(--text-secondary);
   font-size: 0.85rem;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .footer {

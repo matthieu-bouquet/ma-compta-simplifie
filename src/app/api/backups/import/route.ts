@@ -15,6 +15,8 @@ import type {
   BackupAssociationJson,
   BackupBudgetJson,
   BackupBudgetLineJson,
+  BackupCounterpartyJson,
+  BackupCounterpartySettlementAllocationJson,
   BackupDocumentEntryLineJson,
   BackupDocumentJson,
   BackupEntryJson,
@@ -69,6 +71,7 @@ type PreviewResponse = {
     fiscalYears: number
     budgets: number
     documents: number
+    counterparties: number
   }
   conflicts: {
     associations: ConflictAssociation[]
@@ -171,6 +174,11 @@ export async function POST(req: Request) {
     const backupAssociations = await getZipJson<BackupAssociationJson[]>(zip, 'data/associations.json')
     const backupFiscalYears = await getZipJson<BackupFiscalYearJson[]>(zip, 'data/fiscalYears.json')
     const backupBudgets = await getZipJsonOptional<BackupBudgetJson[]>(zip, 'data/budgets.json', [])
+    const backupCounterparties = await getZipJsonOptional<BackupCounterpartyJson[]>(
+      zip,
+      'data/counterparties.json',
+      []
+    )
     const backupDocuments = await getZipJson<BackupDocumentJson[]>(zip, 'data/documents.json')
 
     // Conflicts: associations
@@ -302,6 +310,7 @@ export async function POST(req: Request) {
         fiscalYears: backupFiscalYears.length,
         budgets: backupBudgets.length,
         documents: backupDocuments.length,
+        counterparties: backupCounterparties.length,
       },
       conflicts: {
         associations: associationConflicts,
@@ -359,6 +368,10 @@ export async function POST(req: Request) {
   const inKindContributions = await getZipJson<BackupInKindContributionJson[]>(zip, 'data/inKindContributions.json')
   const budgets = await getZipJsonOptional<BackupBudgetJson[]>(zip, 'data/budgets.json', [])
   const budgetLines = await getZipJsonOptional<BackupBudgetLineJson[]>(zip, 'data/budgetLines.json', [])
+  const counterparties = await getZipJsonOptional<BackupCounterpartyJson[]>(zip, 'data/counterparties.json', [])
+  const counterpartySettlementAllocations = await getZipJsonOptional<
+    BackupCounterpartySettlementAllocationJson[]
+  >(zip, 'data/counterpartySettlementAllocations.json', [])
 
   // Upsert journals by code, and map backup journal IDs -> existing IDs
   const journalIdMap = new Map<string, string>()
@@ -401,9 +414,33 @@ export async function POST(req: Request) {
               phone: a.phone ? String(a.phone) : null,
               legalFormCode: a.legalFormCode ? String(a.legalFormCode) : null,
               legalFormOther: a.legalFormOther ? String(a.legalFormOther) : null,
+              vatLiable: a.vatLiable === undefined ? false : Boolean(a.vatLiable),
+              chartTemplateId:
+                a.chartTemplateId === null || a.chartTemplateId === undefined
+                  ? null
+                  : String(a.chartTemplateId),
               isClosed: Boolean(a.isClosed),
               createdAt: a.createdAt ? new Date(String(a.createdAt)) : undefined,
               updatedAt: a.updatedAt ? new Date(String(a.updatedAt)) : undefined,
+            },
+          })
+        } catch (e) {
+          if (!isUniqueConstraintError(e)) throw e
+        }
+      }
+    }
+
+    if (counterparties.length > 0) {
+      for (const c of counterparties) {
+        try {
+          await tx.counterparty.create({
+            data: {
+              id: String(c.id),
+              associationId: String(c.associationId),
+              kind: String(c.kind),
+              name: String(c.name),
+              createdAt: c.createdAt ? new Date(String(c.createdAt)) : undefined,
+              updatedAt: c.updatedAt ? new Date(String(c.updatedAt)) : undefined,
             },
           })
         } catch (e) {
@@ -524,6 +561,8 @@ export async function POST(req: Request) {
               description: String(e.description),
               journalId: journalIdMap.get(String(e.journalId)) || String(e.journalId),
               fiscalYearId: String(e.fiscalYearId),
+              counterpartyId:
+                e.counterpartyId === null || e.counterpartyId === undefined ? null : String(e.counterpartyId),
               referenceNumber: e.referenceNumber ? String(e.referenceNumber) : null,
               referenceSequence:
                 e.referenceSequence === null || e.referenceSequence === undefined ? null : Number(e.referenceSequence),
@@ -551,6 +590,24 @@ export async function POST(req: Request) {
               creditCents: Number(l.creditCents),
               createdAt: l.createdAt ? new Date(String(l.createdAt)) : undefined,
               updatedAt: l.updatedAt ? new Date(String(l.updatedAt)) : undefined,
+            },
+          })
+        } catch (e) {
+          if (!isUniqueConstraintError(e)) throw e
+        }
+      }
+    }
+
+    if (counterpartySettlementAllocations.length > 0) {
+      for (const row of counterpartySettlementAllocations) {
+        try {
+          await tx.counterpartySettlementAllocation.create({
+            data: {
+              id: String(row.id),
+              payableLineId: String(row.payableLineId),
+              settlementLineId: String(row.settlementLineId),
+              amountCents: Number(row.amountCents),
+              createdAt: row.createdAt ? new Date(String(row.createdAt)) : undefined,
             },
           })
         } catch (e) {
@@ -665,6 +722,8 @@ export async function POST(req: Request) {
       fiscalYearCount: fiscalYears.length,
       budgetCount: budgets.length,
       documentCount: documents.length,
+      counterpartyCount: counterparties.length,
+      counterpartySettlementAllocationCount: counterpartySettlementAllocations.length,
       overwriteAssociationIds,
       overwriteFiscalYearIds,
       overwriteBudgetIds,

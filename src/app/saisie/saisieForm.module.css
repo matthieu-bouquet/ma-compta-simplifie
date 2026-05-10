@@ -158,7 +158,66 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.allocationsBanner {
+  margin-top: 0.65rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+}
+
+.allocationsBannerOk {
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.11);
+}
+
+.allocationsBannerWarn {
+  border: 1px solid rgba(245, 158, 11, 0.42);
+  background: rgba(245, 158, 11, 0.09);
+}
+
+.allocationsBannerOver {
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.07);
+}
+
+.allocationsBannerLead {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.allocationsBannerRemainderLine {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.allocationsBannerLead + .allocationsBannerRemainderLine {
+  margin-top: 0.55rem;
+}
+
+.allocationsRemainderValueOk {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: #15803d;
+}
+
+.allocationsRemainderValueWarn {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: #b45309;
+}
+
+.allocationsRemainderValueOver {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: var(--danger);
 }
 
 .treasuryActions {
@@ -276,23 +335,19 @@
   font-weight: 600;
 }
 
-.advancedHeader {
+.advancedJournalField {
   display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-end;
-  flex-wrap: wrap;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 1rem;
+  width: 100%;
+  max-width: min(520px, 100%);
 }
 
-.advancedTitle {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.journalField {
-  width: min(420px, 100%);
+.advancedJournalSelect {
+  flex: 1;
+  min-width: 0;
 }
 
 .table {
@@ -308,19 +363,15 @@
 
 .thCompte {
   padding: 0.5rem 0;
-  width: 50%;
+  width: 58%;
 }
 
 .thAmount {
-  width: 20%;
-}
-
-.thDocs {
-  width: 30%;
+  width: 18%;
 }
 
 .thActions {
-  width: 10%;
+  width: 6%;
 }
 
 .tableRow {
@@ -334,26 +385,6 @@
 
 .tdAmount {
   padding-right: 1rem;
-}
-
-.tdDocs {
-  padding-right: 1rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-}
-
-.docsCell {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: flex-start;
-}
-
-.docRow {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.25rem;
 }
 
 .quickDocsCell {
@@ -440,6 +471,10 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
+}
+
+.advancedEntryDocs {
+  margin-top: 1.5rem;
 }
 
 .totals {

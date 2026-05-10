@@ -7,7 +7,7 @@ function getTestDbUrl() {
   return `file:${p}`
 }
 
-test('saisie avancée: plusieurs justificatifs sur une ligne au submit', async ({ page }) => {
+test('saisie avancée: plusieurs justificatifs globaux à l’écriture au submit', async ({ page }) => {
   const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
 
   let associationId: string
@@ -62,7 +62,7 @@ test('saisie avancée: plusieurs justificatifs sur une ligne au submit', async (
 
   await page.locator('#saisie-date').click()
   await page.locator('#saisie-date').fill('12/03/2026')
-  await page.locator('#saisie-libelle').fill('E2E multi docs ligne')
+  await page.locator('#saisie-libelle').fill('E2E multi docs écriture')
 
   // Select accounts in both lines (react-select inputId is set).
   await page.locator('#saisie-ligne-compte-0').click()
@@ -79,15 +79,15 @@ test('saisie avancée: plusieurs justificatifs sur une ligne au submit', async (
   const pdf1 = Buffer.from('%PDF-1.4\n% E2E 1\n%%EOF\n', 'utf8')
   const pdf2 = Buffer.from('%PDF-1.4\n% E2E 2\n%%EOF\n', 'utf8')
 
-  await page.getByLabel('Pièce justificative ligne 1 — fichier 1').setInputFiles({
+  await page.getByLabel('Pièce justificative — fichier 1').setInputFiles({
     name: 'justif-1.pdf',
     mimeType: 'application/pdf',
     buffer: pdf1,
   })
 
-  await page.getByRole('button', { name: 'Ajouter un justificatif' }).first().click()
+  await page.getByRole('button', { name: 'Ajouter un justificatif' }).click()
 
-  await page.getByLabel('Pièce justificative ligne 1 — fichier 2').setInputFiles({
+  await page.getByLabel('Pièce justificative — fichier 2').setInputFiles({
     name: 'justif-2.pdf',
     mimeType: 'application/pdf',
     buffer: pdf2,
@@ -100,21 +100,31 @@ test('saisie avancée: plusieurs justificatifs sur une ligne au submit', async (
   const prismaCheck = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
   try {
     const entry = await prismaCheck.entry.findFirst({
-      where: { fiscalYearId, description: 'E2E multi docs ligne' },
+      where: { fiscalYearId, description: 'E2E multi docs écriture' },
       select: { lines: { select: { id: true, accountId: true, accountNumber: true } } },
     })
     expect(entry).not.toBeNull()
     const debitLine = entry!.lines.find((l) => l.accountNumber.startsWith('6'))
+    const creditLine = entry!.lines.find((l) => l.accountNumber.startsWith('5'))
     expect(debitLine).toBeTruthy()
+    expect(creditLine).toBeTruthy()
 
-    const links = await prismaCheck.documentEntryLine.findMany({
+    const debitLinks = await prismaCheck.documentEntryLine.findMany({
       where: { entryLineId: debitLine!.id },
       select: { documentId: true },
     })
-    expect(links).toHaveLength(2)
+    const creditLinks = await prismaCheck.documentEntryLine.findMany({
+      where: { entryLineId: creditLine!.id },
+      select: { documentId: true },
+    })
+    expect(debitLinks).toHaveLength(2)
+    expect(creditLinks).toHaveLength(2)
+    expect(new Set(debitLinks.map((l) => l.documentId))).toEqual(
+      new Set(creditLinks.map((l) => l.documentId)),
+    )
 
     const docs = await prismaCheck.document.findMany({
-      where: { id: { in: links.map((l) => l.documentId) } },
+      where: { id: { in: debitLinks.map((l) => l.documentId) } },
       select: { originalName: true, fiscalYearId: true },
       orderBy: { originalName: 'asc' },
     })

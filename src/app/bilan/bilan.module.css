@@ -4,28 +4,12 @@
   gap: 1.25rem;
 }
 
-.cvnHeader {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  align-items: baseline;
-}
-
 .noMargin {
   margin: 0;
 }
 
 .noTopMargin {
   margin-top: 0;
-}
-
-.cvnTotals {
-  display: flex;
-  gap: 1.25rem;
-  flex-wrap: wrap;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
 }
 
 .cvnWarning {

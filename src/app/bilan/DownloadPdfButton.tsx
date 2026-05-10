@@ -15,6 +15,7 @@ import {
 
 interface DownloadPdfButtonProps {
   associationName: string
+  includeClass8CvnSection: boolean
   comptesCharges: CompteResultatPdfCompte[]
   comptesProduits: CompteResultatPdfCompte[]
   totalCharges: number
@@ -31,6 +32,7 @@ interface DownloadPdfButtonProps {
 
 export default function DownloadPdfButton({
   associationName,
+  includeClass8CvnSection,
   comptesCharges,
   comptesProduits,
   totalCharges,
@@ -46,6 +48,7 @@ export default function DownloadPdfButton({
 }: DownloadPdfButtonProps) {
   const handleDownload = () => {
     const body: CompteResultatPdfBody = {
+      includeClass8CvnSection,
       comptesCharges,
       comptesProduits,
       totalCharges,
@@ -69,8 +72,16 @@ export default function DownloadPdfButton({
       type="button"
       className={`btn btn-primary ${styles.downloadPdfButton}`}
       onClick={handleDownload}
-      title="Télécharger le compte de résultat (classes 6, 7 et 8) en PDF"
-      aria-label="Télécharger le compte de résultat (classes 6, 7 et 8) en PDF"
+      title={
+        includeClass8CvnSection
+          ? 'Télécharger le compte de résultat (classes 6, 7 et 8) en PDF'
+          : 'Télécharger le compte de résultat (classes 6 et 7) en PDF'
+      }
+      aria-label={
+        includeClass8CvnSection
+          ? 'Télécharger le compte de résultat (classes 6, 7 et 8) en PDF'
+          : 'Télécharger le compte de résultat (classes 6 et 7) en PDF'
+      }
     >
       <FileDown size={18} className={styles.downloadPdfIcon} aria-hidden />
       Télécharger en PDF

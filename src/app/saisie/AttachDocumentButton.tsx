@@ -83,9 +83,9 @@ export default function AttachDocumentButton({
         aria-labelledby={`attach-doc-title-${inputId}`}
         className={styles.dialog}
       >
-        <form onSubmit={onSubmit}>
+        <form className={styles.dialogForm} onSubmit={onSubmit}>
           <div className={styles.dialogHeader}>
-            <div>
+            <div className={styles.dialogHeaderLead}>
               <h3 id={`attach-doc-title-${inputId}`} className={styles.dialogTitle}>
                 Ajouter une pièce justificative
               </h3>
@@ -109,15 +109,17 @@ export default function AttachDocumentButton({
             <label htmlFor={inputId} className={forms.label}>
               Fichier
             </label>
-            <input
-              ref={inputRef}
-              id={inputId}
-              type="file"
-              accept="application/pdf,image/jpeg,image/png,image/webp"
-              disabled={isPending}
-              onChange={(e) => setFileName(e.target.files?.[0]?.name ?? '')}
-              className={forms.fileInput}
-            />
+            <div className={styles.fileInputShell}>
+              <input
+                ref={inputRef}
+                id={inputId}
+                type="file"
+                accept="application/pdf,image/jpeg,image/png,image/webp"
+                disabled={isPending}
+                onChange={(e) => setFileName(e.target.files?.[0]?.name ?? '')}
+                className={`${forms.fileInput} ${styles.attachDocFileInput}`}
+              />
+            </div>
             <p className={styles.help}>Formats acceptés : PDF, JPG, PNG, WEBP. Taille max : 20 Mo.</p>
             {fileName ? <p className={styles.help}>Fichier sélectionné : {fileName}</p> : null}
             {error ? <div className={forms.alertError}>{error}</div> : null}

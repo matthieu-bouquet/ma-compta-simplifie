@@ -154,3 +154,82 @@ describe('createEntry quick VAT', () => {
     }
   })
 })
+
+describe('createEntry entry-level documents', () => {
+  beforeEach(() => {
+    currentAssociationId = null
+  })
+
+  it('links each entry document to every line', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    expect(dbUrl).toBeTruthy()
+
+    const prisma = new PrismaClient({
+      datasources: { db: { url: dbUrl } },
+    })
+
+    try {
+      const assoc = await prisma.association.create({
+        data: { name: 'Entry docs entity', vatLiable: false },
+      })
+      currentAssociationId = assoc.id
+
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+
+      const debitAcc = await prisma.account.create({
+        data: { fiscalYearId: fy.id, number: '606', name: 'Achats' },
+      })
+      const creditAcc = await prisma.account.create({
+        data: { fiscalYearId: fy.id, number: '512', name: 'Banque' },
+      })
+
+      const journal = await prisma.journal.upsert({
+        where: { code: 'OD' },
+        update: {},
+        create: { code: 'OD', name: 'Opérations Diverses' },
+      })
+
+      const pdfA = new File([Buffer.from('%PDF-1.4\n')], 'doc-a.pdf', { type: 'application/pdf' })
+      const pdfB = new File([Buffer.from('%PDF-1.4\n')], 'doc-b.pdf', { type: 'application/pdf' })
+
+      await createEntry({
+        date: '2026-03-12',
+        description: 'Entry-level docs test',
+        journalId: journal.id,
+        fiscalYearId: fy.id,
+        counterpartyId: null,
+        lines: [
+          { accountId: debitAcc.id, debit: 45, credit: 0 },
+          { accountId: creditAcc.id, debit: 0, credit: 45 },
+        ],
+        entryDocuments: [pdfA, pdfB],
+      })
+
+      const entry = await prisma.entry.findFirst({
+        where: { fiscalYearId: fy.id, description: 'Entry-level docs test' },
+        include: { lines: { select: { id: true, accountNumber: true } } },
+      })
+      expect(entry?.lines.length).toBe(2)
+
+      for (const line of entry!.lines) {
+        const links = await prisma.documentEntryLine.findMany({
+          where: { entryLineId: line.id },
+          include: { document: { select: { originalName: true } } },
+        })
+        expect(links).toHaveLength(2)
+        expect(new Set(links.map((l) => l.document.originalName))).toEqual(
+          new Set(['doc-a.pdf', 'doc-b.pdf']),
+        )
+      }
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+})

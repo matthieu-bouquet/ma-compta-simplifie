@@ -92,3 +92,52 @@ test('grand livre shows injected entry', async ({ page }) => {
   await expect(page.getByText('512 - Banque')).toBeVisible()
 })
 
+test('grand livre VAT exports visible when entity is VAT liable', async ({ page }) => {
+  const prisma = new PrismaClient({
+    datasources: { db: { url: getTestDbUrl() } },
+  })
+
+  let associationId: string
+  let fiscalYearId: string
+
+  try {
+    const association = await prisma.association.create({
+      data: {
+        name: 'Assoc TVA GL',
+        chartTemplateId: '00000000-0000-0000-0000-000000000001',
+        vatLiable: true,
+      },
+    })
+    associationId = association.id
+
+    const fy = await prisma.fiscalYear.create({
+      data: {
+        associationId,
+        startDate: new Date('2026-01-01'),
+        endDate: new Date('2026-12-31'),
+        status: 'OPEN',
+      },
+    })
+    fiscalYearId = fy.id
+
+    await prisma.account.createMany({
+      data: [
+        { fiscalYearId: fy.id, number: '44566', name: 'TVA déductible sur autres biens et services' },
+        { fiscalYearId: fy.id, number: '44571', name: 'TVA collectée' },
+      ],
+    })
+  } finally {
+    await prisma.$disconnect()
+  }
+
+  await page.context().addCookies([
+    { name: 'currentAssociationId', value: associationId!, path: '/', domain: '127.0.0.1' },
+    { name: 'currentExerciceId', value: fiscalYearId!, path: '/', domain: '127.0.0.1' },
+  ])
+
+  await page.goto('/ecritures')
+
+  await expect(page.getByRole('link', { name: 'Exporter CSV (comptes TVA)' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'État TVA (PDF)' })).toBeVisible()
+})
+

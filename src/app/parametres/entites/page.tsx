@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Building2, Lock, Mail, MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react'
+import { BadgeCheck, Building2, CircleOff, Lock, Mail, MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react'
 import { Association } from '@prisma/client'
 import ParametreLayout from '@/components/ParametreLayout'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -327,6 +327,7 @@ export default function EntitiesPage() {
                 <th className={styles.th}>Nom</th>
                 <th className={styles.th}>Forme</th>
                 <th className={styles.th}>SIRET</th>
+                <th className={styles.th}>TVA</th>
                 <th className={styles.th}>Contact</th>
                 <th className={styles.th}>Exercices</th>
                 <th className={`${styles.th} ${styles.thRight}`}>Actions</th>
@@ -346,6 +347,25 @@ export default function EntitiesPage() {
 
                   <td className={`${styles.td} ${styles.tdMuted}`}>{entity.legalFormCode || '-'}</td>
                   <td className={`${styles.td} ${styles.tdMuted}`}>{entity.siret || '-'}</td>
+                  <td className={`${styles.td} ${styles.tdMuted}`}>
+                    <span
+                      role="status"
+                      className={`${styles.vatBadge} ${entity.vatLiable ? styles.vatBadgeOn : styles.vatBadgeOff}`}
+                      title={entity.vatLiable ? 'TVA activée pour cette entité' : 'TVA non activée pour cette entité'}
+                    >
+                      {entity.vatLiable ? (
+                        <>
+                          <BadgeCheck size={13} className={styles.vatBadgeIcon} aria-hidden />
+                          Activée
+                        </>
+                      ) : (
+                        <>
+                          <CircleOff size={13} className={styles.vatBadgeIcon} aria-hidden />
+                          Non activée
+                        </>
+                      )}
+                    </span>
+                  </td>
                   <td className={`${styles.td} ${styles.tdMuted}`}>
                     <div>
                       {entity.email && <div>{entity.email}</div>}

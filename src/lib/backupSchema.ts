@@ -17,9 +17,31 @@ export type BackupAssociationJson = {
   phone?: string | null
   legalFormCode?: string | null
   legalFormOther?: string | null
+  /** Subject to French VAT (same semantics as Prisma `Association.vatLiable`). */
+  vatLiable?: boolean
+  chartTemplateId?: string | null
   isClosed?: boolean
   createdAt?: string | Date
   updatedAt?: string | Date
+}
+
+/** Third parties (suppliers / customers), scoped to an association. */
+export type BackupCounterpartyJson = {
+  id: string
+  associationId: string
+  kind: string
+  name: string
+  createdAt?: string | Date
+  updatedAt?: string | Date
+}
+
+/** Links payable/receivable lines to settlement lines (treasury allocations). */
+export type BackupCounterpartySettlementAllocationJson = {
+  id: string
+  payableLineId: string
+  settlementLineId: string
+  amountCents: number
+  createdAt?: string | Date
 }
 
 export type BackupFiscalYearJson = {
@@ -79,6 +101,7 @@ export type BackupEntryJson = {
   description: string
   journalId: string
   fiscalYearId: string
+  counterpartyId?: string | null
   referenceNumber?: string | null
   referenceSequence?: number | null
   createdAt?: string | Date

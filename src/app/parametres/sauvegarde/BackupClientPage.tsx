@@ -59,7 +59,13 @@ export default function BackupClientPage() {
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importToken, setImportToken] = useState<string | null>(null)
   const [importPreview, setImportPreview] = useState<{
-    summary: { associations: number; fiscalYears: number; budgets: number; documents: number }
+    summary: {
+      associations: number
+      fiscalYears: number
+      budgets: number
+      documents: number
+      counterparties: number
+    }
     conflicts: {
       associations: {
         kind: 'ASSOCIATION'
@@ -485,6 +491,9 @@ export default function BackupClientPage() {
               </div>
               <div className={styles.summaryPill}>
                 <strong>{importPreview.summary.documents}</strong> document(s)
+              </div>
+              <div className={styles.summaryPill}>
+                <strong>{importPreview.summary.counterparties}</strong> tiers
               </div>
             </div>
 

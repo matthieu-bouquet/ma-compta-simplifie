@@ -139,7 +139,7 @@ export default function SaisieForm({
   const [treasuryAllocationsByLineId, setTreasuryAllocationsByLineId] = useState<Record<string, number>>({})
 
   const [quickDocuments, setQuickDocuments] = useState<(File | null)[]>([null])
-  const [lineDocuments, setLineDocuments] = useState<(File | null)[][]>([[null], [null]])
+  const [advancedEntryDocuments, setAdvancedEntryDocuments] = useState<(File | null)[]>([null])
   const [fileInputsResetKey, setFileInputsResetKey] = useState(0)
 
   const [error, setError] = useState('')
@@ -163,8 +163,8 @@ export default function SaisieForm({
   const paiementOptions = compteOptions.filter((o) => o.label.startsWith('5'))
 
   const operationOptions = compteOptions.filter((o) => {
-    if (typeOperation === 'DEPENSE') return o.label.startsWith('6') || o.label.startsWith('2')
-    if (typeOperation === 'RECETTE') return o.label.startsWith('7') || o.label.startsWith('1')
+    if (typeOperation === 'DEPENSE') return o.label.startsWith('6')
+    if (typeOperation === 'RECETTE') return o.label.startsWith('7')
     return o.label.startsWith('5')
   })
 
@@ -269,10 +269,14 @@ export default function SaisieForm({
 
   const treasuryAllocationSum = Object.values(treasuryAllocationsByLineId).reduce((s, v) => s + (Number(v) || 0), 0)
   const treasuryAllocationMatchesAmount = Math.abs(treasuryAllocationSum - montant) < 0.0001
+  const treasuryAllocationRemainderEuros = normalizeEurosAmount(montant - treasuryAllocationSum)
+
+  const treasuryCounterpartySelected =
+    typeOperation === 'REGLEMENT_FOURNISSEUR' ? supplierId != null : customerId != null
+  const showTreasuryAllocationBanner = treasuryCounterpartySelected && montant >= 0.0001
 
   const addLigne = () => {
     setLignes([...lignes, { compteId: '', debit: 0, credit: 0 }])
-    setLineDocuments((prev) => [...prev, [null]])
   }
 
   const removeLigne = (index: number) => {
@@ -280,11 +284,6 @@ export default function SaisieForm({
     const newLignes = [...lignes]
     newLignes.splice(index, 1)
     setLignes(newLignes)
-    setLineDocuments((prev) => {
-      const next = [...prev]
-      next.splice(index, 1)
-      return next
-    })
   }
 
   const updateLigne = (index: number, field: keyof LigneForm, value: string | number) => {
@@ -295,21 +294,24 @@ export default function SaisieForm({
     setLignes(newLignes)
   }
 
-  const addDocumentInputForLine = (lineIndex: number) => {
-    setLineDocuments((prev) => {
+  const addAdvancedDocumentInput = () => {
+    setAdvancedEntryDocuments((prev) => [...prev, null])
+  }
+
+  const updateAdvancedDocument = (docIndex: number, file: File | null) => {
+    setAdvancedEntryDocuments((prev) => {
       const next = [...prev]
-      next[lineIndex] = [...(next[lineIndex] ?? [null]), null]
+      next[docIndex] = file
       return next
     })
   }
 
-  const updateDocumentForLine = (lineIndex: number, docIndex: number, file: File | null) => {
-    setLineDocuments((prev) => {
+  const removeAdvancedDocument = (docIndex: number) => {
+    setAdvancedEntryDocuments((prev) => {
+      if (prev.length <= 1) return [null]
       const next = [...prev]
-      const docs = [...(next[lineIndex] ?? [null])]
-      docs[docIndex] = file
-      next[lineIndex] = docs
-      return next
+      next.splice(docIndex, 1)
+      return next.length > 0 ? next : [null]
     })
   }
 
@@ -599,7 +601,7 @@ export default function SaisieForm({
     try {
       const documentsByLine: File[][] | undefined =
         mode === 'AVANCE'
-          ? lineDocuments.map((docs) => docs.filter((d): d is File => d != null))
+          ? undefined
           : (() => {
               if (
                 typeOperation === 'REGLEMENT_FOURNISSEUR' ||
@@ -629,6 +631,10 @@ export default function SaisieForm({
         counterpartyId,
         lignes: quickVatPayload ? [] : lignesToSubmit,
         documentFile: null,
+        entryDocuments:
+          mode === 'AVANCE'
+            ? advancedEntryDocuments.filter((d): d is File => d != null)
+            : undefined,
         documentsByLine,
         quickVat: quickVatPayload ?? null,
       })
@@ -644,7 +650,7 @@ export default function SaisieForm({
           { compteId: '', debit: 0, credit: 0 },
           { compteId: '', debit: 0, credit: 0 },
         ])
-        setLineDocuments([[null], [null]])
+        setAdvancedEntryDocuments([null])
       } else {
         setMontant(0)
         setComptePaiementId(null)
@@ -776,6 +782,8 @@ export default function SaisieForm({
             setMode('AVANCE')
             setError('')
             setSuccess('')
+            /* Bottom list follows ops tab (classes 6 & 7), not treasury (class 5). */
+            setTabParam('ops')
           }}
         >
           Saisie Avancée (Multiple)
@@ -1429,13 +1437,57 @@ export default function SaisieForm({
 
               <div className={styles.allocationsFooter}>
                 <div className={styles.allocationsSumRow}>
-                  <span>Total affecté :</span>
-                  <strong>{treasuryAllocationSum.toFixed(2)} €</strong>
+                  <span>
+                    {typeOperation === 'REGLEMENT_FOURNISSEUR'
+                      ? 'Montant du règlement :'
+                      : 'Montant de l’encaissement :'}
+                  </span>
+                  <strong>{montant.toFixed(2)} €</strong>
                 </div>
-                {!treasuryAllocationMatchesAmount ? (
-                  <p className={forms.alertError}>
-                    La somme des affectations doit être égale au montant ({montant.toFixed(2)} €).
-                  </p>
+                {showTreasuryAllocationBanner ? (
+                  treasuryAllocationMatchesAmount ? (
+                    <div className={`${styles.allocationsBanner} ${styles.allocationsBannerOk}`} role="status">
+                      <p className={styles.allocationsBannerLead}>
+                        {typeOperation === 'REGLEMENT_FOURNISSEUR'
+                          ? 'La somme des affectations doit égaler le montant du règlement.'
+                          : 'La somme des affectations doit égaler le montant de l’encaissement.'}
+                      </p>
+                      <p className={styles.allocationsBannerRemainderLine}>
+                        Reste à affecter :{' '}
+                        <span className={styles.allocationsRemainderValueOk}>0,00 €</span>
+                      </p>
+                    </div>
+                  ) : (
+                    <div
+                      className={`${styles.allocationsBanner} ${
+                        treasuryAllocationRemainderEuros < 0 ? styles.allocationsBannerOver : styles.allocationsBannerWarn
+                      }`}
+                      role="alert"
+                    >
+                      <p className={styles.allocationsBannerLead}>
+                        {typeOperation === 'REGLEMENT_FOURNISSEUR'
+                          ? 'La somme des affectations doit égaler le montant du règlement.'
+                          : 'La somme des affectations doit égaler le montant de l’encaissement.'}
+                      </p>
+                      <p className={styles.allocationsBannerRemainderLine}>
+                        {treasuryAllocationRemainderEuros > 0 ? (
+                          <>
+                            Reste à affecter :{' '}
+                            <span className={styles.allocationsRemainderValueWarn}>
+                              {treasuryAllocationRemainderEuros.toFixed(2)} €
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            Montant dépassé de :{' '}
+                            <span className={styles.allocationsRemainderValueOver}>
+                              {Math.abs(treasuryAllocationRemainderEuros).toFixed(2)} €
+                            </span>
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  )
                 ) : null}
               </div>
             </div>
@@ -1447,12 +1499,11 @@ export default function SaisieForm({
             title="Lignes de l'écriture (mode avancé)"
             description="Choisissez le journal, puis au moins deux lignes avec débit et crédit équilibrés."
           >
-            <div className={styles.advancedHeader}>
-              <h3 className={styles.advancedTitle}>Journal et lignes</h3>
-              <div className={styles.journalField}>
-                <label className={forms.label} htmlFor="saisie-journal">
-                  Journal
-                </label>
+            <div className={styles.advancedJournalField}>
+              <label className={forms.label} htmlFor="saisie-journal">
+                Journal
+              </label>
+              <div className={styles.advancedJournalSelect}>
                 <AppSearchableSelect
                   id="saisie-journal"
                   inputId="saisie-journal"
@@ -1471,7 +1522,6 @@ export default function SaisieForm({
                   <th className={styles.thCompte}>Compte</th>
                   <th className={styles.thAmount}>Débit (€)</th>
                   <th className={styles.thAmount}>Crédit (€)</th>
-                  <th className={styles.thDocs}>Justificatifs</th>
                   <th className={styles.thActions} />
                 </tr>
               </thead>
@@ -1518,39 +1568,6 @@ export default function SaisieForm({
                         className={forms.input}
                       />
                     </td>
-                    <td className={styles.tdDocs}>
-                      <div className={styles.docsCell}>
-                        {(lineDocuments[i] ?? [null]).map((file, docIndex) => {
-                          const inputId = `${componentId}-saisie-ligne-doc-${i}-${docIndex}`
-                          return (
-                            <div key={docIndex} className={styles.docRow}>
-                              <label className="sr-only" htmlFor={inputId}>
-                                Pièce justificative ligne {i + 1} — fichier {docIndex + 1}
-                              </label>
-                              <input
-                                key={`${fileInputsResetKey}-${inputId}`}
-                                id={inputId}
-                                type="file"
-                                accept="application/pdf,image/jpeg,image/png,image/webp"
-                                onChange={(e) => updateDocumentForLine(i, docIndex, e.target.files?.[0] ?? null)}
-                                className={forms.fileInput}
-                              />
-                              {file?.name ? <span className={styles.docFileName}>{file.name}</span> : null}
-                            </div>
-                          )
-                        })}
-
-                        <button
-                          type="button"
-                          className={styles.addDocBtn}
-                          onClick={() => addDocumentInputForLine(i)}
-                          title="Ajouter un justificatif"
-                          aria-label="Ajouter un justificatif"
-                        >
-                          <Plus size={16} aria-hidden="true" />
-                        </button>
-                      </div>
-                    </td>
                     <td>
                       <button
                         type="button"
@@ -1576,6 +1593,59 @@ export default function SaisieForm({
                 <span>Total Débit : {totalDebit.toFixed(2)}</span>
                 <span>Total Crédit : {totalCredit.toFixed(2)}</span>
               </div>
+            </div>
+
+            <div className={`${forms.field} ${styles.advancedEntryDocs}`}>
+              <div className={styles.quickDocsHeader}>
+                <label className={forms.label} htmlFor={`${componentId}-saisie-advanced-doc-0`}>
+                  Pièces justificatives (optionnel)
+                </label>
+                <button
+                  type="button"
+                  className={styles.addDocBtn}
+                  onClick={addAdvancedDocumentInput}
+                  title="Ajouter un justificatif"
+                  aria-label="Ajouter un justificatif"
+                >
+                  <Plus size={16} aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className={styles.quickDocsCell}>
+                {advancedEntryDocuments.map((file, docIndex) => {
+                  const inputId = `${componentId}-saisie-advanced-doc-${docIndex}`
+                  return (
+                    <div key={docIndex} className={styles.quickDocRow}>
+                      <label className="sr-only" htmlFor={inputId}>
+                        Pièce justificative — fichier {docIndex + 1}
+                      </label>
+                      <input
+                        key={`${fileInputsResetKey}-${inputId}`}
+                        id={inputId}
+                        type="file"
+                        accept="application/pdf,image/jpeg,image/png,image/webp"
+                        onChange={(e) => updateAdvancedDocument(docIndex, e.target.files?.[0] ?? null)}
+                        className={forms.fileInput}
+                      />
+                      <button
+                        type="button"
+                        className={styles.removeDocBtn}
+                        onClick={() => removeAdvancedDocument(docIndex)}
+                        title="Retirer ce justificatif"
+                        aria-label="Retirer ce justificatif"
+                      >
+                        <X size={16} aria-hidden="true" />
+                      </button>
+                      <div className={styles.quickDocFileNameRow}>
+                        {file?.name ? <span className={styles.docFileName}>{file.name}</span> : null}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <p className={styles.fileHint}>
+                Les justificatifs sont rattachés à l&apos;ensemble de l&apos;écriture.
+              </p>
             </div>
           </FormSection>
         )}

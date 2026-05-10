@@ -32,6 +32,8 @@ export type CompteResultatPdfCompte = { numero: string; libelle: string; solde: 
 export type CompteResultatPdfCvnRow = { numero: string; libelle: string; montant: number }
 
 export type CompteResultatPdfBody = {
+  /** Class 8 (86/87 CVN) applies to associations (ANC) — omit from PDF for other legal forms. */
+  includeClass8CvnSection: boolean
   comptesCharges: CompteResultatPdfCompte[]
   comptesProduits: CompteResultatPdfCompte[]
   totalCharges: number
@@ -165,6 +167,7 @@ export function downloadCompteResultatStylePdf(
   const startY = drawPdfHeader(doc, header, pageWidth, margin)
 
   const {
+    includeClass8CvnSection,
     comptesCharges,
     comptesProduits,
     totalCharges,
@@ -375,150 +378,152 @@ export function downloadCompteResultatStylePdf(
     { align: 'center' },
   )
 
-  const half = availableWidth / 2
-  const colNum = 16
-  const colAmt = 20
-  const colLib = half - colNum - colAmt
+  if (includeClass8CvnSection) {
+    const half = availableWidth / 2
+    const colNum = 16
+    const colAmt = 20
+    const colLib = half - colNum - colAmt
 
-  let cvnStartY = afterPlTableY + 24
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Contributions volontaires en nature (classe 8)', pageWidth / 2, cvnStartY, { align: 'center' })
-  cvnStartY += 6
+    let cvnStartY = afterPlTableY + 24
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Contributions volontaires en nature (classe 8)', pageWidth / 2, cvnStartY, { align: 'center' })
+    cvnStartY += 6
 
-  if (!cvnIsBalanced) {
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(180, 0, 0)
-    doc.text(
-      'Totaux non équilibrés (86 ≠ 87). Vérifiez les écritures de classe 8.',
-      margin,
-      cvnStartY,
-      { maxWidth: availableWidth },
-    )
-    doc.setTextColor(0)
-    cvnStartY += 5
-  }
-
-  const maxCvn = Math.max(cvnEmploisRows.length, cvnContributionRows.length)
-  const cvnBody: RowInput[] = []
-  if (maxCvn === 0) {
-    cvnBody.push(['—', 'Aucun mouvement', '', '—', 'Aucun mouvement', ''])
-  } else {
-    for (let i = 0; i < maxCvn; i++) {
-      const e = cvnEmploisRows[i]
-      const c = cvnContributionRows[i]
-      cvnBody.push([
-        e?.numero ?? '',
-        e?.libelle ?? '',
-        e ? { content: e.montant.toFixed(2), styles: { halign: 'right' as const } } : '',
-        c?.numero ?? '',
-        c?.libelle ?? '',
-        c ? { content: c.montant.toFixed(2), styles: { halign: 'right' as const } } : '',
-      ])
+    if (!cvnIsBalanced) {
+      doc.setFontSize(8)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(180, 0, 0)
+      doc.text(
+        'Totaux non équilibrés (86 ≠ 87). Vérifiez les écritures de classe 8.',
+        margin,
+        cvnStartY,
+        { maxWidth: availableWidth },
+      )
+      doc.setTextColor(0)
+      cvnStartY += 5
     }
+
+    const maxCvn = Math.max(cvnEmploisRows.length, cvnContributionRows.length)
+    const cvnBody: RowInput[] = []
+    if (maxCvn === 0) {
+      cvnBody.push(['—', 'Aucun mouvement', '', '—', 'Aucun mouvement', ''])
+    } else {
+      for (let i = 0; i < maxCvn; i++) {
+        const e = cvnEmploisRows[i]
+        const c = cvnContributionRows[i]
+        cvnBody.push([
+          e?.numero ?? '',
+          e?.libelle ?? '',
+          e ? { content: e.montant.toFixed(2), styles: { halign: 'right' as const } } : '',
+          c?.numero ?? '',
+          c?.libelle ?? '',
+          c ? { content: c.montant.toFixed(2), styles: { halign: 'right' as const } } : '',
+        ])
+      }
+    }
+
+    cvnBody.push([
+      {
+        content: 'Total emplois (86)',
+        colSpan: 2,
+        styles: { fontStyle: 'bold', fillColor: COLORS.total },
+      },
+      {
+        content: totalCvnEmplois.toFixed(2),
+        styles: {
+          fontStyle: 'bold',
+          fillColor: COLORS.total,
+          halign: 'right',
+        },
+      },
+      {
+        content: 'Total contributions (87)',
+        colSpan: 2,
+        styles: { fontStyle: 'bold', fillColor: COLORS.total },
+      },
+      {
+        content: totalCvnContributions.toFixed(2),
+        styles: {
+          fontStyle: 'bold',
+          fillColor: COLORS.total,
+          halign: 'right',
+        },
+      },
+    ])
+
+    autoTable(doc, {
+      startY: cvnStartY + 2,
+      margin: { left: margin, right: margin },
+      head: [
+        [
+          {
+            content: 'EMPLOIS (86)',
+            colSpan: 3,
+            styles: {
+              halign: 'center' as const,
+              fillColor: COLORS.header,
+              textColor: 0,
+              fontSize: 10,
+              fontStyle: 'bold' as const,
+            },
+          },
+          {
+            content: 'CONTRIBUTIONS (87)',
+            colSpan: 3,
+            styles: {
+              halign: 'center' as const,
+              fillColor: COLORS.header,
+              textColor: 0,
+              fontSize: 10,
+              fontStyle: 'bold' as const,
+            },
+          },
+        ],
+        [
+          { content: 'Compte', styles: { fillColor: COLORS.header2, textColor: 0 } },
+          { content: 'Libellé', styles: { fillColor: COLORS.header2, textColor: 0 } },
+          {
+            content: 'Montant',
+            styles: {
+              halign: 'right' as const,
+              fillColor: COLORS.header2,
+              textColor: 0,
+            },
+          },
+          { content: 'Compte', styles: { fillColor: COLORS.header2, textColor: 0 } },
+          { content: 'Libellé', styles: { fillColor: COLORS.header2, textColor: 0 } },
+          {
+            content: 'Montant',
+            styles: {
+              halign: 'right' as const,
+              fillColor: COLORS.header2,
+              textColor: 0,
+            },
+          },
+        ],
+      ],
+      body: cvnBody,
+      columnStyles: {
+        0: { cellWidth: colNum },
+        1: { cellWidth: colLib },
+        2: { cellWidth: colAmt, halign: 'right' as const },
+        3: { cellWidth: colNum },
+        4: { cellWidth: colLib },
+        5: { cellWidth: colAmt, halign: 'right' as const },
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        lineColor: COLORS.grid,
+        lineWidth: 0.2,
+        overflow: 'linebreak',
+        textColor: 0,
+      },
+      headStyles: { fontSize: 8 },
+      theme: 'grid',
+    })
   }
-
-  cvnBody.push([
-    {
-      content: 'Total emplois (86)',
-      colSpan: 2,
-      styles: { fontStyle: 'bold', fillColor: COLORS.total },
-    },
-    {
-      content: totalCvnEmplois.toFixed(2),
-      styles: {
-        fontStyle: 'bold',
-        fillColor: COLORS.total,
-        halign: 'right',
-      },
-    },
-    {
-      content: 'Total contributions (87)',
-      colSpan: 2,
-      styles: { fontStyle: 'bold', fillColor: COLORS.total },
-    },
-    {
-      content: totalCvnContributions.toFixed(2),
-      styles: {
-        fontStyle: 'bold',
-        fillColor: COLORS.total,
-        halign: 'right',
-      },
-    },
-  ])
-
-  autoTable(doc, {
-    startY: cvnStartY + 2,
-    margin: { left: margin, right: margin },
-    head: [
-      [
-        {
-          content: 'EMPLOIS (86)',
-          colSpan: 3,
-          styles: {
-            halign: 'center' as const,
-            fillColor: COLORS.header,
-            textColor: 0,
-            fontSize: 10,
-            fontStyle: 'bold' as const,
-          },
-        },
-        {
-          content: 'CONTRIBUTIONS (87)',
-          colSpan: 3,
-          styles: {
-            halign: 'center' as const,
-            fillColor: COLORS.header,
-            textColor: 0,
-            fontSize: 10,
-            fontStyle: 'bold' as const,
-          },
-        },
-      ],
-      [
-        { content: 'Compte', styles: { fillColor: COLORS.header2, textColor: 0 } },
-        { content: 'Libellé', styles: { fillColor: COLORS.header2, textColor: 0 } },
-        {
-          content: 'Montant',
-          styles: {
-            halign: 'right' as const,
-            fillColor: COLORS.header2,
-            textColor: 0,
-          },
-        },
-        { content: 'Compte', styles: { fillColor: COLORS.header2, textColor: 0 } },
-        { content: 'Libellé', styles: { fillColor: COLORS.header2, textColor: 0 } },
-        {
-          content: 'Montant',
-          styles: {
-            halign: 'right' as const,
-            fillColor: COLORS.header2,
-            textColor: 0,
-          },
-        },
-      ],
-    ],
-    body: cvnBody,
-    columnStyles: {
-      0: { cellWidth: colNum },
-      1: { cellWidth: colLib },
-      2: { cellWidth: colAmt, halign: 'right' as const },
-      3: { cellWidth: colNum },
-      4: { cellWidth: colLib },
-      5: { cellWidth: colAmt, halign: 'right' as const },
-    },
-    styles: {
-      fontSize: 8,
-      cellPadding: 2,
-      lineColor: COLORS.grid,
-      lineWidth: 0.2,
-      overflow: 'linebreak',
-      textColor: 0,
-    },
-    headStyles: { fontSize: 8 },
-    theme: 'grid',
-  })
 
   const footerNote =
     header.type === 'budget' ? 'Prévisionnel (non comptabilisé) — ' : ''
