@@ -182,8 +182,32 @@ model EntryLine {
 
   documents  DocumentEntryLine[]
 
+  // Internal allocation links (e.g. supplier payable 401 credit lines allocated by 401 debit settlements).
+  payableAllocations   CounterpartySettlementAllocation[] @relation("PayableLineAllocations")
+  settlementAllocations CounterpartySettlementAllocation[] @relation("SettlementLineAllocations")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+model CounterpartySettlementAllocation {
+  id String @id @default(uuid())
+
+  // 401/411 line representing the payable/receivable to be settled (typically credit for 401, debit for 411).
+  payableLineId String
+  payableLine   EntryLine @relation("PayableLineAllocations", fields: [payableLineId], references: [id], onDelete: Cascade)
+
+  // 401/411 line representing the settlement movement (typically debit for 401, credit for 411).
+  settlementLineId String
+  settlementLine   EntryLine @relation("SettlementLineAllocations", fields: [settlementLineId], references: [id], onDelete: Cascade)
+
+  amountCents Int
+
+  createdAt DateTime @default(now())
+
+  @@index([payableLineId])
+  @@index([settlementLineId])
+  @@unique([payableLineId, settlementLineId])
 }
 
 model JournalSequence {

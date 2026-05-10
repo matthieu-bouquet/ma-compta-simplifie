@@ -10,13 +10,14 @@ import { getCurrentExerciceId } from '@/lib/exerciceContext'
 import { Paperclip } from 'lucide-react'
 import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
 import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
+import { getOpsLineStatusLabel } from '@/lib/opsStatus'
 
 export default async function SaisiePage({
   searchParams,
 }: {
-  searchParams?: Promise<{ exerciceId?: string }>
+  searchParams?: Promise<{ exerciceId?: string; tab?: string }>
 }) {
-  const { exerciceId: exerciceIdParam } = (await searchParams) ?? {}
+  const { exerciceId: exerciceIdParam, tab } = (await searchParams) ?? {}
   const associationId = await getValidatedCurrentAssociationId()
   const cookieExerciceId = await getCurrentExerciceId()
 
@@ -98,15 +99,53 @@ export default async function SaisiePage({
     }),
   ])
 
-  const lignesRecentes = await prisma.entryLine.findMany({
-    where: {
-      entry: { fiscalYearId: exerciceOuvert.id },
-      OR: [{ accountNumber: { startsWith: '6' } }, { accountNumber: { startsWith: '7' } }],
-    },
-    include: { entry: true, documents: { select: { id: true }, take: 1 } },
-    orderBy: [{ entry: { date: 'desc' } }, { id: 'desc' }],
-    take: 100,
-  })
+  const activeTab: 'ops' | 'treasury' = tab === 'treasury' ? 'treasury' : 'ops'
+
+  const lignesRecentes =
+    activeTab === 'treasury'
+      ? await prisma.entryLine.findMany({
+          where: {
+            entry: { fiscalYearId: exerciceOuvert.id },
+            accountNumber: { startsWith: '5' },
+          },
+          include: { entry: true, documents: { select: { id: true }, take: 1 } },
+          orderBy: [{ entry: { date: 'desc' } }, { id: 'desc' }],
+          take: 100,
+        })
+      : await prisma.entryLine.findMany({
+          where: {
+            entry: { fiscalYearId: exerciceOuvert.id },
+            OR: [{ accountNumber: { startsWith: '6' } }, { accountNumber: { startsWith: '7' } }],
+          },
+          include: {
+            entry: {
+              include: {
+                lines: {
+                  where: {
+                    OR: [{ accountNumber: { startsWith: '401' } }, { accountNumber: { startsWith: '411' } }],
+                  },
+                  include: { payableAllocations: { select: { amountCents: true } } },
+                },
+              },
+            },
+            documents: { select: { id: true }, take: 1 },
+          },
+          orderBy: [{ entry: { date: 'desc' } }, { id: 'desc' }],
+          take: 100,
+        })
+
+  function getOpsStatusLabel(row: (typeof lignesRecentes)[number]) {
+    if (activeTab !== 'ops') return ''
+    const entryLines =
+      (row.entry as unknown as {
+        lines?: { accountNumber: string; debitCents: number; creditCents: number; payableAllocations?: { amountCents: number }[] }[]
+      })?.lines ?? []
+
+    return getOpsLineStatusLabel({
+      accountNumber: row.accountNumber,
+      entryLines,
+    })
+  }
 
   return (
     <div>
@@ -122,11 +161,14 @@ export default async function SaisiePage({
           exerciceStartDate={exerciceOuvert.startDate.toISOString()}
           exerciceEndDate={exerciceOuvert.endDate.toISOString()}
           vatLiable={associationVat?.vatLiable ?? false}
+          initialTab={activeTab === 'treasury' ? 'TREASURY' : 'OPERATIONS'}
         />
       </div>
 
       <div className="card">
-        <h2 className="card-title">Lignes comptables déjà saisies</h2>
+        <h2 className="card-title">
+          {activeTab === 'treasury' ? 'Paiements / Trésorerie (comptes 5)' : 'Dépenses / Recettes (comptes 6 et 7)'}
+        </h2>
         {lignesRecentes.length === 0 ? (
           <p>Aucune ligne comptable enregistrée pour l’instant.</p>
         ) : (
@@ -137,6 +179,9 @@ export default async function SaisiePage({
                   <th style={{ padding: '0.9rem 0.5rem', whiteSpace: 'nowrap' }}>Date</th>
                   <th style={{ padding: '0.9rem 0.5rem' }}>Libellé</th>
                   <th style={{ padding: '0.9rem 0.5rem' }}>Compte</th>
+                  {activeTab === 'ops' ? (
+                    <th style={{ padding: '0.9rem 0.5rem', whiteSpace: 'nowrap' }}>Statut</th>
+                  ) : null}
                   <th style={{ padding: '0.9rem 0.5rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Débit</th>
                   <th style={{ padding: '0.9rem 0.5rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Crédit</th>
                   <th
@@ -161,6 +206,11 @@ export default async function SaisiePage({
                     <td style={{ padding: '0.75rem 0.5rem' }}>
                       {l.accountNumber} - {l.accountName}
                     </td>
+                    {activeTab === 'ops' ? (
+                      <td style={{ padding: '0.75rem 0.5rem', whiteSpace: 'nowrap' }}>
+                        {getOpsStatusLabel(l)}
+                      </td>
+                    ) : null}
                     <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       {l.debitCents ? `${(l.debitCents / 100).toFixed(2)} €` : ''}
                     </td>

@@ -5,6 +5,10 @@ export function eurosToCents(euros: number) {
   return Math.round((euros || 0) * 100)
 }
 
+export function normalizeEurosAmount(euros: number) {
+  return Math.round((euros || 0) * 100) / 100
+}
+
 export function centsToEuros(cents: number) {
   return (cents || 0) / 100
 }

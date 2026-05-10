@@ -7,12 +7,14 @@ function getTestDbUrl() {
   return `file:${p}`
 }
 
-test('saisie rapide: dépense à crédit puis règlement fournisseur', async ({ page }) => {
+test('saisie rapide: dépense à crédit puis règlement fournisseur (onglet Trésorerie)', async ({ page }) => {
   const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
 
   let associationId: string
   let fiscalYearId: string
   let supplierId: string
+  let payableDescription: string
+  let payableLineId: string
 
   try {
     const assoc = await prisma.association.create({
@@ -75,12 +77,13 @@ test('saisie rapide: dépense à crédit puis règlement fournisseur', async ({ 
 
   await page.goto('/saisie')
 
-  await page.locator('#saisie-libelle').fill('Facture transport E2E')
+  payableDescription = 'Facture transport E2E'
+  await page.locator('#saisie-libelle').fill(payableDescription)
   await page.locator('#saisie-montant').fill('120')
 
   await page.getByRole('button', { name: 'Non (dette / créance)' }).click()
 
-  await page.locator('#saisie-tiers-dette').click()
+  await page.locator('#saisie-tiers-main').click()
   await page.keyboard.type('Dupont')
   await page.keyboard.press('Enter')
 
@@ -102,30 +105,36 @@ test('saisie rapide: dépense à crédit puis règlement fournisseur', async ({ 
     const nums = debtEntry!.lines.map((l) => l.accountNumber).sort()
     expect(nums).toContain('401')
     expect(nums).toContain('606')
+    payableLineId = debtEntry!.lines.find((l) => l.accountNumber === '401')!.id
   } finally {
     await prismaCheck.$disconnect()
   }
 
-  await page.locator('#saisie-libelle').fill('Paiement facture E2E')
-  await page.locator('#saisie-montant').fill('120')
-  await page.getByRole('button', { name: 'Règlement fournisseur' }).click()
+  await page.getByRole('button', { name: 'Règlement / Encaissement' }).click()
 
-  await page.locator('#saisie-tiers').click()
+  await page.getByLabel('Fournisseur').click()
   await page.keyboard.type('Dupont')
   await page.keyboard.press('Enter')
 
-  await page.locator('#saisie-compte-paiement-reglement').click()
+  await page.getByLabel('Compte de trésorerie').click()
   await page.keyboard.type('512')
   await page.keyboard.press('Enter')
 
+  await page.getByLabel('Montant (€)').fill('120')
+
+  const row = page.locator('tr', { hasText: payableDescription })
+  await expect(row).toBeVisible()
+  await row.locator(`input#alloc-${payableLineId}`).fill('120')
+
   await page.getByRole('button', { name: "Enregistrer l'écriture" }).click()
-  await expect(page.getByText('Écriture enregistrée avec succès.')).toBeVisible()
+  await expect(page.getByText('Opération enregistrée.')).toBeVisible()
 
   const prismaCheck2 = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
   try {
     const payEntry = await prismaCheck2.entry.findFirst({
-      where: { fiscalYearId, description: { contains: 'Paiement facture E2E' } },
+      where: { fiscalYearId, description: { contains: 'Règlement fournisseur' } },
       include: { lines: true },
+      orderBy: { createdAt: 'desc' },
     })
     expect(payEntry).not.toBeNull()
     const byNum: Record<string, { debit: number; credit: number }> = {}
