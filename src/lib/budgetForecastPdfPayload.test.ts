@@ -18,6 +18,7 @@ describe('buildBudgetForecastPdfPayload', () => {
         ],
       },
       'Mon asso',
+      true,
     )
 
     expect(p.associationName).toBe('Mon asso')
@@ -31,5 +32,24 @@ describe('buildBudgetForecastPdfPayload', () => {
     expect(p.cvnEmploisRows).toHaveLength(1)
     expect(p.cvnContributionRows).toHaveLength(1)
     expect(p.cvnIsBalanced).toBe(true)
+    expect(p.includeClass8CvnSection).toBe(true)
+  })
+
+  it('sets includeClass8CvnSection so PDF can omit classe 8 for non-association entities', () => {
+    const p = buildBudgetForecastPdfPayload(
+      {
+        name: 'Budget TPE',
+        updatedAt: new Date('2026-06-01T12:00:00Z'),
+        lines: [
+          { accountNumber: '606', accountName: 'Achats', amountCents: 5_000 },
+          { accountNumber: '8641', accountName: 'CVN', amountCents: 100 },
+        ],
+      },
+      'Ma société',
+      false,
+    )
+
+    expect(p.includeClass8CvnSection).toBe(false)
+    expect(p.cvnEmploisRows.length).toBeGreaterThan(0)
   })
 })

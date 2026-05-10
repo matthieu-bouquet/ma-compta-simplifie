@@ -121,7 +121,10 @@ test('saisie rapide: dépense à crédit puis règlement fournisseur (onglet Tr�
 
   await page.getByLabel('Montant (€)').fill('120')
 
-  const row = page.locator('tr', { hasText: payableDescription })
+  const allocationsTable = page.getByRole('table').filter({
+    has: page.getByRole('columnheader', { name: 'Affecter (€)' }),
+  })
+  const row = allocationsTable.locator('tbody tr').filter({ hasText: payableDescription })
   await expect(row).toBeVisible()
   await row.locator(`input#alloc-${payableLineId}`).fill('120')
 

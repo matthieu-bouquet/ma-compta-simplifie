@@ -15,6 +15,7 @@ import {
 import { classifyAccount } from '@/lib/budgetClassification'
 import { buildBudgetForecastPdfPayload, type BudgetForecastPdfPayload } from '@/lib/budgetForecastPdfPayload'
 import { eurosToCents } from '@/lib/money'
+import { showClass8CvnForLegalForm } from '@/lib/legalForms'
 
 async function assertAssociationWritableForBudget(associationId: string) {
   const a = await prisma.association.findUnique({
@@ -92,13 +93,17 @@ export async function getBudgetForecastPdfPayload(budgetId: string): Promise<Bud
     }),
     prisma.association.findUnique({
       where: { id: associationId },
-      select: { name: true },
+      select: { name: true, legalFormCode: true },
     }),
   ])
 
   if (!budget) return null
 
-  return buildBudgetForecastPdfPayload(budget, association?.name ?? 'Association')
+  return buildBudgetForecastPdfPayload(
+    budget,
+    association?.name ?? 'Association',
+    showClass8CvnForLegalForm(association?.legalFormCode),
+  )
 }
 
 export async function createBudget(formData: FormData) {

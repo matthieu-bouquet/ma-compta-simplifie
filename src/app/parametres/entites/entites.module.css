@@ -80,6 +80,37 @@
   color: var(--text-secondary);
 }
 
+/* Statut TVA (lecture seule — même esprit que .badgeClosed, pas un contrôle cliquable) */
+.vatBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.vatBadgeIcon {
+  flex-shrink: 0;
+  opacity: 0.92;
+}
+
+.vatBadgeOn {
+  color: #3f6212;
+  background: rgba(151, 206, 102, 0.14);
+  border: 1px solid rgba(151, 206, 102, 0.3);
+}
+
+.vatBadgeOff {
+  color: var(--text-secondary);
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+}
+
 .actionsCell {
   text-align: right;
 }

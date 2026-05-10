@@ -26,7 +26,7 @@ import type { FiscalYearNetTotals } from '@/lib/accountTotals'
 import { findNetCentsForAccount, getNetAccountTotalsForFiscalYear } from '@/lib/accountTotals'
 import { forecastVsRealizedKind } from '@/lib/budgetCompareVariance'
 import { formatEurosFromCents } from '@/lib/money'
-import { isAssociationLegalForm } from '@/lib/legalForms'
+import { isAssociationLegalForm, showClass8CvnForLegalForm } from '@/lib/legalForms'
 import PrefillBudgetDialog from '../PrefillBudgetDialog'
 import BudgetCompareSelect from '../BudgetCompareSelect'
 import DeleteBudgetButton from '../DeleteBudgetButton'
@@ -188,6 +188,7 @@ export default async function PrevisionnelDetailPage({
       })),
     },
     association?.name ?? 'Association',
+    showClass8CvnForLegalForm(association?.legalFormCode),
   )
 
   return (

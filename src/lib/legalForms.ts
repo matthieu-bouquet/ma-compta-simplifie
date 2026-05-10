@@ -35,6 +35,11 @@ export function isAssociationLegalForm(code: string | null | undefined): boolean
   return code === 'ASSOCIATION'
 }
 
+/** CVN / classe 8 (ANC) : affichée pour association déclarée ou forme non renseignée (comportement legacy aligné sur le modèle de plan). */
+export function showClass8CvnForLegalForm(code: string | null | undefined): boolean {
+  return code == null || code === 'ASSOCIATION'
+}
+
 export function validateLegalForm({
   legalFormCode,
   legalFormOther,

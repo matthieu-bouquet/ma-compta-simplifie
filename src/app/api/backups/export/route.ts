@@ -57,6 +57,8 @@ export async function POST(req: Request) {
     phone: true,
     legalFormCode: true,
     legalFormOther: true,
+    vatLiable: true,
+    chartTemplateId: true,
     isClosed: true,
     createdAt: true,
     updatedAt: true,
@@ -119,29 +121,58 @@ export async function POST(req: Request) {
 
   const associationIds = Array.from(selectedAssociationMap.keys())
 
-  const [
-    journals,
-    accounts,
-    journalSequences,
-    entries,
-    entryLines,
-    documents,
-    documentEntryLines,
-    inKindContributions,
-  ] = await Promise.all([
-    prisma.journal.findMany({ orderBy: { code: 'asc' } }),
-    prisma.account.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
-    prisma.journalSequence.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
-    prisma.entry.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
-    prisma.entryLine.findMany({
-      where: { entry: { fiscalYearId: { in: fiscalYearIds } } },
-    }),
-    prisma.document.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
-    prisma.documentEntryLine.findMany({
-      where: { document: { fiscalYearId: { in: fiscalYearIds } } },
-    }),
-    prisma.inKindContribution.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
-  ])
+  const journals = await prisma.journal.findMany({ orderBy: { code: 'asc' } })
+
+  const counterparties =
+    associationIds.length > 0
+      ? await prisma.counterparty.findMany({
+          where: { associationId: { in: associationIds } },
+        })
+      : []
+
+  let accounts: Awaited<ReturnType<typeof prisma.account.findMany>> = []
+  let journalSequences: Awaited<ReturnType<typeof prisma.journalSequence.findMany>> = []
+  let entries: Awaited<ReturnType<typeof prisma.entry.findMany>> = []
+  let entryLines: Awaited<ReturnType<typeof prisma.entryLine.findMany>> = []
+  let documents: Awaited<ReturnType<typeof prisma.document.findMany>> = []
+  let documentEntryLines: Awaited<ReturnType<typeof prisma.documentEntryLine.findMany>> = []
+  let inKindContributions: Awaited<ReturnType<typeof prisma.inKindContribution.findMany>> = []
+  let counterpartySettlementAllocations: Awaited<
+    ReturnType<typeof prisma.counterpartySettlementAllocation.findMany>
+  > = []
+
+  if (fiscalYearIds.length > 0) {
+    ;[
+      accounts,
+      journalSequences,
+      entries,
+      entryLines,
+      documents,
+      documentEntryLines,
+      inKindContributions,
+      counterpartySettlementAllocations,
+    ] = await Promise.all([
+      prisma.account.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
+      prisma.journalSequence.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
+      prisma.entry.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
+      prisma.entryLine.findMany({
+        where: { entry: { fiscalYearId: { in: fiscalYearIds } } },
+      }),
+      prisma.document.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
+      prisma.documentEntryLine.findMany({
+        where: { document: { fiscalYearId: { in: fiscalYearIds } } },
+      }),
+      prisma.inKindContribution.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
+      prisma.counterpartySettlementAllocation.findMany({
+        where: {
+          OR: [
+            { payableLine: { entry: { fiscalYearId: { in: fiscalYearIds } } } },
+            { settlementLine: { entry: { fiscalYearId: { in: fiscalYearIds } } } },
+          ],
+        },
+      }),
+    ])
+  }
 
   const budgetsPayload = budgetsWithLines.map(({ lines, ...b }) => {
     void lines
@@ -184,6 +215,8 @@ export async function POST(req: Request) {
     jsonFile('data/documents.json', documents),
     jsonFile('data/documentEntryLines.json', documentEntryLines),
     jsonFile('data/inKindContributions.json', inKindContributions),
+    jsonFile('data/counterparties.json', counterparties),
+    jsonFile('data/counterpartySettlementAllocations.json', counterpartySettlementAllocations),
   ]
 
   await writeAuditEvent({
@@ -195,6 +228,8 @@ export async function POST(req: Request) {
       fiscalYearIds,
       budgetIds,
       documentCount: documents.length,
+      counterpartyCount: counterparties.length,
+      counterpartySettlementAllocationCount: counterpartySettlementAllocations.length,
     },
   })
 

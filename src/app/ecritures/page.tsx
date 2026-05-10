@@ -1,19 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
+import React from 'react'
 import { prisma } from '@/lib/prisma'
 import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import { getCurrentExerciceId } from '@/lib/exerciceContext'
+import { toLocalYmd } from '@/lib/vatStatementPayload'
 import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
 import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
+import EcrituresVatExports from '@/app/ecritures/EcrituresVatExports'
+import styles from '@/app/ecritures/ecritures.module.css'
 
 export default async function EcrituresPage({
-  searchParams
+  searchParams,
 }: {
-  searchParams: { exerciceId?: string }
+  searchParams?: Promise<{ exerciceId?: string }>
 }) {
-  const params = await searchParams; // Next.js 15: searchParams is a Promise
-  const spExerciceId = params?.exerciceId;
+  const { exerciceId: spExerciceId } = (await searchParams) ?? {}
 
   const associationId = await getValidatedCurrentAssociationId()
   const cookieExerciceId = await getCurrentExerciceId()
@@ -27,10 +30,16 @@ export default async function EcrituresPage({
     )
   }
 
-  const fiscalYears = await prisma.fiscalYear.findMany({
-    where: { associationId },
-    orderBy: { startDate: 'desc' },
-  })
+  const [fiscalYears, association] = await Promise.all([
+    prisma.fiscalYear.findMany({
+      where: { associationId },
+      orderBy: { startDate: 'desc' },
+    }),
+    prisma.association.findUnique({
+      where: { id: associationId },
+      select: { vatLiable: true },
+    }),
+  ])
 
   if (fiscalYears.length === 0) {
     return (
@@ -38,15 +47,15 @@ export default async function EcrituresPage({
         <h1 className="page-title">Grand Livre</h1>
         <FiscalYearRequiredEmptyState purpose="grandLivre" />
       </div>
-    );
+    )
   }
 
   const fiscalYearId =
-    (spExerciceId && fiscalYears.some((e) => e.id === spExerciceId)
+    spExerciceId && fiscalYears.some((e) => e.id === spExerciceId)
       ? spExerciceId
       : cookieExerciceId && fiscalYears.some((e) => e.id === cookieExerciceId)
         ? cookieExerciceId
-        : fiscalYears[0].id)
+        : fiscalYears[0].id
 
   const fiscalYear = fiscalYears.find((e) => e.id === fiscalYearId)!
 
@@ -57,20 +66,31 @@ export default async function EcrituresPage({
     orderBy: { date: 'desc' },
     include: {
       journal: true,
-      lines: true
-    }
-  });
+      lines: true,
+    },
+  })
+
+  const vatLiable = association?.vatLiable ?? false
+  const exerciceStartYmd = toLocalYmd(fiscalYear.startDate)
+  const exerciceEndYmd = toLocalYmd(fiscalYear.endDate)
 
   return (
     <div>
-      <div style={{ marginBottom: '1.25rem' }}>
-        <h1 className="page-title no-topbar-pad" style={{ margin: 0 }}>
+      <div className={styles.pageHeader}>
+        <h1 className={`page-title no-topbar-pad ${styles.pageTitle}`}>
           Grand Livre - {`${new Date(fiscalYear.startDate).getFullYear()}`}
         </h1>
-        <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-start' }}>
-          <a className="btn btn-primary" href={exportHref} style={{ height: '32px', padding: '0 0.9rem' }}>
+        <div className={styles.toolbar}>
+          <a className={`btn btn-primary ${styles.toolbarBtn}`} href={exportHref}>
             Exporter CSV
           </a>
+          {vatLiable ? (
+            <EcrituresVatExports
+              fiscalYearId={fiscalYearId}
+              exerciceStartYmd={exerciceStartYmd}
+              exerciceEndYmd={exerciceEndYmd}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -78,48 +98,59 @@ export default async function EcrituresPage({
         {entries.length === 0 ? (
           <p>Aucune écriture comptable trouvée pour cet exercice.</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+          <table className={styles.tableWrap}>
             <thead>
-              <tr style={{ borderBottom: '2px solid var(--border-color)', backgroundColor: 'var(--bg-color)' }}>
-                <th style={{ padding: '0.75rem' }}>Date</th>
-                <th>Journal</th>
-                <th>Libellé</th>
-                <th>Compte</th>
-                <th style={{ textAlign: 'right' }}>Débit</th>
-                <th style={{ textAlign: 'right', paddingRight: '0.75rem' }}>Crédit</th>
+              <tr className={styles.thRow}>
+                <th className={styles.thCell}>Date</th>
+                <th className={styles.thCell}>Journal</th>
+                <th className={styles.thCell}>Libellé</th>
+                <th className={styles.thCell}>Compte</th>
+                <th className={`${styles.thCell} ${styles.thRight}`}>Débit</th>
+                <th className={`${styles.thCell} ${styles.thRightPad}`}>Crédit</th>
               </tr>
             </thead>
             <tbody>
               {entries.map((entry, index) => (
                 <React.Fragment key={entry.id}>
                   {entry.lines.map((line, i) => (
-                    <tr 
-                      key={line.id} 
-                      style={{ 
-                        borderBottom: i === entry.lines.length - 1 ? '1px solid var(--border-color)' : 'none',
-                        backgroundColor: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)'
-                      }}
+                    <tr
+                      key={line.id}
+                      className={
+                        i === entry.lines.length - 1
+                          ? index % 2 === 0
+                            ? styles.trEven
+                            : styles.trOdd
+                          : styles.trInner
+                      }
                     >
                       {i === 0 && (
                         <>
-                          <td style={{ padding: '0.5rem 0.75rem' }} rowSpan={entry.lines.length}>
+                          <td className={styles.tdPad} rowSpan={entry.lines.length}>
                             {new Date(entry.date).toLocaleDateString('fr-FR')}
                           </td>
                           <td rowSpan={entry.lines.length}>
-                            <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{entry.journal.code}</span>
+                            <span className={styles.journalCode}>{entry.journal.code}</span>
                           </td>
-                          <td rowSpan={entry.lines.length} style={{ fontStyle: 'italic' }}>
+                          <td rowSpan={entry.lines.length} className={styles.libelle}>
                             {entry.description}
                           </td>
                         </>
                       )}
-                      <td style={{ padding: '0.5rem 0', fontWeight: 500 }}>
+                      <td className={styles.tdAccount}>
                         {line.accountNumber} - {line.accountName}
                       </td>
-                      <td style={{ textAlign: 'right', color: line.debitCents > 0 ? 'var(--text-primary)' : 'transparent' }}>
+                      <td
+                        className={`${styles.cellDebit} ${
+                          line.debitCents > 0 ? styles.amountCell : styles.amountCellEmpty
+                        }`}
+                      >
                         {(line.debitCents / 100).toFixed(2)} €
                       </td>
-                      <td style={{ textAlign: 'right', paddingRight: '0.75rem', color: line.creditCents > 0 ? 'var(--text-primary)' : 'transparent' }}>
+                      <td
+                        className={`${styles.cellCredit} ${
+                          line.creditCents > 0 ? styles.amountCell : styles.amountCellEmpty
+                        }`}
+                      >
                         {(line.creditCents / 100).toFixed(2)} €
                       </td>
                     </tr>
@@ -133,6 +164,3 @@ export default async function EcrituresPage({
     </div>
   )
 }
-
-// React est nécessaire pour React.Fragment
-import React from 'react';
