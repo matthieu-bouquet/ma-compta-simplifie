@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import Link from "next/link";
-import { Building, DatabaseBackup, Settings } from "lucide-react";
+import { Building, DatabaseBackup, Settings, Users } from "lucide-react";
 import styles from "./parametres.module.css";
 
 export default function ParametresPage() {
@@ -53,6 +53,21 @@ export default function ParametresPage() {
             des exercices. Ajoutez, modifiez ou supprimez des comptes.
           </p>
           <div className={styles.cardCtaSuccess}>Configurer le plan →</div>
+        </Link>
+
+        <Link
+          href="/parametres/tiers"
+          className={`card ${styles.cardLink}`}
+        >
+          <div className={styles.cardHeader}>
+            <Users className={`w-8 h-8 ${styles.iconPrimary}`} />
+            <h2 className={styles.cardTitle}>Fournisseurs et clients</h2>
+          </div>
+          <p className={styles.cardText}>
+            Gérer les tiers de l&apos;entité sélectionnée : création, modification et suppression
+            des fournisseurs et clients utilisés en saisie.
+          </p>
+          <div className={styles.cardCtaPrimary}>Gérer les tiers →</div>
         </Link>
       </div>
 

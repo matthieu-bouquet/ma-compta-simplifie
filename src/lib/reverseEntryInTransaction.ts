@@ -47,6 +47,7 @@ export async function reverseEntryInTransaction(
       description: `REVERSAL: ${entry.description}`,
       journalId: entry.journalId,
       fiscalYearId: entry.fiscalYearId,
+      counterpartyId: entry.counterpartyId,
       referenceNumber,
       referenceSequence,
       lines: {

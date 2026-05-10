@@ -24,8 +24,26 @@ model Association {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  fiscalYears FiscalYear[]
-  budgets     Budget[]
+  fiscalYears   FiscalYear[]
+  budgets       Budget[]
+  counterparties Counterparty[]
+}
+
+// Third parties (suppliers / customers) scoped to the association (UI: Paramètres → Entités).
+model Counterparty {
+  id             String      @id @default(uuid())
+  associationId  String
+  association    Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  // SQLite: use string constants SUPPLIER | CUSTOMER at application layer
+  kind           String
+  name           String
+
+  entries Entry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([associationId, kind])
 }
 
 model Budget {
@@ -134,6 +152,9 @@ model Entry {
   fiscalYear      FiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
   lines           EntryLine[]
 
+  counterpartyId String?
+  counterparty   Counterparty? @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+
   referenceNumber   String?
   referenceSequence Int?
 
@@ -141,6 +162,7 @@ model Entry {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([fiscalYearId, journalId, date])
+  @@index([counterpartyId])
 }
 
 model EntryLine {

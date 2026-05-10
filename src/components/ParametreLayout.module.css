@@ -9,6 +9,20 @@
   gap: 1rem;
 }
 
+.headerEnd {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/** Constrain entity switcher width when embedded in the parametres header */
+.headerEntitySwitcher {
+  width: min(300px, calc(100vw - 8rem));
+  min-width: 0;
+}
+
 .titleWrap {
   min-width: 0;
 }

@@ -1,0 +1,31 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.dialog {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  background: var(--card-bg, var(--background));
+  border: 1px solid var(--border-color);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+}
+
+.dialogTitle {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
