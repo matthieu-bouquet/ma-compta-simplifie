@@ -12,7 +12,6 @@ test('treasury tab: supplier settlement allocates payable and marks charge as pa
 
   let associationId: string
   let fiscalYearId: string
-  let supplierName: string
   let payableEntryDescription: string
   let payableLineId: string
 
@@ -61,7 +60,7 @@ test('treasury tab: supplier settlement allocates payable and marks charge as pa
       data: { associationId, kind: 'SUPPLIER', name: 'Supplier Treasury E2E' },
       select: { id: true, name: true },
     })
-    supplierName = supplier.name
+    expect(supplier.name).toBeTruthy()
 
     payableEntryDescription = 'Facture fournisseur tab trésorerie'
     const payableEntry = await prisma.entry.create({
@@ -112,11 +111,19 @@ test('treasury tab: supplier settlement allocates payable and marks charge as pa
   // Default is "Règlement fournisseur"
   await expect(page.getByRole('button', { name: /Règlement fournisseur/i })).toBeVisible()
 
-  await page.getByLabel('Fournisseur').click()
+  await page
+    .locator('#react-select-tresorerie-fournisseur-placeholder')
+    .locator('..')
+    .locator('..')
+    .click({ force: true })
   await page.keyboard.type('Supplier Treasury')
   await page.keyboard.press('Enter')
 
-  await page.getByLabel('Compte de trésorerie').click()
+  await page
+    .locator('#react-select-tresorerie-compte-placeholder')
+    .locator('..')
+    .locator('..')
+    .click({ force: true })
   await page.keyboard.type('512')
   await page.keyboard.press('Enter')
 
@@ -140,7 +147,6 @@ test('treasury tab: customer receipt allocates receivable and marks product as r
 
   let associationId: string
   let fiscalYearId: string
-  let customerName: string
   let invoiceDescription: string
   let receivableLineId: string
 
@@ -189,7 +195,7 @@ test('treasury tab: customer receipt allocates receivable and marks product as r
       data: { associationId, kind: 'CUSTOMER', name: 'Customer Treasury E2E' },
       select: { id: true, name: true },
     })
-    customerName = customer.name
+    expect(customer.name).toBeTruthy()
 
     invoiceDescription = 'Facture client tab trésorerie'
     const invoice = await prisma.entry.create({

@@ -13,7 +13,7 @@ test('saisie rapide: dépense à crédit puis règlement fournisseur (onglet Tr�
   let associationId: string
   let fiscalYearId: string
   let supplierId: string
-  let payableDescription: string
+  const payableDescription = 'Facture transport E2E'
   let payableLineId: string
 
   try {
@@ -77,7 +77,6 @@ test('saisie rapide: dépense à crédit puis règlement fournisseur (onglet Tr�
 
   await page.goto('/saisie')
 
-  payableDescription = 'Facture transport E2E'
   await page.locator('#saisie-libelle').fill(payableDescription)
   await page.locator('#saisie-montant').fill('120')
 

@@ -114,7 +114,9 @@ export default function SaisieForm({
 
   const [comptePaiementId, setComptePaiementId] = useState<string | null>(null)
   const [compteOperationId, setCompteOperationId] = useState<string | null>(null)
-  const [typeOperation, setTypeOperation] = useState<TypeOperation>('DEPENSE')
+  const [typeOperation, setTypeOperation] = useState<TypeOperation>(
+    initialTab === 'TREASURY' ? 'REGLEMENT_FOURNISSEUR' : 'DEPENSE'
+  )
   const [montant, setMontant] = useState<number>(0)
   const [vatRatePercent, setVatRatePercent] = useState<number>(20)
   const [dejaRegle, setDejaRegle] = useState(true)
@@ -219,17 +221,7 @@ export default function SaisieForm({
   }, [mode, typeOperation, customerId, exerciceId])
 
   useEffect(() => {
-    if (mode !== 'TREASURY') {
-      setTreasuryOpenItems(null)
-      setTreasuryAllocationsByLineId({})
-      return
-    }
-
-    // Default to supplier settlement when entering the treasury tab.
-    if (typeOperation !== 'REGLEMENT_FOURNISSEUR' && typeOperation !== 'ENCAISSEMENT_CLIENT') {
-      setTypeOperation('REGLEMENT_FOURNISSEUR')
-      return
-    }
+    if (mode !== 'TREASURY') return
 
     if (typeOperation === 'REGLEMENT_FOURNISSEUR' && supplierId) {
       let cancelled = false
@@ -262,9 +254,6 @@ export default function SaisieForm({
         cancelled = true
       }
     }
-
-    setTreasuryOpenItems(null)
-    setTreasuryAllocationsByLineId({})
   }, [mode, typeOperation, supplierId, customerId, exerciceId])
 
   const showPaidQuestion =
@@ -1292,7 +1281,9 @@ export default function SaisieForm({
                     Fournisseur
                   </label>
                   <AppSearchableSelect
+                    id="tresorerie-fournisseur"
                     inputId="tresorerie-fournisseur"
+                    aria-label="Fournisseur"
                     value={supplierOptions.find((o) => o.value === supplierId) ?? null}
                     options={supplierOptions}
                     onChange={(v) => {
@@ -1309,7 +1300,9 @@ export default function SaisieForm({
                     Client
                   </label>
                   <AppSearchableSelect
+                    id="tresorerie-client"
                     inputId="tresorerie-client"
+                    aria-label="Client"
                     value={customerOptions.find((o) => o.value === customerId) ?? null}
                     options={customerOptions}
                     onChange={(v) => {
@@ -1327,7 +1320,9 @@ export default function SaisieForm({
                   Compte de trésorerie
                 </label>
                 <AppSearchableSelect
+                  id="tresorerie-compte"
                   inputId="tresorerie-compte"
+                  aria-label="Compte de trésorerie"
                   options={paiementOptions}
                   value={paiementOptions.find((o) => o.value === comptePaiementId) ?? null}
                   onChange={(v) => setComptePaiementId(v)}
