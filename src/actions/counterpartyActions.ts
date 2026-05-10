@@ -14,8 +14,10 @@ import {
 } from '@/lib/counterparty'
 import {
   count401LinesWithoutCounterparty,
+  count411LinesWithoutCounterparty,
   getCustomerReceivableBalanceCents,
   getSupplierPayableBalanceCents,
+  listCustomer411Movements,
   listSupplier401Movements,
 } from '@/lib/counterpartyBalance'
 
@@ -151,6 +153,34 @@ export async function getSupplier401Preview(fiscalYearId: string, counterpartyId
     balanceCents,
     movements,
     orphan401Lines,
+  }
+}
+
+export async function getCustomer411Preview(fiscalYearId: string, counterpartyId: string) {
+  const associationId = await getCurrentAssociationId()
+  if (!associationId) throw new Error('Association non sélectionnée.')
+
+  const fy = await prisma.fiscalYear.findFirst({
+    where: { id: fiscalYearId, associationId },
+    select: { id: true },
+  })
+  if (!fy) throw new Error('Exercice introuvable.')
+
+  const cp = await prisma.counterparty.findFirst({
+    where: { id: counterpartyId, associationId },
+  })
+  if (!cp) throw new Error('Tiers introuvable.')
+
+  const [balanceCents, movements, orphan411Lines] = await Promise.all([
+    getCustomerReceivableBalanceCents(fiscalYearId, counterpartyId),
+    listCustomer411Movements(fiscalYearId, counterpartyId, 50),
+    count411LinesWithoutCounterparty(fiscalYearId),
+  ])
+
+  return {
+    balanceCents,
+    movements,
+    orphan411Lines,
   }
 }
 

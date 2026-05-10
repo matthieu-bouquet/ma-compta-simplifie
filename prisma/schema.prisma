@@ -20,6 +20,8 @@ model Association {
   legalFormOther String?
   chartTemplateId String?
   chartTemplate   ChartTemplate? @relation(fields: [chartTemplateId], references: [id], onDelete: SetNull)
+  /// Subject to French VAT (assujetti à la TVA).
+  vatLiable  Boolean  @default(false)
   isClosed   Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -29,7 +31,7 @@ model Association {
   counterparties Counterparty[]
 }
 
-// Third parties (suppliers / customers) scoped to the association (UI: Paramètres → Entités).
+// Third parties (suppliers / customers) scoped to the association (UI: Paramètres → Fournisseurs et clients).
 model Counterparty {
   id             String      @id @default(uuid())
   associationId  String

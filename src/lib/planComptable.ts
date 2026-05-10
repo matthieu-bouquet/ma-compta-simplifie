@@ -71,6 +71,8 @@ export const PLAN_COMPTABLE_ASSOCIATION = [
   { numero: '421', libelle: 'Personnel — rémunérations dues' },
   { numero: '431', libelle: 'Sécurité sociale' },
   { numero: '444', libelle: 'État — impôts sur les bénéfices' },
+  { numero: '44566', libelle: 'TVA déductible sur autres biens et services' },
+  { numero: '44571', libelle: 'TVA collectée' },
   { numero: '455', libelle: 'Partenaires - comptes courants' },
   { numero: '461', libelle: 'Créances reçues par legs ou donations' },
   { numero: '466', libelle: 'Dettes des legs ou donations' },

@@ -42,6 +42,7 @@ export default function EntitiesPage() {
     ville: '',
     email: '',
     telephone: '',
+    vatLiable: false,
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -68,7 +69,11 @@ export default function EntitiesPage() {
 
     try {
       const form = new FormData()
-      Object.entries(formData).forEach(([key, value]) => form.append(key, value))
+      for (const [key, value] of Object.entries(formData)) {
+        if (key === 'vatLiable') continue
+        form.append(key, value as string)
+      }
+      form.append('vatLiable', formData.vatLiable ? 'on' : '')
 
       await createAssociation(form)
       setSuccess('Entité créée avec succès')
@@ -82,6 +87,7 @@ export default function EntitiesPage() {
         ville: '',
         email: '',
         telephone: '',
+        vatLiable: false,
       })
       setShowForm(false)
       loadEntities()
@@ -194,6 +200,26 @@ export default function EntitiesPage() {
                       />
                     </div>
                   ) : null}
+
+                  <div className={forms.field}>
+                    <div className={styles.checkboxRow}>
+                      <input
+                        id="entity-vat-liable"
+                        type="checkbox"
+                        checked={formData.vatLiable}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, vatLiable: e.target.checked }))
+                        }
+                      />
+                      <label htmlFor="entity-vat-liable">
+                        Assujetti à la TVA
+                        <span className={forms.fieldHint}>
+                          {' '}
+                          (hors franchise en base de TVA). Permet la ventilation TVA à la saisie.
+                        </span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </FormSection>
 

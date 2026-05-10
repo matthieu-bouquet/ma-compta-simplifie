@@ -14,6 +14,7 @@ import { allocateEntryReferenceNumber } from '@/lib/journalNumbering'
 import { getOrCreateJournalByCode } from '@/lib/journals'
 import { assertEntryDateNotAfterToday, assertEntryDateWithinFiscalYear } from '@/lib/entryDateValidation'
 import { reverseEntryInTransaction } from '@/lib/reverseEntryInTransaction'
+import { buildEntryLinesFromQuickVat, type QuickVatInput } from '@/lib/vatQuickEntry'
 
 export async function createEntry(data: {
   date: string,
@@ -22,7 +23,9 @@ export async function createEntry(data: {
   fiscalYearId: string,
   counterpartyId?: string | null,
   lines: { accountId: string, debit: number, credit: number, documents?: File[] }[],
-  documentFile?: File | null
+  documentFile?: File | null,
+  quickVat?: QuickVatInput | null,
+  documentsByLine?: File[][],
 }) {
   if (!data.fiscalYearId) {
     throw new Error('Fiscal year is required.')
@@ -58,18 +61,36 @@ export async function createEntry(data: {
   assertEntryDateNotAfterToday(data.date)
   assertEntryDateWithinFiscalYear(data.date, fiscalYear.startDate, fiscalYear.endDate)
 
-  const totalDebitCents = data.lines.reduce((sum, l) => sum + eurosToCents(l.debit), 0)
-  const totalCreditCents = data.lines.reduce((sum, l) => sum + eurosToCents(l.credit), 0)
+  let resolvedLines = data.lines
+  if (data.quickVat) {
+    if (!fiscalYear.association.vatLiable) {
+      throw new Error('Cette entité n’est pas assujettie à la TVA (paramètres entité).')
+    }
+    resolvedLines = await buildEntryLinesFromQuickVat(prisma, {
+      fiscalYearId: data.fiscalYearId,
+      associationId: fiscalYear.associationId,
+      input: data.quickVat,
+      documentsByLine: data.documentsByLine,
+    })
+  } else {
+    resolvedLines = data.lines.map((l, idx) => ({
+      ...l,
+      documents: l.documents ?? data.documentsByLine?.[idx],
+    }))
+  }
+
+  const totalDebitCents = resolvedLines.reduce((sum, l) => sum + eurosToCents(l.debit), 0)
+  const totalCreditCents = resolvedLines.reduce((sum, l) => sum + eurosToCents(l.credit), 0)
   if (totalDebitCents !== totalCreditCents) {
     throw new Error("L'écriture n'est pas équilibrée (Total Débit ≠ Total Crédit)")
   }
 
-  const accountIds = data.lines.map((l) => l.accountId)
+  const accountIds = resolvedLines.map((l) => l.accountId)
   const accountsDb = await prisma.account.findMany({
     where: { id: { in: accountIds }, fiscalYearId: data.fiscalYearId }
   })
 
-  const linesWithSnapshot = data.lines.map((l) => {
+  const linesWithSnapshot = resolvedLines.map((l) => {
     const accountInfo = accountsDb.find((a) => a.id === l.accountId)
     if (!accountInfo) throw new Error(`Account not found: ${l.accountId}`)
     return {
@@ -94,7 +115,7 @@ export async function createEntry(data: {
       : null
 
   const storedLineDocuments = await Promise.all(
-    data.lines.map(async (line) => {
+    resolvedLines.map(async (line) => {
       const docs = (line.documents ?? []).filter(Boolean)
       if (docs.length === 0) return []
       return await Promise.all(
@@ -298,6 +319,7 @@ export async function createEcriture(data: {
   lignes: { compteId: string; debit: number; credit: number }[]
   documentFile?: File | null
   documentsByLine?: File[][] | undefined
+  quickVat?: QuickVatInput | null
 }) {
   return await createEntry({
     date: data.date,
@@ -305,13 +327,18 @@ export async function createEcriture(data: {
     journalId: data.journalId,
     fiscalYearId: data.exerciceId,
     counterpartyId: data.counterpartyId ?? null,
-    lines: data.lignes.map((l, idx) => ({
-      accountId: l.compteId,
-      debit: l.debit,
-      credit: l.credit,
-      documents: data.documentsByLine?.[idx] ?? [],
-    })),
+    lines:
+      data.quickVat != null
+        ? []
+        : data.lignes.map((l, idx) => ({
+            accountId: l.compteId,
+            debit: l.debit,
+            credit: l.credit,
+            documents: data.documentsByLine?.[idx] ?? [],
+          })),
     documentFile: data.documentFile,
+    quickVat: data.quickVat ?? undefined,
+    documentsByLine: data.documentsByLine,
   })
 }
 

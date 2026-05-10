@@ -5,7 +5,7 @@
 
 import { forwardRef, useEffect, useId, useMemo, useState } from 'react'
 import { createEcriture } from '@/actions/ecritureActions'
-import { getSupplier401Preview } from '@/actions/counterpartyActions'
+import { getCustomer411Preview, getSupplier401Preview } from '@/actions/counterpartyActions'
 import {
   calendarDateInTimeZone,
   ENTRY_DATE_TIMEZONE,
@@ -25,6 +25,9 @@ import {
   COUNTERPARTY_KIND_SUPPLIER,
 } from '@/lib/counterparty'
 import { formatEurosFromCents } from '@/lib/money'
+import { splitTtcToHtAndVatEuros } from '@/lib/vatSplit'
+import { VAT_RATE_OPTIONS } from '@/lib/vatRates'
+import type { QuickVatInput } from '@/lib/vatQuickEntry'
 
 type Journal = { id: string; code: string; nom: string }
 type Compte = { id: string; numero: string; libelle: string }
@@ -74,6 +77,7 @@ export default function SaisieForm({
   exerciceId,
   exerciceStartDate,
   exerciceEndDate,
+  vatLiable,
 }: {
   journaux: Journal[]
   comptes: Compte[]
@@ -82,6 +86,7 @@ export default function SaisieForm({
   exerciceId: string
   exerciceStartDate: string
   exerciceEndDate: string
+  vatLiable: boolean
 }) {
   const router = useRouter()
   const componentId = useId()
@@ -99,6 +104,7 @@ export default function SaisieForm({
   const [compteOperationId, setCompteOperationId] = useState<string | null>(null)
   const [typeOperation, setTypeOperation] = useState<TypeOperation>('DEPENSE')
   const [montant, setMontant] = useState<number>(0)
+  const [vatRatePercent, setVatRatePercent] = useState<number>(20)
   const [dejaRegle, setDejaRegle] = useState(true)
 
   const [supplierId, setSupplierId] = useState<string | null>(null)
@@ -108,6 +114,9 @@ export default function SaisieForm({
 
   const [settlementPreview, setSettlementPreview] = useState<Awaited<
     ReturnType<typeof getSupplier401Preview>
+  > | null>(null)
+  const [encaissementPreview, setEncaissementPreview] = useState<Awaited<
+    ReturnType<typeof getCustomer411Preview>
   > | null>(null)
 
   const [quickDocuments, setQuickDocuments] = useState<(File | null)[]>([null])
@@ -169,8 +178,33 @@ export default function SaisieForm({
     }
   }, [typeOperation, supplierId, exerciceId])
 
+  useEffect(() => {
+    if (typeOperation !== 'ENCAISSEMENT_CLIENT' || !customerId) {
+      return
+    }
+    let cancelled = false
+    getCustomer411Preview(exerciceId, customerId)
+      .then((p) => {
+        if (!cancelled) setEncaissementPreview(p)
+      })
+      .catch(() => {
+        if (!cancelled) setEncaissementPreview(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [typeOperation, customerId, exerciceId])
+
   const showPaidQuestion =
     typeOperation === 'DEPENSE' || typeOperation === 'RECETTE'
+
+  const showVatUi =
+    vatLiable && (typeOperation === 'DEPENSE' || typeOperation === 'RECETTE')
+
+  const vatPreview =
+    showVatUi && vatRatePercent > 0 && montant > 0
+      ? splitTtcToHtAndVatEuros(montant, vatRatePercent)
+      : null
 
   const addLigne = () => {
     setLignes([...lignes, { compteId: '', debit: 0, credit: 0 }])
@@ -243,6 +277,7 @@ export default function SaisieForm({
 
     let lignesToSubmit: LigneForm[] = []
     let counterpartyId: string | null = null
+    let quickVatPayload: QuickVatInput | undefined
 
     const autoJournalId =
       typeOperation === 'TRANSFERT'
@@ -324,6 +359,90 @@ export default function SaisieForm({
           { compteId: comptePaiementId, debit: 0, credit: montant },
         ]
         journalId = journalByCode('OD') || journalId
+      } else if (vatLiable && vatRatePercent > 0 && typeOperation === 'DEPENSE') {
+        if (!compteOperationId) {
+          setError('Veuillez choisir la catégorie (charge).')
+          return
+        }
+        if (dejaRegle) {
+          if (!comptePaiementId) {
+            setError('Veuillez choisir le moyen de paiement.')
+            return
+          }
+          quickVatPayload = {
+            amountTtcEuros: montant,
+            vatRatePercent,
+            flow: 'DEPENSE',
+            settledImmediately: true,
+            operationAccountId: compteOperationId,
+            treasuryAccountId: comptePaiementId,
+            thirdPartyAccountId: null,
+          }
+        } else {
+          if (!supplierId) {
+            setError('Veuillez choisir ou créer un fournisseur pour une dette fournisseur.')
+            return
+          }
+          const c401 = findThirdPartyAccount(comptes, '401')
+          if (!c401) {
+            setError('Le compte 401 (Fournisseurs) est absent du plan de cet exercice.')
+            return
+          }
+          quickVatPayload = {
+            amountTtcEuros: montant,
+            vatRatePercent,
+            flow: 'DEPENSE',
+            settledImmediately: false,
+            operationAccountId: compteOperationId,
+            treasuryAccountId: null,
+            thirdPartyAccountId: c401.id,
+          }
+        }
+        counterpartyId = supplierId
+        lignesToSubmit = []
+        journalId = journalByCode('AC') || journalId
+      } else if (vatLiable && vatRatePercent > 0 && typeOperation === 'RECETTE') {
+        if (!compteOperationId) {
+          setError('Veuillez choisir la catégorie (produit).')
+          return
+        }
+        if (dejaRegle) {
+          if (!comptePaiementId) {
+            setError('Veuillez choisir le moyen de paiement.')
+            return
+          }
+          quickVatPayload = {
+            amountTtcEuros: montant,
+            vatRatePercent,
+            flow: 'RECETTE',
+            settledImmediately: true,
+            operationAccountId: compteOperationId,
+            treasuryAccountId: comptePaiementId,
+            thirdPartyAccountId: null,
+          }
+        } else {
+          if (!customerId) {
+            setError('Veuillez choisir ou créer un client pour une créance.')
+            return
+          }
+          const c411 = findThirdPartyAccount(comptes, '411')
+          if (!c411) {
+            setError('Le compte 411 (Clients) est absent du plan de cet exercice.')
+            return
+          }
+          quickVatPayload = {
+            amountTtcEuros: montant,
+            vatRatePercent,
+            flow: 'RECETTE',
+            settledImmediately: false,
+            operationAccountId: compteOperationId,
+            treasuryAccountId: null,
+            thirdPartyAccountId: c411.id,
+          }
+        }
+        counterpartyId = customerId
+        lignesToSubmit = []
+        journalId = journalByCode('VE') || journalId
       } else if (typeOperation === 'DEPENSE') {
         if (!compteOperationId) {
           setError('Veuillez choisir la catégorie (charge).')
@@ -419,6 +538,13 @@ export default function SaisieForm({
               const docs = quickDocuments.filter((d): d is File => d != null)
               if (docs.length === 0) return undefined
 
+              if (quickVatPayload) {
+                const operationLineIndex = quickDocOperationLineIndex(typeOperation)
+                const rows: File[][] = [[], [], []]
+                rows[operationLineIndex] = docs
+                return rows
+              }
+
               const operationLineIndex = quickDocOperationLineIndex(typeOperation)
               return lignesToSubmit.map((_, idx) => (idx === operationLineIndex ? docs : []))
             })()
@@ -429,9 +555,10 @@ export default function SaisieForm({
         journalId,
         exerciceId,
         counterpartyId,
-        lignes: lignesToSubmit,
+        lignes: quickVatPayload ? [] : lignesToSubmit,
         documentFile: null,
         documentsByLine,
+        quickVat: quickVatPayload ?? null,
       })
       setSuccess('Écriture enregistrée avec succès.')
       setLibelle('')
@@ -608,7 +735,7 @@ export default function SaisieForm({
 
               <div className={forms.field}>
                 <label className={forms.label} htmlFor="saisie-montant">
-                  Montant (€)
+                  {showVatUi ? 'Montant TTC (€)' : 'Montant (€)'}
                 </label>
                 <input
                   id="saisie-montant"
@@ -622,6 +749,34 @@ export default function SaisieForm({
                 />
               </div>
             </div>
+
+            {showVatUi ? (
+              <div className={styles.quickGridAccounts}>
+                <div className={forms.field}>
+                  <label className={forms.label} htmlFor="saisie-taux-tva">
+                    Taux de TVA
+                  </label>
+                  <select
+                    id="saisie-taux-tva"
+                    className={forms.select}
+                    value={vatRatePercent}
+                    onChange={(e) => setVatRatePercent(parseFloat(e.target.value))}
+                  >
+                    {VAT_RATE_OPTIONS.map((o) => (
+                      <option key={o.label} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                  {vatPreview ? (
+                    <p className={forms.fieldHint}>
+                      HT : {vatPreview.htEuros.toFixed(2)} € · TVA : {vatPreview.vatEuros.toFixed(2)} €
+                    </p>
+                  ) : null}
+                </div>
+                <div aria-hidden="true" />
+              </div>
+            ) : null}
 
             {showPaidQuestion ? (
               <div className={styles.paidRow}>
@@ -752,6 +907,41 @@ export default function SaisieForm({
                   </>
                 ) : (
                   <p className={forms.fieldHint}>Chargement du solde fournisseur…</p>
+                )}
+              </div>
+            ) : null}
+
+            {typeOperation === 'ENCAISSEMENT_CLIENT' && customerId ? (
+              <div className={styles.settlementPanel}>
+                {encaissementPreview ? (
+                  <>
+                    <p className={styles.settlementBalance}>
+                      Solde clients (411) pour ce tiers :{' '}
+                      <strong>{formatEurosFromCents(encaissementPreview.balanceCents)}</strong>
+                    </p>
+                    {encaissementPreview.orphan411Lines > 0 ? (
+                      <p className={forms.alertError}>
+                        Attention : {encaissementPreview.orphan411Lines} ligne(s) sur le compte 411 sans client
+                        sur cet exercice peuvent affecter les soldes par tiers.
+                      </p>
+                    ) : null}
+                    {encaissementPreview.movements.length > 0 ? (
+                      <div className={styles.movementsBox}>
+                        <div className={styles.movementsTitle}>Mouvements récents (411)</div>
+                        <ul className={styles.movementsList}>
+                          {encaissementPreview.movements.slice(0, 8).map((m, idx) => (
+                            <li key={`411-${m.entryId}-${idx}`} className={styles.movementsItem}>
+                              <span>{new Date(m.entryDate).toLocaleDateString('fr-FR')}</span>
+                              <span className={styles.movementsDesc}>{m.description}</span>
+                              <span>{formatEurosFromCents(m.lineAmountSignedCents)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className={forms.fieldHint}>Chargement du solde client…</p>
                 )}
               </div>
             ) : null}
