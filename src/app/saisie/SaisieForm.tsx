@@ -11,10 +11,10 @@ import {
   ENTRY_DATE_TIMEZONE,
   isEntryDateAfterToday,
 } from '@/lib/entryDateValidation'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
-import { List, Plus, X } from 'lucide-react'
+import { ArrowLeftRight, HandCoins, List, Plus, ShoppingCart, TrendingUp, X } from 'lucide-react'
 import AppSearchableSelect from '@/components/forms/AppSearchableSelect'
 import FormSection from '@/components/forms/FormSection'
 import CounterpartyCreateDialog from '@/components/CounterpartyCreateDialog'
@@ -24,10 +24,16 @@ import {
   COUNTERPARTY_KIND_CUSTOMER,
   COUNTERPARTY_KIND_SUPPLIER,
 } from '@/lib/counterparty'
-import { formatEurosFromCents } from '@/lib/money'
+import { formatEurosFromCents, normalizeEurosAmount } from '@/lib/money'
 import { splitTtcToHtAndVatEuros } from '@/lib/vatSplit'
 import { VAT_RATE_OPTIONS } from '@/lib/vatRates'
 import type { QuickVatInput } from '@/lib/vatQuickEntry'
+import {
+  createCustomerReceipt,
+  createSupplierSettlement,
+  listOpenCustomerReceivables,
+  listOpenSupplierPayables,
+} from '@/actions/treasuryActions'
 
 type Journal = { id: string; code: string; nom: string }
 type Compte = { id: string; numero: string; libelle: string }
@@ -78,6 +84,7 @@ export default function SaisieForm({
   exerciceStartDate,
   exerciceEndDate,
   vatLiable,
+  initialTab = 'OPERATIONS',
 }: {
   journaux: Journal[]
   comptes: Compte[]
@@ -87,10 +94,15 @@ export default function SaisieForm({
   exerciceStartDate: string
   exerciceEndDate: string
   vatLiable: boolean
+  initialTab?: 'OPERATIONS' | 'TREASURY'
 }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const componentId = useId()
-  const [mode, setMode] = useState<'RAPIDE' | 'AVANCE'>('RAPIDE')
+  const [mode, setMode] = useState<'OPERATIONS' | 'TREASURY' | 'AVANCE'>(
+    initialTab === 'TREASURY' ? 'TREASURY' : 'OPERATIONS'
+  )
   const [date, setDate] = useState<Date | null>(() => new Date())
   const [libelle, setLibelle] = useState('')
   const [selectedJournalId, setSelectedJournalId] = useState<string>(journaux[0]?.id || '')
@@ -102,7 +114,9 @@ export default function SaisieForm({
 
   const [comptePaiementId, setComptePaiementId] = useState<string | null>(null)
   const [compteOperationId, setCompteOperationId] = useState<string | null>(null)
-  const [typeOperation, setTypeOperation] = useState<TypeOperation>('DEPENSE')
+  const [typeOperation, setTypeOperation] = useState<TypeOperation>(
+    initialTab === 'TREASURY' ? 'REGLEMENT_FOURNISSEUR' : 'DEPENSE'
+  )
   const [montant, setMontant] = useState<number>(0)
   const [vatRatePercent, setVatRatePercent] = useState<number>(20)
   const [dejaRegle, setDejaRegle] = useState(true)
@@ -119,12 +133,23 @@ export default function SaisieForm({
     ReturnType<typeof getCustomer411Preview>
   > | null>(null)
 
+  const [treasuryOpenItems, setTreasuryOpenItems] = useState<
+    Awaited<ReturnType<typeof listOpenSupplierPayables>> | Awaited<ReturnType<typeof listOpenCustomerReceivables>> | null
+  >(null)
+  const [treasuryAllocationsByLineId, setTreasuryAllocationsByLineId] = useState<Record<string, number>>({})
+
   const [quickDocuments, setQuickDocuments] = useState<(File | null)[]>([null])
   const [lineDocuments, setLineDocuments] = useState<(File | null)[][]>([[null], [null]])
   const [fileInputsResetKey, setFileInputsResetKey] = useState(0)
 
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const setTabParam = (tab: 'ops' | 'treasury') => {
+    const next = new URLSearchParams(searchParams?.toString() ?? '')
+    next.set('tab', tab)
+    router.replace(`${pathname}?${next.toString()}`)
+  }
 
   const exerciceStart = new Date(exerciceStartDate)
   const exerciceEnd = new Date(exerciceEndDate)
@@ -162,7 +187,7 @@ export default function SaisieForm({
   const compteById = (id: string | null) => comptes.find((c) => c.id === id)
 
   useEffect(() => {
-    if (typeOperation !== 'REGLEMENT_FOURNISSEUR' || !supplierId) {
+    if (mode !== 'OPERATIONS' || typeOperation !== 'REGLEMENT_FOURNISSEUR' || !supplierId) {
       return
     }
     let cancelled = false
@@ -176,10 +201,10 @@ export default function SaisieForm({
     return () => {
       cancelled = true
     }
-  }, [typeOperation, supplierId, exerciceId])
+  }, [mode, typeOperation, supplierId, exerciceId])
 
   useEffect(() => {
-    if (typeOperation !== 'ENCAISSEMENT_CLIENT' || !customerId) {
+    if (mode !== 'OPERATIONS' || typeOperation !== 'ENCAISSEMENT_CLIENT' || !customerId) {
       return
     }
     let cancelled = false
@@ -193,7 +218,43 @@ export default function SaisieForm({
     return () => {
       cancelled = true
     }
-  }, [typeOperation, customerId, exerciceId])
+  }, [mode, typeOperation, customerId, exerciceId])
+
+  useEffect(() => {
+    if (mode !== 'TREASURY') return
+
+    if (typeOperation === 'REGLEMENT_FOURNISSEUR' && supplierId) {
+      let cancelled = false
+      listOpenSupplierPayables({ fiscalYearId: exerciceId, counterpartyId: supplierId, take: 200 })
+        .then((rows) => {
+          if (cancelled) return
+          setTreasuryOpenItems(rows)
+          setTreasuryAllocationsByLineId({})
+        })
+        .catch(() => {
+          if (!cancelled) setTreasuryOpenItems([])
+        })
+      return () => {
+        cancelled = true
+      }
+    }
+
+    if (typeOperation === 'ENCAISSEMENT_CLIENT' && customerId) {
+      let cancelled = false
+      listOpenCustomerReceivables({ fiscalYearId: exerciceId, counterpartyId: customerId, take: 200 })
+        .then((rows) => {
+          if (cancelled) return
+          setTreasuryOpenItems(rows)
+          setTreasuryAllocationsByLineId({})
+        })
+        .catch(() => {
+          if (!cancelled) setTreasuryOpenItems([])
+        })
+      return () => {
+        cancelled = true
+      }
+    }
+  }, [mode, typeOperation, supplierId, customerId, exerciceId])
 
   const showPaidQuestion =
     typeOperation === 'DEPENSE' || typeOperation === 'RECETTE'
@@ -205,6 +266,9 @@ export default function SaisieForm({
     showVatUi && vatRatePercent > 0 && montant > 0
       ? splitTtcToHtAndVatEuros(montant, vatRatePercent)
       : null
+
+  const treasuryAllocationSum = Object.values(treasuryAllocationsByLineId).reduce((s, v) => s + (Number(v) || 0), 0)
+  const treasuryAllocationMatchesAmount = Math.abs(treasuryAllocationSum - montant) < 0.0001
 
   const addLigne = () => {
     setLignes([...lignes, { compteId: '', debit: 0, credit: 0 }])
@@ -275,6 +339,14 @@ export default function SaisieForm({
     setError('')
     setSuccess('')
 
+    if (mode === 'TREASURY') {
+      setError("Utilisez le bouton « Enregistrer » de l'onglet Règlement / Encaissement.")
+      return
+    }
+
+    // Normalize to 2 decimals to avoid floating glitches (e.g. 4.999999 → 5.00).
+    const normalizedAmount = normalizeEurosAmount(montant)
+
     let lignesToSubmit: LigneForm[] = []
     let counterpartyId: string | null = null
     let quickVatPayload: QuickVatInput | undefined
@@ -290,7 +362,7 @@ export default function SaisieForm({
               ? null
               : journalByCode('OD')
 
-    let journalId = (mode === 'RAPIDE' ? autoJournalId : null) || selectedJournalId || journaux[0]?.id
+    let journalId = (mode === 'OPERATIONS' ? autoJournalId : null) || selectedJournalId || journaux[0]?.id
 
     if (!date) {
       setError('Veuillez choisir une date.')
@@ -303,8 +375,8 @@ export default function SaisieForm({
       return
     }
 
-    if (mode === 'RAPIDE') {
-      if (montant <= 0) {
+    if (mode === 'OPERATIONS') {
+      if (normalizedAmount <= 0) {
         setError('Le montant doit être strictement supérieur à 0.')
         return
       }
@@ -320,8 +392,8 @@ export default function SaisieForm({
           return
         }
         lignesToSubmit = [
-          { compteId: c401.id, debit: montant, credit: 0 },
-          { compteId: comptePaiementId, debit: 0, credit: montant },
+          { compteId: c401.id, debit: normalizedAmount, credit: 0 },
+          { compteId: comptePaiementId, debit: 0, credit: normalizedAmount },
         ]
         counterpartyId = supplierId
         const pay = compteById(comptePaiementId)
@@ -338,8 +410,8 @@ export default function SaisieForm({
           return
         }
         lignesToSubmit = [
-          { compteId: comptePaiementId, debit: montant, credit: 0 },
-          { compteId: c411.id, debit: 0, credit: montant },
+          { compteId: comptePaiementId, debit: normalizedAmount, credit: 0 },
+          { compteId: c411.id, debit: 0, credit: normalizedAmount },
         ]
         counterpartyId = customerId
         const pay = compteById(comptePaiementId)
@@ -355,8 +427,8 @@ export default function SaisieForm({
           return
         }
         lignesToSubmit = [
-          { compteId: compteOperationId, debit: montant, credit: 0 },
-          { compteId: comptePaiementId, debit: 0, credit: montant },
+          { compteId: compteOperationId, debit: normalizedAmount, credit: 0 },
+          { compteId: comptePaiementId, debit: 0, credit: normalizedAmount },
         ]
         journalId = journalByCode('OD') || journalId
       } else if (vatLiable && vatRatePercent > 0 && typeOperation === 'DEPENSE') {
@@ -370,7 +442,7 @@ export default function SaisieForm({
             return
           }
           quickVatPayload = {
-            amountTtcEuros: montant,
+            amountTtcEuros: normalizedAmount,
             vatRatePercent,
             flow: 'DEPENSE',
             settledImmediately: true,
@@ -389,7 +461,7 @@ export default function SaisieForm({
             return
           }
           quickVatPayload = {
-            amountTtcEuros: montant,
+            amountTtcEuros: normalizedAmount,
             vatRatePercent,
             flow: 'DEPENSE',
             settledImmediately: false,
@@ -412,7 +484,7 @@ export default function SaisieForm({
             return
           }
           quickVatPayload = {
-            amountTtcEuros: montant,
+            amountTtcEuros: normalizedAmount,
             vatRatePercent,
             flow: 'RECETTE',
             settledImmediately: true,
@@ -431,7 +503,7 @@ export default function SaisieForm({
             return
           }
           quickVatPayload = {
-            amountTtcEuros: montant,
+            amountTtcEuros: normalizedAmount,
             vatRatePercent,
             flow: 'RECETTE',
             settledImmediately: false,
@@ -454,8 +526,8 @@ export default function SaisieForm({
             return
           }
           lignesToSubmit = [
-            { compteId: compteOperationId, debit: montant, credit: 0 },
-            { compteId: comptePaiementId, debit: 0, credit: montant },
+            { compteId: compteOperationId, debit: normalizedAmount, credit: 0 },
+            { compteId: comptePaiementId, debit: 0, credit: normalizedAmount },
           ]
           counterpartyId = supplierId
         } else {
@@ -469,8 +541,8 @@ export default function SaisieForm({
             return
           }
           lignesToSubmit = [
-            { compteId: compteOperationId, debit: montant, credit: 0 },
-            { compteId: c401.id, debit: 0, credit: montant },
+            { compteId: compteOperationId, debit: normalizedAmount, credit: 0 },
+            { compteId: c401.id, debit: 0, credit: normalizedAmount },
           ]
           counterpartyId = supplierId
           journalId = journalByCode('AC') || journalId
@@ -486,8 +558,8 @@ export default function SaisieForm({
             return
           }
           lignesToSubmit = [
-            { compteId: comptePaiementId, debit: montant, credit: 0 },
-            { compteId: compteOperationId, debit: 0, credit: montant },
+            { compteId: comptePaiementId, debit: normalizedAmount, credit: 0 },
+            { compteId: compteOperationId, debit: 0, credit: normalizedAmount },
           ]
           counterpartyId = customerId
         } else {
@@ -501,8 +573,8 @@ export default function SaisieForm({
             return
           }
           lignesToSubmit = [
-            { compteId: c411.id, debit: montant, credit: 0 },
-            { compteId: compteOperationId, debit: 0, credit: montant },
+            { compteId: c411.id, debit: normalizedAmount, credit: 0 },
+            { compteId: compteOperationId, debit: 0, credit: normalizedAmount },
           ]
           counterpartyId = customerId
           journalId = journalByCode('VE') || journalId
@@ -584,6 +656,52 @@ export default function SaisieForm({
     }
   }
 
+  const handleTreasurySave = async () => {
+    try {
+      setError('')
+      setSuccess('')
+      if (!date) throw new Error('Veuillez choisir une date.')
+      const dateStr = calendarDateInTimeZone(date, ENTRY_DATE_TIMEZONE)
+      if (isEntryDateAfterToday(dateStr)) throw new Error("La date d'écriture ne peut pas être dans le futur.")
+      if (!comptePaiementId) throw new Error('Veuillez choisir un compte de trésorerie.')
+
+      const allocations = Object.entries(treasuryAllocationsByLineId)
+        .filter(([, v]) => Number(v) > 0)
+        .map(([payableLineId, amountEuros]) => ({ payableLineId, amountEuros: Number(amountEuros) }))
+
+      if (typeOperation === 'REGLEMENT_FOURNISSEUR') {
+        if (!supplierId) throw new Error('Veuillez choisir un fournisseur.')
+        await createSupplierSettlement({
+          fiscalYearId: exerciceId,
+          date: dateStr,
+          counterpartyId: supplierId,
+          treasuryAccountId: comptePaiementId,
+          description: libelle.trim() || 'Règlement fournisseur',
+          amountEuros: montant,
+          allocations,
+        })
+      } else {
+        if (!customerId) throw new Error('Veuillez choisir un client.')
+        await createCustomerReceipt({
+          fiscalYearId: exerciceId,
+          date: dateStr,
+          counterpartyId: customerId,
+          treasuryAccountId: comptePaiementId,
+          description: libelle.trim() || 'Encaissement client',
+          amountEuros: montant,
+          allocations,
+        })
+      }
+
+      setSuccess('Opération enregistrée.')
+      setTreasuryAllocationsByLineId({})
+      setTreasuryOpenItems(null)
+      router.refresh()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Erreur.')
+    }
+  }
+
   const switchTypeOperation = (t: TypeOperation) => {
     setTypeOperation(t)
     setCompteOperationId(null)
@@ -625,14 +743,31 @@ export default function SaisieForm({
       <div className={styles.modeBar}>
         <button
           type="button"
-          className={`btn ${mode === 'RAPIDE' ? 'btn-primary' : ''} ${mode === 'RAPIDE' ? styles.modeBtnActive : ''} ${styles.modeBtn}`}
+          className={`btn ${mode === 'OPERATIONS' ? 'btn-primary' : ''} ${mode === 'OPERATIONS' ? styles.modeBtnActive : ''} ${styles.modeBtn}`}
           onClick={() => {
-            setMode('RAPIDE')
+            setMode('OPERATIONS')
+            setTypeOperation('DEPENSE')
             setError('')
             setSuccess('')
+            setTabParam('ops')
           }}
         >
-          Saisie Rapide (Recommandé)
+          Dépense / recette
+        </button>
+        <button
+          type="button"
+          className={`btn ${mode === 'TREASURY' ? 'btn-primary' : ''} ${mode === 'TREASURY' ? styles.modeBtnActive : ''} ${styles.modeBtn}`}
+          onClick={() => {
+            setMode('TREASURY')
+            setTypeOperation('REGLEMENT_FOURNISSEUR')
+            setTreasuryAllocationsByLineId({})
+            setTreasuryOpenItems(null)
+            setError('')
+            setSuccess('')
+            setTabParam('treasury')
+          }}
+        >
+          Règlement / Encaissement
         </button>
         <button
           type="button"
@@ -672,7 +807,7 @@ export default function SaisieForm({
           <div className={forms.field}>
             <label className={forms.label} htmlFor="saisie-libelle">
               Libellé{' '}
-              {mode === 'RAPIDE'
+              {mode === 'OPERATIONS'
                 ? typeOperation === 'TRANSFERT'
                   ? '(ex: Retrait caisse)'
                   : '(ex: Achat matériel)'
@@ -689,9 +824,11 @@ export default function SaisieForm({
           </div>
         </div>
 
-        {mode === 'RAPIDE' ? (
+        {mode === 'OPERATIONS' ? (
           <div className={styles.quickPanel}>
-            <div className={styles.quickGridTop}>
+            <div
+              className={`${styles.quickGridTop} ${showVatUi ? styles.quickGridTopWithVat : styles.quickGridTopNoVat}`}
+            >
               <div className={`${forms.field} ${styles.operationField}`}>
                 <span className={forms.label}>Type d&apos;opération</span>
                 <div className={styles.operationStripWrap} role="group" aria-label="Type d'opération">
@@ -700,6 +837,7 @@ export default function SaisieForm({
                     className={`${styles.operationBtn} ${typeOperation === 'DEPENSE' ? styles.operationBtnDepenseActive : ''}`}
                     onClick={() => switchTypeOperation('DEPENSE')}
                   >
+                    <ShoppingCart size={16} aria-hidden="true" />
                     Dépense
                   </button>
                   <button
@@ -707,6 +845,7 @@ export default function SaisieForm({
                     className={`${styles.operationBtn} ${styles.operationBtnBorder} ${typeOperation === 'RECETTE' ? styles.operationBtnRecetteActive : ''}`}
                     onClick={() => switchTypeOperation('RECETTE')}
                   >
+                    <TrendingUp size={16} aria-hidden="true" />
                     Recette
                   </button>
                   <button
@@ -714,21 +853,8 @@ export default function SaisieForm({
                     className={`${styles.operationBtn} ${styles.operationBtnBorder} ${typeOperation === 'TRANSFERT' ? styles.operationBtnTransfertActive : ''}`}
                     onClick={() => switchTypeOperation('TRANSFERT')}
                   >
+                    <ArrowLeftRight size={16} aria-hidden="true" />
                     Virement
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.operationBtn} ${styles.operationBtnBorder} ${typeOperation === 'REGLEMENT_FOURNISSEUR' ? styles.operationBtnReglementActive : ''}`}
-                    onClick={() => switchTypeOperation('REGLEMENT_FOURNISSEUR')}
-                  >
-                    Règlement fournisseur
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.operationBtn} ${styles.operationBtnBorder} ${typeOperation === 'ENCAISSEMENT_CLIENT' ? styles.operationBtnEncaissementActive : ''}`}
-                    onClick={() => switchTypeOperation('ENCAISSEMENT_CLIENT')}
-                  >
-                    Encaissement client
                   </button>
                 </div>
               </div>
@@ -743,15 +869,13 @@ export default function SaisieForm({
                   step="0.01"
                   min="0.01"
                   value={montant || ''}
-                  onChange={(e) => setMontant(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setMontant(normalizeEurosAmount(parseFloat(e.target.value) || 0))}
                   required
                   className={forms.input}
                 />
               </div>
-            </div>
 
-            {showVatUi ? (
-              <div className={styles.quickGridAccounts}>
+              {showVatUi ? (
                 <div className={forms.field}>
                   <label className={forms.label} htmlFor="saisie-taux-tva">
                     Taux de TVA
@@ -768,13 +892,15 @@ export default function SaisieForm({
                       </option>
                     ))}
                   </select>
-                  {vatPreview ? (
-                    <p className={forms.fieldHint}>
-                      HT : {vatPreview.htEuros.toFixed(2)} € · TVA : {vatPreview.vatEuros.toFixed(2)} €
-                    </p>
-                  ) : null}
                 </div>
-                <div aria-hidden="true" />
+              ) : null}
+            </div>
+
+            {vatPreview ? (
+              <div className={styles.vatPreviewRow}>
+                <p className={forms.fieldHint}>
+                  HT : {vatPreview.htEuros.toFixed(2)} € · TVA : {vatPreview.vatEuros.toFixed(2)} €
+                </p>
               </div>
             ) : null}
 
@@ -949,45 +1075,57 @@ export default function SaisieForm({
             {typeOperation !== 'REGLEMENT_FOURNISSEUR' &&
             typeOperation !== 'ENCAISSEMENT_CLIENT' &&
             (typeOperation === 'DEPENSE' || typeOperation === 'RECETTE') ? (
-              <div className={styles.quickGridAccounts}>
-                {(typeOperation === 'DEPENSE' && !dejaRegle) || (typeOperation === 'RECETTE' && !dejaRegle) ? (
-                  <div className={forms.field}>
-                    <label className={forms.label} htmlFor="saisie-tiers-dette">
-                      {typeOperation === 'DEPENSE' ? 'Fournisseur' : 'Client'}{' '}
-                      <span className={styles.requiredMark}>(obligatoire)</span>
-                    </label>
-                    <div className={styles.tiersRow}>
-                      <div className={styles.tiersSelect}>
-                        <AppSearchableSelect
-                          id="saisie-tiers-dette"
-                          inputId="saisie-tiers-dette"
-                          options={typeOperation === 'DEPENSE' ? supplierOptions : customerOptions}
-                          value={
-                            typeOperation === 'DEPENSE'
-                              ? supplierOptions.find((o) => o.value === supplierId) ?? null
-                              : customerOptions.find((o) => o.value === customerId) ?? null
-                          }
-                          onChange={(v) => (typeOperation === 'DEPENSE' ? setSupplierId(v) : setCustomerId(v))}
-                          placeholder={typeOperation === 'DEPENSE' ? 'Fournisseur' : 'Client'}
-                          noOptionsMessage={() => 'Aucun résultat'}
-                          elevatedZIndex
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        className={`btn btn-primary ${forms.btnWithLeadingIcon}`}
-                        onClick={() =>
-                          typeOperation === 'DEPENSE' ? setShowSupplierCreate(true) : setShowCustomerCreate(true)
+              <div className={styles.quickGridAccountsThree}>
+                <div className={forms.field}>
+                  <label className={forms.label} htmlFor="saisie-tiers-main">
+                    {typeOperation === 'DEPENSE' ? 'Fournisseur' : 'Client'}{' '}
+                    {!dejaRegle ? <span className={styles.requiredMark}>(obligatoire)</span> : null}
+                  </label>
+                  <div className={styles.tiersRow}>
+                    <div className={styles.tiersSelect}>
+                      <AppSearchableSelect
+                        id="saisie-tiers-main"
+                        inputId="saisie-tiers-main"
+                        options={typeOperation === 'DEPENSE' ? supplierOptions : customerOptions}
+                        value={
+                          typeOperation === 'DEPENSE'
+                            ? supplierOptions.find((o) => o.value === supplierId) ?? null
+                            : customerOptions.find((o) => o.value === customerId) ?? null
                         }
-                        title={typeOperation === 'DEPENSE' ? 'Créer un fournisseur' : 'Créer un client'}
-                        aria-label={typeOperation === 'DEPENSE' ? 'Créer un fournisseur' : 'Créer un client'}
-                      >
-                        <Plus size={18} aria-hidden="true" />
-                        {typeOperation === 'DEPENSE' ? 'Nouveau fournisseur' : 'Nouveau client'}
-                      </button>
+                        onChange={(v) => (typeOperation === 'DEPENSE' ? setSupplierId(v) : setCustomerId(v))}
+                        placeholder="—"
+                        isClearable={dejaRegle}
+                        noOptionsMessage={() => 'Aucun résultat'}
+                        elevatedZIndex
+                      />
                     </div>
+                    <button
+                      type="button"
+                      className={`btn btn-primary ${styles.iconOnlyBtn}`}
+                      onClick={() => (typeOperation === 'DEPENSE' ? setShowSupplierCreate(true) : setShowCustomerCreate(true))}
+                      title={typeOperation === 'DEPENSE' ? 'Créer un fournisseur' : 'Créer un client'}
+                      aria-label={typeOperation === 'DEPENSE' ? 'Créer un fournisseur' : 'Créer un client'}
+                    >
+                      <Plus size={18} aria-hidden="true" />
+                    </button>
                   </div>
-                ) : null}
+                </div>
+
+                <div className={forms.field}>
+                  <label className={forms.label} htmlFor="saisie-compte-operation">
+                    {typeOperation === 'DEPENSE' ? 'Catégorie (Charge)' : 'Catégorie (Produit)'}
+                  </label>
+                  <AppSearchableSelect
+                    id="saisie-compte-operation"
+                    inputId="saisie-compte-operation"
+                    options={operationOptions}
+                    value={operationOptions.find((o) => o.value === compteOperationId) ?? null}
+                    onChange={(v) => setCompteOperationId(v)}
+                    placeholder={typeOperation === 'RECETTE' ? 'Ex: Cotisations...' : 'Ex: Achats...'}
+                    noOptionsMessage={() => 'Aucun compte trouvé'}
+                    elevatedZIndex
+                  />
+                </div>
 
                 {(typeOperation === 'DEPENSE' && dejaRegle) || (typeOperation === 'RECETTE' && dejaRegle) ? (
                   <div className={forms.field}>
@@ -1005,89 +1143,9 @@ export default function SaisieForm({
                       elevatedZIndex
                     />
                   </div>
-                ) : null}
-
-                {typeOperation === 'DEPENSE' && dejaRegle ? (
-                  <div className={forms.field}>
-                    <label className={forms.label} htmlFor="saisie-fournisseur-optionnel">
-                      Fournisseur (optionnel)
-                    </label>
-                    <div className={styles.tiersRow}>
-                      <div className={styles.tiersSelect}>
-                        <AppSearchableSelect
-                          id="saisie-fournisseur-optionnel"
-                          inputId="saisie-fournisseur-optionnel"
-                          options={supplierOptions}
-                          value={supplierOptions.find((o) => o.value === supplierId) ?? null}
-                          onChange={(v) => setSupplierId(v)}
-                          placeholder="—"
-                          isClearable
-                          noOptionsMessage={() => 'Aucun résultat'}
-                          elevatedZIndex
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        className={`btn btn-primary ${forms.btnWithLeadingIcon}`}
-                        onClick={() => setShowSupplierCreate(true)}
-                        title="Créer un fournisseur"
-                        aria-label="Créer un fournisseur"
-                      >
-                        <Plus size={18} aria-hidden="true" />
-                        Nouveau
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                {typeOperation === 'RECETTE' && dejaRegle ? (
-                  <div className={forms.field}>
-                    <label className={forms.label} htmlFor="saisie-client-optionnel">
-                      Client (optionnel)
-                    </label>
-                    <div className={styles.tiersRow}>
-                      <div className={styles.tiersSelect}>
-                        <AppSearchableSelect
-                          id="saisie-client-optionnel"
-                          inputId="saisie-client-optionnel"
-                          options={customerOptions}
-                          value={customerOptions.find((o) => o.value === customerId) ?? null}
-                          onChange={(v) => setCustomerId(v)}
-                          placeholder="—"
-                          isClearable
-                          noOptionsMessage={() => 'Aucun résultat'}
-                          elevatedZIndex
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        className={`btn btn-primary ${forms.btnWithLeadingIcon}`}
-                        onClick={() => setShowCustomerCreate(true)}
-                        title="Créer un client"
-                        aria-label="Créer un client"
-                      >
-                        <Plus size={18} aria-hidden="true" />
-                        Nouveau
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className={forms.field}>
-                  <label className={forms.label} htmlFor="saisie-compte-operation">
-                    {typeOperation === 'DEPENSE' ? 'Catégorie (Charge)' : 'Catégorie (Produit)'}
-                  </label>
-                  <AppSearchableSelect
-                    id="saisie-compte-operation"
-                    inputId="saisie-compte-operation"
-                    options={operationOptions}
-                    value={operationOptions.find((o) => o.value === compteOperationId) ?? null}
-                    onChange={(v) => setCompteOperationId(v)}
-                    placeholder={typeOperation === 'RECETTE' ? 'Ex: Cotisations...' : 'Ex: Achats...'}
-                    noOptionsMessage={() => 'Aucun compte trouvé'}
-                    elevatedZIndex
-                  />
-                </div>
+                ) : (
+                  <div aria-hidden="true" />
+                )}
               </div>
             ) : typeOperation === 'TRANSFERT' ? (
               <div className={styles.quickGridAccounts}>
@@ -1178,6 +1236,210 @@ export default function SaisieForm({
                 </p>
               </div>
             ) : null}
+          </div>
+        ) : mode === 'TREASURY' ? (
+          <div className={styles.treasuryPanel}>
+            <div className={styles.quickGridTop}>
+              <div className={`${forms.field} ${styles.operationField}`}>
+                <span className={forms.label}>Type d&apos;opération</span>
+                <div className={styles.operationStripWrap} role="group" aria-label="Type d'opération">
+                  <button
+                    type="button"
+                    className={`${styles.operationBtn} ${typeOperation === 'REGLEMENT_FOURNISSEUR' ? styles.operationBtnReglementActive : ''}`}
+                    onClick={() => {
+                      setTypeOperation('REGLEMENT_FOURNISSEUR')
+                      setTreasuryAllocationsByLineId({})
+                      setTreasuryOpenItems(null)
+                    }}
+                  >
+                    <HandCoins size={16} aria-hidden="true" />
+                    Règlement fournisseur
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.operationBtn} ${styles.operationBtnBorder} ${typeOperation === 'ENCAISSEMENT_CLIENT' ? styles.operationBtnEncaissementActive : ''}`}
+                    onClick={() => {
+                      setTypeOperation('ENCAISSEMENT_CLIENT')
+                      setTreasuryAllocationsByLineId({})
+                      setTreasuryOpenItems(null)
+                    }}
+                  >
+                    <TrendingUp size={16} aria-hidden="true" />
+                    Encaissement client
+                  </button>
+                </div>
+                <p className={forms.fieldHint}>
+                  Sélectionnez un tiers, puis affectez le montant sur une ou plusieurs lignes ouvertes.
+                </p>
+              </div>
+            </div>
+
+            <div className={styles.quickGridAccounts}>
+              {typeOperation === 'REGLEMENT_FOURNISSEUR' ? (
+                <div className={`${forms.field} ${styles.cpField}`}>
+                  <label className={forms.label} htmlFor="tresorerie-fournisseur">
+                    Fournisseur
+                  </label>
+                  <AppSearchableSelect
+                    id="tresorerie-fournisseur"
+                    inputId="tresorerie-fournisseur"
+                    aria-label="Fournisseur"
+                    value={supplierOptions.find((o) => o.value === supplierId) ?? null}
+                    options={supplierOptions}
+                    onChange={(v) => {
+                      setSupplierId(v)
+                      setTreasuryAllocationsByLineId({})
+                      setTreasuryOpenItems(null)
+                    }}
+                    placeholder="Choisir un fournisseur…"
+                  />
+                </div>
+              ) : (
+                <div className={`${forms.field} ${styles.cpField}`}>
+                  <label className={forms.label} htmlFor="tresorerie-client">
+                    Client
+                  </label>
+                  <AppSearchableSelect
+                    id="tresorerie-client"
+                    inputId="tresorerie-client"
+                    aria-label="Client"
+                    value={customerOptions.find((o) => o.value === customerId) ?? null}
+                    options={customerOptions}
+                    onChange={(v) => {
+                      setCustomerId(v)
+                      setTreasuryAllocationsByLineId({})
+                      setTreasuryOpenItems(null)
+                    }}
+                    placeholder="Choisir un client…"
+                  />
+                </div>
+              )}
+
+              <div className={forms.field}>
+                <label className={forms.label} htmlFor="tresorerie-compte">
+                  Compte de trésorerie
+                </label>
+                <AppSearchableSelect
+                  id="tresorerie-compte"
+                  inputId="tresorerie-compte"
+                  aria-label="Compte de trésorerie"
+                  options={paiementOptions}
+                  value={paiementOptions.find((o) => o.value === comptePaiementId) ?? null}
+                  onChange={(v) => setComptePaiementId(v)}
+                  placeholder="Ex: Banque"
+                  noOptionsMessage={() => 'Aucun compte trouvé'}
+                  elevatedZIndex
+                />
+              </div>
+            </div>
+
+            <div className={styles.treasuryAmountRow}>
+              <div className={forms.field}>
+                <label className={forms.label} htmlFor="tresorerie-montant">
+                  Montant (€)
+                </label>
+                <input
+                  id="tresorerie-montant"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={montant ? montant : ''}
+                  onChange={(e) => setMontant(normalizeEurosAmount(Number(e.target.value)))}
+                  className={forms.input}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className={styles.allocationsBox}>
+              <div className={styles.allocationsTitle}>
+                {typeOperation === 'REGLEMENT_FOURNISSEUR'
+                  ? 'Dettes fournisseurs à solder (401)'
+                  : 'Créances clients à encaisser (411)'}
+              </div>
+              <div className={styles.allocationsTableWrap}>
+                <table className={styles.allocationsTable}>
+                  <thead>
+                    <tr>
+                      <th className={styles.allocationsTh}>Pièce</th>
+                      <th className={styles.allocationsTh}>Reste</th>
+                      <th className={styles.allocationsTh}>Affecter (€)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {treasuryOpenItems === null ? (
+                      <tr>
+                        <td className={styles.allocationsEmptyCell} colSpan={3}>
+                          <div className={styles.allocationsEmptyText}>
+                            Sélectionnez un fournisseur ou un client pour charger les lignes ouvertes.
+                          </div>
+                        </td>
+                      </tr>
+                    ) : treasuryOpenItems.length === 0 ? (
+                      <tr>
+                        <td className={styles.allocationsEmptyCell} colSpan={3}>
+                          <div className={styles.allocationsEmptyText}>Aucune ligne ouverte à solder.</div>
+                        </td>
+                      </tr>
+                    ) : (
+                      treasuryOpenItems.map((row) => {
+                        const value = treasuryAllocationsByLineId[row.payableLineId] ?? 0
+                        return (
+                          <tr key={row.payableLineId}>
+                            <td className={styles.allocationsTd}>
+                              <div className={styles.allocationsPieceTop}>
+                                <span className={styles.allocationsDate}>{row.entryDate}</span>
+                                {row.referenceNumber ? (
+                                  <span className={styles.allocationsRef}>{row.referenceNumber}</span>
+                                ) : null}
+                              </div>
+                              <div className={styles.allocationsDesc}>{row.description}</div>
+                            </td>
+                            <td className={`${styles.allocationsTd} ${styles.allocationsAmount}`}>
+                              {formatEurosFromCents(row.remainingCents)}
+                            </td>
+                            <td className={styles.allocationsTd}>
+                              <label htmlFor={`alloc-${row.payableLineId}`} className="sr-only">
+                                Montant affecté (€)
+                              </label>
+                              <input
+                                id={`alloc-${row.payableLineId}`}
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max={(row.remainingCents / 100).toFixed(2)}
+                                value={value ? value : ''}
+                                onChange={(e) => {
+                                  const next = normalizeEurosAmount(Number(e.target.value))
+                                  setTreasuryAllocationsByLineId((prev) => ({
+                                    ...prev,
+                                    [row.payableLineId]: next,
+                                  }))
+                                }}
+                                className={forms.input}
+                              />
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className={styles.allocationsFooter}>
+                <div className={styles.allocationsSumRow}>
+                  <span>Total affecté :</span>
+                  <strong>{treasuryAllocationSum.toFixed(2)} €</strong>
+                </div>
+                {!treasuryAllocationMatchesAmount ? (
+                  <p className={forms.alertError}>
+                    La somme des affectations doit être égale au montant ({montant.toFixed(2)} €).
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
           </div>
         ) : (
           <FormSection
@@ -1319,13 +1581,29 @@ export default function SaisieForm({
         )}
 
         <div className={styles.submitRow}>
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={mode === 'AVANCE' && (!isEquilibre || totalDebit <= 0)}
-          >
-            Enregistrer l&apos;écriture
-          </button>
+          {mode === 'TREASURY' ? (
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={
+                !treasuryOpenItems ||
+                treasuryOpenItems.length === 0 ||
+                !treasuryAllocationMatchesAmount ||
+                montant <= 0
+              }
+              onClick={handleTreasurySave}
+            >
+              Enregistrer l&apos;écriture
+            </button>
+          ) : (
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={mode === 'AVANCE' && (!isEquilibre || totalDebit <= 0)}
+            >
+              Enregistrer l&apos;écriture
+            </button>
+          )}
         </div>
       </form>
     </div>

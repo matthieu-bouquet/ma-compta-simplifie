@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Counterparty } from '@prisma/client'
 import { createCounterparty } from '@/actions/counterpartyActions'
 import {
@@ -30,6 +30,15 @@ export default function CounterpartyCreateDialog({
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
+  const nameInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Focus the first field when opened (keyboard-friendly).
+  // `requestAnimationFrame` ensures the element is mounted and painted.
+  useEffect(() => {
+    if (!isOpen) return
+    const id = requestAnimationFrame(() => nameInputRef.current?.focus())
+    return () => cancelAnimationFrame(id)
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -75,6 +84,7 @@ export default function CounterpartyCreateDialog({
             </label>
             <input
               id="counterparty-create-name"
+              ref={nameInputRef}
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
