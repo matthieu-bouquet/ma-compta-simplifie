@@ -5,7 +5,7 @@
 
 import { forwardRef, useEffect, useId, useMemo, useState } from 'react'
 import { createEcriture } from '@/actions/ecritureActions'
-import { getSupplier401Preview } from '@/actions/counterpartyActions'
+import { getCustomer411Preview, getSupplier401Preview } from '@/actions/counterpartyActions'
 import {
   calendarDateInTimeZone,
   ENTRY_DATE_TIMEZONE,
@@ -109,6 +109,9 @@ export default function SaisieForm({
   const [settlementPreview, setSettlementPreview] = useState<Awaited<
     ReturnType<typeof getSupplier401Preview>
   > | null>(null)
+  const [encaissementPreview, setEncaissementPreview] = useState<Awaited<
+    ReturnType<typeof getCustomer411Preview>
+  > | null>(null)
 
   const [quickDocuments, setQuickDocuments] = useState<(File | null)[]>([null])
   const [lineDocuments, setLineDocuments] = useState<(File | null)[][]>([[null], [null]])
@@ -168,6 +171,23 @@ export default function SaisieForm({
       cancelled = true
     }
   }, [typeOperation, supplierId, exerciceId])
+
+  useEffect(() => {
+    if (typeOperation !== 'ENCAISSEMENT_CLIENT' || !customerId) {
+      return
+    }
+    let cancelled = false
+    getCustomer411Preview(exerciceId, customerId)
+      .then((p) => {
+        if (!cancelled) setEncaissementPreview(p)
+      })
+      .catch(() => {
+        if (!cancelled) setEncaissementPreview(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [typeOperation, customerId, exerciceId])
 
   const showPaidQuestion =
     typeOperation === 'DEPENSE' || typeOperation === 'RECETTE'
@@ -752,6 +772,41 @@ export default function SaisieForm({
                   </>
                 ) : (
                   <p className={forms.fieldHint}>Chargement du solde fournisseur…</p>
+                )}
+              </div>
+            ) : null}
+
+            {typeOperation === 'ENCAISSEMENT_CLIENT' && customerId ? (
+              <div className={styles.settlementPanel}>
+                {encaissementPreview ? (
+                  <>
+                    <p className={styles.settlementBalance}>
+                      Solde clients (411) pour ce tiers :{' '}
+                      <strong>{formatEurosFromCents(encaissementPreview.balanceCents)}</strong>
+                    </p>
+                    {encaissementPreview.orphan411Lines > 0 ? (
+                      <p className={forms.alertError}>
+                        Attention : {encaissementPreview.orphan411Lines} ligne(s) sur le compte 411 sans client
+                        sur cet exercice peuvent affecter les soldes par tiers.
+                      </p>
+                    ) : null}
+                    {encaissementPreview.movements.length > 0 ? (
+                      <div className={styles.movementsBox}>
+                        <div className={styles.movementsTitle}>Mouvements récents (411)</div>
+                        <ul className={styles.movementsList}>
+                          {encaissementPreview.movements.slice(0, 8).map((m, idx) => (
+                            <li key={`411-${m.entryId}-${idx}`} className={styles.movementsItem}>
+                              <span>{new Date(m.entryDate).toLocaleDateString('fr-FR')}</span>
+                              <span className={styles.movementsDesc}>{m.description}</span>
+                              <span>{formatEurosFromCents(m.lineAmountSignedCents)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className={forms.fieldHint}>Chargement du solde client…</p>
                 )}
               </div>
             ) : null}

@@ -77,10 +77,49 @@ export async function listSupplier401Movements(
   }))
 }
 
+/**
+ * Customer receivable lines on 411… for this counterparty (signed: debit − credit).
+ */
+export async function listCustomer411Movements(
+  fiscalYearId: string,
+  counterpartyId: string,
+  take = 50
+): Promise<CounterpartyMoveRow[]> {
+  const lines = await prisma.entryLine.findMany({
+    where: {
+      entry: { fiscalYearId, counterpartyId },
+      accountNumber: { startsWith: '411' },
+    },
+    include: {
+      entry: { select: { id: true, date: true, description: true, referenceNumber: true } },
+    },
+    orderBy: [{ entry: { date: 'desc' } }, { id: 'desc' }],
+    take,
+  })
+  return lines.map((l) => ({
+    entryId: l.entry.id,
+    entryDate: l.entry.date,
+    description: l.entry.description,
+    referenceNumber: l.entry.referenceNumber,
+    lineAmountSignedCents: l.debitCents - l.creditCents,
+    debitCents: l.debitCents,
+    creditCents: l.creditCents,
+  }))
+}
+
 export async function count401LinesWithoutCounterparty(fiscalYearId: string): Promise<number> {
   return prisma.entryLine.count({
     where: {
       accountNumber: { startsWith: '401' },
+      entry: { fiscalYearId, counterpartyId: null },
+    },
+  })
+}
+
+export async function count411LinesWithoutCounterparty(fiscalYearId: string): Promise<number> {
+  return prisma.entryLine.count({
+    where: {
+      accountNumber: { startsWith: '411' },
       entry: { fiscalYearId, counterpartyId: null },
     },
   })
