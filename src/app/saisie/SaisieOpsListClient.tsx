@@ -176,7 +176,12 @@ export default function SaisieOpsListClient({
             </thead>
             <tbody>
               {filtered.map((row) => (
-                <tr key={row.id} className={styles.tr}>
+                <tr
+                  key={row.id}
+                  className={styles.tr}
+                  data-testid="saisie-ops-row"
+                  data-entry-description={row.libelle}
+                >
                   <td className={`${styles.td} ${styles.nowrap}`}>
                     {new Date(row.dateIso + 'T12:00:00').toLocaleDateString('fr-FR')}
                   </td>

@@ -5,6 +5,7 @@
 
 import { useMemo, useRef, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
+import chartStyles from './PaymentMethodsEvolutionChart.module.css'
 
 type InputLine = {
   montantDebit: number
@@ -99,6 +100,48 @@ function fmtEuro(v: number) {
   } catch {
     return `${v.toFixed(2)} €`
   }
+}
+
+type ChartTooltipRow = {
+  id: string
+  label: string
+  valueEuro: number
+  color: string
+}
+
+function ChartHoverTooltip({
+  client,
+  title,
+  rows,
+}: {
+  client: { x: number; y: number }
+  title: string
+  rows: ChartTooltipRow[]
+}) {
+  const tx = clamp(client.x + 12, 12, window.innerWidth - 12)
+  const ty = clamp(client.y - 8, 10, window.innerHeight - 10)
+
+  return (
+    <div className={chartStyles.tooltip} style={{ transform: `translate(${tx}px, ${ty}px)` }}>
+      <div className={chartStyles.tooltipTitle}>{title}</div>
+      <div className={chartStyles.tooltipRows}>
+        {rows.map((row) => (
+          <div key={row.id} className={chartStyles.tooltipRow}>
+            <span
+              aria-hidden="true"
+              className={chartStyles.tooltipSwatch}
+              style={{ ['--swatch-color' as string]: row.color }}
+            />
+            <div className={chartStyles.tooltipRowInner}>
+              <span className={chartStyles.tooltipLabel}>{row.label}</span>
+              <span className={chartStyles.tooltipValue}>{fmtEuro(row.valueEuro)}</span>
+            </div>
+          </div>
+        ))}
+        {rows.length === 0 ? <div className={chartStyles.tooltipMuted}>Aucune courbe affichée.</div> : null}
+      </div>
+    </div>
+  )
 }
 
 export default function PaymentMethodsEvolutionChart({
@@ -354,16 +397,16 @@ export default function PaymentMethodsEvolutionChart({
 
   if (!data) return null
   if (!data.seriesMonthly.length) {
-    return <div style={{ color: 'var(--text-secondary)' }}>Aucun moyen de paiement (classe 5) sur cet exercice.</div>
+    return <div className={chartStyles.emptyState}>Aucun moyen de paiement (classe 5) sur cet exercice.</div>
   }
   if (!chartModel) return null
 
   const { width, height, pad, h, ticks, x, y, visibleSeriesMonthly } = chartModel
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div className={chartStyles.root}>
       {/* Toggles (mutualisés pour les 2 graphes) */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+      <div className={chartStyles.legendWrap}>
         {data.seriesMonthly.map((s, si) => {
           const hidden = hiddenSeriesIds.has(s.id)
           return (
@@ -373,28 +416,14 @@ export default function PaymentMethodsEvolutionChart({
               onClick={() => toggleSeries(s.id)}
               aria-pressed={!hidden}
               title={hidden ? 'Afficher ce compte' : 'Masquer ce compte'}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                padding: '6px 10px',
-                borderRadius: 999,
-                border: '1px solid var(--border-color)',
-                background: hidden ? 'rgba(2,6,23,0.03)' : 'white',
-                cursor: 'pointer',
-              }}
+              className={`${chartStyles.legendBtn} ${hidden ? chartStyles.legendBtnHidden : ''}`}
             >
               <span
                 aria-hidden="true"
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 99,
-                  background: COLORS[si % COLORS.length],
-                  opacity: hidden ? 0.35 : 1,
-                }}
+                className={`${chartStyles.legendSwatch} ${hidden ? chartStyles.legendSwatchHidden : ''}`}
+                style={{ ['--swatch-color' as string]: COLORS[si % COLORS.length] }}
               />
-              <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', opacity: hidden ? 0.6 : 1 }}>
+              <span className={`${chartStyles.legendLabel} ${hidden ? chartStyles.legendLabelHidden : ''}`}>
                 {s.label}
               </span>
             </button>
@@ -403,7 +432,7 @@ export default function PaymentMethodsEvolutionChart({
       </div>
 
       {/* Graphe global (mensuel) */}
-      <div style={{ position: 'relative' }}>
+      <div className={chartStyles.chartWrap}>
         <svg
           ref={svgRef}
           viewBox={`0 0 ${width} ${height}`}
@@ -515,71 +544,30 @@ export default function PaymentMethodsEvolutionChart({
           tooltipClient &&
           typeof document !== 'undefined' &&
           createPortal(
-            <div
-              style={{
-                position: 'fixed',
-                left: 0,
-                top: 0,
-                pointerEvents: 'none',
-                zIndex: 100000,
-                transform: `translate(${clamp(tooltipClient.x + 12, 12, window.innerWidth - 12)}px, ${clamp(tooltipClient.y - 8, 10, window.innerHeight - 10)}px)`,
-                maxWidth: 320,
-                background: 'rgba(15, 23, 42, 0.96)',
-                color: 'white',
-                padding: '10px 12px',
-                borderRadius: 10,
-                boxShadow: '0 12px 30px rgba(0,0,0,0.25)',
-                border: '1px solid rgba(255,255,255,0.12)',
-              }}
-            >
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 6 }}>{monthLabelForIndex(hoverIndex)}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {visibleSeriesMonthly.map((s) => {
-                  const si = data.seriesMonthly.findIndex((x) => x.id === s.id)
-                  const color = COLORS[(si >= 0 ? si : 0) % COLORS.length]
-                  return (
-                    <div key={s.id} style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
-                      <span
-                        aria-hidden="true"
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: 99,
-                          background: color,
-                          flex: '0 0 auto',
-                          marginTop: 2,
-                        }}
-                      />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
-                        <span style={{ fontSize: '0.85rem', opacity: 0.9 }}>{s.label}</span>
-                        <span style={{ fontWeight: 700 }}>{fmtEuro(s.values[hoverIndex] ?? 0)}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-                {visibleSeriesMonthly.length === 0 && <div style={{ fontSize: '0.85rem', opacity: 0.85 }}>Aucune courbe affichée.</div>}
-              </div>
-            </div>,
+            <ChartHoverTooltip
+              client={tooltipClient}
+              title={monthLabelForIndex(hoverIndex)}
+              rows={visibleSeriesMonthly.map((s) => {
+                const si = data.seriesMonthly.findIndex((x) => x.id === s.id)
+                return {
+                  id: s.id,
+                  label: s.label,
+                  valueEuro: s.values[hoverIndex] ?? 0,
+                  color: COLORS[(si >= 0 ? si : 0) % COLORS.length],
+                }
+              })}
+            />,
             document.body,
           )}
       </div>
 
       {/* Graphe détail du mois */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-        <div style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>Détail du mois</div>
+      <div className={chartStyles.monthHeader}>
+        <div className={chartStyles.monthTitle}>Détail du mois</div>
         <select
           value={effectiveMonthKey ?? ''}
           onChange={(e) => setSelectedMonthKey(e.target.value)}
-          style={{
-            height: '36px',
-            borderRadius: '0.5rem',
-            border: '1px solid var(--border-color)',
-            background: 'white',
-            color: 'var(--text-primary)',
-            padding: '0 0.6rem',
-            outline: 'none',
-            minWidth: 160,
-          }}
+          className={chartStyles.monthSelect}
           aria-label="Sélectionner un mois"
           title="Sélectionner un mois"
         >
@@ -602,10 +590,10 @@ export default function PaymentMethodsEvolutionChart({
           hiddenSeriesIds={hiddenSeriesIds}
         />
       ) : (
-        <div style={{ color: 'var(--text-secondary)' }}>Aucune donnée sur ce mois.</div>
+        <div className={chartStyles.emptyState}>Aucune donnée sur ce mois.</div>
       )}
 
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+      <div className={chartStyles.footnote}>
         Vue globale: 1 point par mois. Détail: 1 point par jour sur le mois sélectionné.
       </div>
     </div>
@@ -691,7 +679,7 @@ function MonthlyDetailChart({
   })
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div className={chartStyles.chartWrap}>
       <svg
         ref={svgRef}
         viewBox={`0 0 ${width} ${height}`}
@@ -778,44 +766,19 @@ function MonthlyDetailChart({
         tooltipClient &&
         typeof document !== 'undefined' &&
         createPortal(
-          <div
-            style={{
-              position: 'fixed',
-              left: 0,
-              top: 0,
-              pointerEvents: 'none',
-              zIndex: 100000,
-              transform: `translate(${clamp(tooltipClient.x + 12, 12, window.innerWidth - 12)}px, ${clamp(tooltipClient.y - 8, 10, window.innerHeight - 10)}px)`,
-              maxWidth: 320,
-              background: 'rgba(15, 23, 42, 0.96)',
-              color: 'white',
-              padding: '10px 12px',
-              borderRadius: 10,
-              boxShadow: '0 12px 30px rgba(0,0,0,0.25)',
-              border: '1px solid rgba(255,255,255,0.12)',
-            }}
-          >
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 6 }}>{fmtDay(days[hoverIndex])}</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {visible.map((s) => {
-                const si = series.findIndex((x) => x.id === s.id)
-                const color = COLORS[(si >= 0 ? si : 0) % COLORS.length]
-                return (
-                  <div key={s.id} style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
-                    <span
-                      aria-hidden="true"
-                      style={{ width: 10, height: 10, borderRadius: 99, background: color, flex: '0 0 auto', marginTop: 2 }}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
-                      <span style={{ fontSize: '0.85rem', opacity: 0.9 }}>{s.label}</span>
-                      <span style={{ fontWeight: 700 }}>{fmtEuro(s.values[hoverIndex] ?? 0)}</span>
-                    </div>
-                  </div>
-                )
-              })}
-              {visible.length === 0 && <div style={{ fontSize: '0.85rem', opacity: 0.85 }}>Aucune courbe affichée.</div>}
-            </div>
-          </div>,
+          <ChartHoverTooltip
+            client={tooltipClient}
+            title={fmtDay(days[hoverIndex])}
+            rows={visible.map((s) => {
+              const si = series.findIndex((x) => x.id === s.id)
+              return {
+                id: s.id,
+                label: s.label,
+                valueEuro: s.values[hoverIndex] ?? 0,
+                color: COLORS[(si >= 0 ? si : 0) % COLORS.length],
+              }
+            })}
+          />,
           document.body,
         )}
     </div>

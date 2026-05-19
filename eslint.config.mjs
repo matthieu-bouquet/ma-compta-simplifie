@@ -17,6 +17,7 @@ const eslintConfig = defineConfig([
     "desktop/dist-electron/**",
     ".cache/**",
     ".tmp/**",
+    "coverage/**",
     "next-env.d.ts",
   ]),
 ]);

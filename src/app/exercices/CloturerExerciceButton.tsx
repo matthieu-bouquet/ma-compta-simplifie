@@ -6,14 +6,15 @@
 import { useState } from 'react'
 import { cloturerExercice } from '@/actions/exerciceActions'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import styles from './CloturerExerciceButton.module.css'
 
 export default function CloturerExerciceButton({ id }: { id: string }) {
   const [loading, setLoading] = useState(false)
 
   return (
-    <div style={{ marginTop: '3rem', padding: '1.5rem', backgroundColor: 'rgba(239, 68, 68, 0.05)', border: '1px solid var(--danger)', borderRadius: '0.5rem' }}>
-      <h3 style={{ color: 'var(--danger)', marginBottom: '0.5rem' }}>Zone de danger</h3>
-      <p style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>
+    <div className={styles.dangerZone}>
+      <h3 className={styles.dangerTitle}>Zone de danger</h3>
+      <p className={styles.dangerText}>
         La clôture d&apos;un exercice est définitive. Elle verrouille toutes les écritures et empêche toute modification ultérieure.
       </p>
       <ConfirmDialog
@@ -34,12 +35,7 @@ export default function CloturerExerciceButton({ id }: { id: string }) {
           setLoading(false)
         }}
         trigger={({ open }) => (
-          <button
-            onClick={open}
-            disabled={loading}
-            className="btn"
-            style={{ backgroundColor: 'var(--danger)', color: 'white', border: 'none' }}
-          >
+          <button onClick={open} disabled={loading} className={`btn ${styles.closeBtn}`}>
             {loading ? 'Clôture en cours...' : 'Clôturer cet exercice'}
           </button>
         )}

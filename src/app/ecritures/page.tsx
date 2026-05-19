@@ -5,6 +5,7 @@ import React from 'react'
 import { prisma } from '@/lib/prisma'
 import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import { getCurrentExerciceId } from '@/lib/exerciceContext'
+import { resolveSelectedFiscalYearId } from '@/lib/fiscalYearSelection'
 import { toLocalYmd } from '@/lib/vatStatementPayload'
 import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
 import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
@@ -50,12 +51,10 @@ export default async function EcrituresPage({
     )
   }
 
-  const fiscalYearId =
-    spExerciceId && fiscalYears.some((e) => e.id === spExerciceId)
-      ? spExerciceId
-      : cookieExerciceId && fiscalYears.some((e) => e.id === cookieExerciceId)
-        ? cookieExerciceId
-        : fiscalYears[0].id
+  const fiscalYearId = resolveSelectedFiscalYearId(fiscalYears, {
+    urlExerciceId: spExerciceId,
+    cookieExerciceId: cookieExerciceId,
+  })!
 
   const fiscalYear = fiscalYears.find((e) => e.id === fiscalYearId)!
 

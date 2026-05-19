@@ -4,6 +4,7 @@
 import { prisma } from '@/lib/prisma'
 import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import { getCurrentExerciceId } from '@/lib/exerciceContext'
+import { resolveSelectedFiscalYearId } from '@/lib/fiscalYearSelection'
 import PaymentMethodsEvolutionChart from '@/components/PaymentMethodsEvolutionChart'
 import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
 import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
@@ -53,12 +54,19 @@ export default async function Dashboard() {
     )
   }
 
-  // Prendre l’exercice sélectionné dans le select (TopBar), sinon fallback:
-  // - dernier exercice OUVERT
-  // - sinon dernier exercice tout court
-  const exerciceFromCookie = currentExerciceId
+  const fiscalYearList = await prisma.fiscalYear.findMany({
+    where: { associationId },
+    orderBy: { startDate: 'desc' },
+    select: { id: true, status: true },
+  })
+
+  const selectedFiscalYearId = resolveSelectedFiscalYearId(fiscalYearList, {
+    cookieExerciceId: currentExerciceId,
+  })
+
+  const fiscalYear = selectedFiscalYearId
     ? await prisma.fiscalYear.findFirst({
-        where: { id: currentExerciceId, associationId },
+        where: { id: selectedFiscalYearId, associationId },
         include: {
           accounts: {
             where: { number: { startsWith: '5' } },
@@ -74,44 +82,6 @@ export default async function Dashboard() {
         },
       })
     : null
-
-  const exerciceFallbackOuvert = await prisma.fiscalYear.findFirst({
-    where: { status: 'OPEN', associationId },
-    orderBy: { startDate: 'desc' },
-    include: {
-      accounts: {
-        where: { number: { startsWith: '5' } },
-        orderBy: { number: 'asc' },
-        include: {
-          lines: {
-            include: {
-              entry: { select: { date: true, description: true } },
-            },
-          },
-        },
-      },
-    },
-  })
-
-  const exerciceFallbackAny = await prisma.fiscalYear.findFirst({
-    where: { associationId },
-    orderBy: { startDate: 'desc' },
-    include: {
-      accounts: {
-        where: { number: { startsWith: '5' } },
-        orderBy: { number: 'asc' },
-        include: {
-          lines: {
-            include: {
-              entry: { select: { date: true, description: true } },
-            },
-          },
-        },
-      },
-    },
-  })
-
-  const fiscalYear = exerciceFromCookie ?? exerciceFallbackOuvert ?? exerciceFallbackAny
 
   const exercice: DashboardExercice | null = fiscalYear
     ? {

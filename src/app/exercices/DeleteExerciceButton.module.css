@@ -1,0 +1,21 @@
+.wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.iconBtn {
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  background-color: transparent;
+  padding: 0.35rem;
+  line-height: 0;
+}
+
+.error {
+  font-size: 0.8rem;
+  color: var(--danger);
+  max-width: 12rem;
+  text-align: center;
+}

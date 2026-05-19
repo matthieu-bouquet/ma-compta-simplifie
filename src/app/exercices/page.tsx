@@ -47,7 +47,7 @@ export default async function ExercicesPage() {
         </div>
       ) : null}
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+      <div className={styles.pageGrid}>
         {/* Formulaire de création */}
         <div className="card">
           <h2 className="card-title">Nouvel Exercice</h2>
@@ -58,7 +58,7 @@ export default async function ExercicesPage() {
               Cette entité est clôturée : la création d’un nouvel exercice est désactivée.
             </div>
           )}
-          <p style={{ marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          <p className={styles.formNote}>
             Note: Lors de la création, le plan comptable associatif standard sera automatiquement copié et affecté à ce nouvel exercice.
           </p>
         </div>
@@ -69,43 +69,31 @@ export default async function ExercicesPage() {
           {exercices.length === 0 ? (
             <p>Aucun exercice comptable n&apos;a été créé.</p>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <table className={styles.dataTable}>
               <thead>
-                <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-                  <th style={{ padding: '0.75rem 0' }}>Période</th>
+                <tr className={styles.dataTableHead}>
+                  <th className={styles.dataTableTh}>Période</th>
                   <th>Statut</th>
                   <th aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
                 {exercices.map((ex) => (
-                  <tr key={ex.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '0.75rem 0' }}>
+                  <tr key={ex.id} className={styles.dataTableRow}>
+                    <td className={styles.dataTableCell}>
                       {new Date(ex.startDate).toLocaleDateString('fr-FR')} - {new Date(ex.endDate).toLocaleDateString('fr-FR')}
                     </td>
                     <td>
-                      <span style={{
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '1rem',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        backgroundColor: ex.status === 'OPEN' ? 'rgba(151, 206, 102, 0.1)' : 'rgba(100, 116, 139, 0.1)',
-                        color: ex.status === 'OPEN' ? 'var(--success)' : 'var(--text-secondary)'
-                      }}>
+                      <span
+                        className={`${styles.statusPill} ${ex.status === 'OPEN' ? styles.statusOpen : styles.statusClosed}`}
+                      >
                         {ex.status}
                       </span>
                     </td>
-                    <td style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
+                    <td className={styles.rowActions}>
                       <Link
                         href={`/exercices/${ex.id}`}
-                        className="btn"
-                        style={{
-                          border: '1px solid var(--border-color)',
-                          backgroundColor: 'transparent',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                        }}
+                        className={`btn ${styles.configLink}`}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                           <path

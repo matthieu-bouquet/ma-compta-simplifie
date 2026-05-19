@@ -6,6 +6,7 @@
 import { useSearchParams } from 'next/navigation'
 import PageBackLink from '@/components/PageBackLink'
 import ExerciceForm from '../ExerciceForm'
+import formStyles from '../exerciceForm.module.css'
 
 export default function NewExercicePage() {
   const searchParams = useSearchParams()
@@ -15,7 +16,7 @@ export default function NewExercicePage() {
     <div className="p-6">
       <PageBackLink href="/exercices" aria-label="Retour à la liste des exercices" />
       <h1 className="text-2xl font-bold mb-6">Nouvel exercice comptable</h1>
-      <div className="bg-white rounded-lg shadow-md p-6" style={{ maxWidth: '500px' }}>
+      <div className={`bg-white rounded-lg shadow-md p-6 ${formStyles.formCard}`}>
         <ExerciceForm associationId={associationId} />
       </div>
     </div>

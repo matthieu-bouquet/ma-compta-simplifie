@@ -12,6 +12,7 @@ import { Paperclip } from 'lucide-react'
 import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
 import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
 import { mapOpsEntryLineToRow } from '@/lib/mapOpsListRow'
+import { resolveSelectedFiscalYearId } from '@/lib/fiscalYearSelection'
 import { toLocalYmd } from '@/lib/vatStatementPayload'
 import styles from './saisieList.module.css'
 
@@ -63,12 +64,10 @@ export default async function SaisiePage({
     orderBy: { startDate: 'desc' },
   })
 
-  const selectedExerciceId =
-    (exerciceIdParam && fiscalYears.some((e) => e.id === exerciceIdParam)
-      ? exerciceIdParam
-      : cookieExerciceId && fiscalYears.some((e) => e.id === cookieExerciceId)
-        ? cookieExerciceId
-        : fiscalYears.find((e) => e.status === 'OPEN')?.id || fiscalYears[0]?.id) || null
+  const selectedExerciceId = resolveSelectedFiscalYearId(fiscalYears, {
+    urlExerciceId: exerciceIdParam,
+    cookieExerciceId: cookieExerciceId,
+  })
 
   const exerciceOuvert = selectedExerciceId ? fiscalYears.find((e) => e.id === selectedExerciceId) : null
 
@@ -80,24 +79,6 @@ export default async function SaisiePage({
       </div>
     )
   }
-
-  const STANDARD_JOURNAUX: { code: string; name: string }[] = [
-    { code: 'AC', name: 'Achats' },
-    { code: 'BQ', name: 'Banque' },
-    { code: 'CA', name: 'Caisse' },
-    { code: 'OD', name: 'Opérations Diverses' },
-    { code: 'VE', name: 'Ventes' },
-  ]
-
-  await prisma.$transaction(
-    STANDARD_JOURNAUX.map((j) =>
-      prisma.journal.upsert({
-        where: { code: j.code },
-        update: { name: j.name },
-        create: { code: j.code, name: j.name },
-      }),
-    ),
-  )
 
   const journaux = (await prisma.journal.findMany({ orderBy: { code: 'asc' } })).map((j) => ({
     ...j,
@@ -164,7 +145,7 @@ export default async function SaisiePage({
     <div>
       <h1 className="page-title">Saisie Comptable</h1>
 
-      <div className="card" style={{ marginBottom: '1.5rem' }}>
+      <div className={`card ${styles.formCardSection}`}>
         <SaisieForm
           journaux={journaux}
           comptes={comptes}

@@ -8,6 +8,11 @@ export type FiscalYearOption = {
   statut: string // 'OUVERT' | 'CLOTURE' in current UI payload
 }
 
+export type FiscalYearRef = {
+  id: string
+  status: string
+}
+
 export function sortFiscalYearsOpenFirstNewestFirst(exercices: FiscalYearOption[]): FiscalYearOption[] {
   return exercices
     .slice()
@@ -19,3 +24,21 @@ export function sortFiscalYearsOpenFirstNewestFirst(exercices: FiscalYearOption[
     })
 }
 
+/**
+ * Resolves the active fiscal year: URL param → cookie → first OPEN → first in list.
+ */
+export function resolveSelectedFiscalYearId(
+  fiscalYears: FiscalYearRef[],
+  opts: { urlExerciceId?: string | null; cookieExerciceId?: string | null },
+): string | null {
+  if (fiscalYears.length === 0) return null
+
+  const { urlExerciceId, cookieExerciceId } = opts
+  if (urlExerciceId && fiscalYears.some((fy) => fy.id === urlExerciceId)) {
+    return urlExerciceId
+  }
+  if (cookieExerciceId && fiscalYears.some((fy) => fy.id === cookieExerciceId)) {
+    return cookieExerciceId
+  }
+  return fiscalYears.find((fy) => fy.status === 'OPEN')?.id ?? fiscalYears[0]?.id ?? null
+}

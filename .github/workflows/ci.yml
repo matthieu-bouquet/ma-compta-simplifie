@@ -34,6 +34,16 @@ jobs:
         env:
           CI: true
 
+      - name: Unit test coverage
+        run: npm run test:unit:coverage
+        env:
+          CI: true
+
+      - name: Build
+        run: npm run build
+        env:
+          CI: true
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:

@@ -20,7 +20,8 @@ const reset = spawnSync(nodeBin, [path.join(root, 'scripts/test/reset-test-db.mj
 if (reset.status !== 0) process.exit(reset.status ?? 1)
 
 const vitestBin = path.join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'vitest.cmd' : 'vitest')
-const res = spawnSync(vitestBin, ['run'], {
+const vitestArgs = ['run', ...process.argv.slice(2).filter((a) => a !== '--')]
+const res = spawnSync(vitestBin, vitestArgs, {
   stdio: 'inherit',
   cwd: root,
   env: process.env,
