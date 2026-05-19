@@ -19,6 +19,7 @@ import AppSearchableSelect from '@/components/forms/AppSearchableSelect'
 import FormSection from '@/components/forms/FormSection'
 import CounterpartyCreateDialog from '@/components/CounterpartyCreateDialog'
 import forms from '@/components/forms/forms.module.css'
+import { NumberInput } from '@/components/forms/NumberInput'
 import styles from './saisieForm.module.css'
 import {
   COUNTERPARTY_KIND_CUSTOMER,
@@ -871,9 +872,8 @@ export default function SaisieForm({
                 <label className={forms.label} htmlFor="saisie-montant">
                   {showVatUi ? 'Montant TTC (€)' : 'Montant (€)'}
                 </label>
-                <input
+                <NumberInput
                   id="saisie-montant"
-                  type="number"
                   step="0.01"
                   min="0.01"
                   value={montant || ''}
@@ -1346,9 +1346,8 @@ export default function SaisieForm({
                 <label className={forms.label} htmlFor="tresorerie-montant">
                   Montant (€)
                 </label>
-                <input
+                <NumberInput
                   id="tresorerie-montant"
-                  type="number"
                   step="0.01"
                   min="0"
                   value={montant ? montant : ''}
@@ -1410,9 +1409,8 @@ export default function SaisieForm({
                               <label htmlFor={`alloc-${row.payableLineId}`} className="sr-only">
                                 Montant affecté (€)
                               </label>
-                              <input
+                              <NumberInput
                                 id={`alloc-${row.payableLineId}`}
-                                type="number"
                                 step="0.01"
                                 min="0"
                                 max={(row.remainingCents / 100).toFixed(2)}
@@ -1544,9 +1542,8 @@ export default function SaisieForm({
                       <label className="sr-only" htmlFor={`saisie-ligne-debit-${i}`}>
                         Débit ligne {i + 1}
                       </label>
-                      <input
+                      <NumberInput
                         id={`saisie-ligne-debit-${i}`}
-                        type="number"
                         step="0.01"
                         min="0"
                         value={ligne.debit || ''}
@@ -1558,9 +1555,8 @@ export default function SaisieForm({
                       <label className="sr-only" htmlFor={`saisie-ligne-credit-${i}`}>
                         Crédit ligne {i + 1}
                       </label>
-                      <input
+                      <NumberInput
                         id={`saisie-ligne-credit-${i}`}
-                        type="number"
                         step="0.01"
                         min="0"
                         value={ligne.credit || ''}

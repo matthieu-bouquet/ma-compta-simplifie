@@ -3,7 +3,12 @@
 
 import { redirect } from 'next/navigation'
 
-export default function EditAssociationRedirectPage({ params }: { params: { id: string } }) {
-  redirect(`/parametres/entites/${params.id}/edit`)
+export default async function EditAssociationRedirectPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  redirect(`/parametres/entites/${id}/edit`)
 }
 

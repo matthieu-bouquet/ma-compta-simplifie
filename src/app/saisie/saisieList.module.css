@@ -1,0 +1,116 @@
+.toolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem 1rem;
+  align-items: end;
+  margin-bottom: 0.75rem;
+}
+
+.toolbarActions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.count {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.empty {
+  color: var(--text-secondary);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.theadRow {
+  border-bottom: 2px solid var(--border-color);
+}
+
+.th {
+  padding: 0.9rem 0.5rem;
+}
+
+.thRight {
+  padding: 0.9rem 0.5rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.thCenter {
+  padding: 0.9rem 0.5rem;
+  text-align: center;
+  width: 1%;
+}
+
+.thActions {
+  padding: 0.75rem 0;
+  text-align: right;
+  width: 1%;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.tr {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.td {
+  padding: 0.75rem 0.5rem;
+}
+
+.tdRight {
+  padding: 0.75rem 0.5rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tdCenter {
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.tdActions {
+  padding: 0.5rem 0 0.5rem 0.5rem;
+  text-align: right;
+  white-space: nowrap;
+  min-width: 44px;
+}
+
+.paymentEmpty {
+  color: var(--text-secondary);
+}
+
+.docBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(66, 120, 186, 0.35);
+  background: rgba(66, 120, 186, 0.08);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.footer {
+  margin-top: 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}

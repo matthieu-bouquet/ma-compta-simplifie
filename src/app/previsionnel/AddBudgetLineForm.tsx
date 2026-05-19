@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import AppSearchableSelect from '@/components/forms/AppSearchableSelect'
 import forms from '@/components/forms/forms.module.css'
+import { NumberInput } from '@/components/forms/NumberInput'
 import { upsertBudgetLine } from '@/actions/budgetActions'
 import styles from './previsionnel.module.css'
 
@@ -82,10 +83,9 @@ export default function AddBudgetLineForm({
           <label className={forms.label} htmlFor="add-budget-amount">
             Montant prévisionnel (€)
           </label>
-          <input
+          <NumberInput
             id="add-budget-amount"
             name="amountEuros"
-            type="number"
             step="0.01"
             min="0"
             defaultValue="0"

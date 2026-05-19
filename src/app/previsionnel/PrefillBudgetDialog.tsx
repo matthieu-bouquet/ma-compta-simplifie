@@ -7,6 +7,7 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { prefillBudgetFromFiscalYear } from '@/actions/budgetActions'
 import forms from '@/components/forms/forms.module.css'
+import { NumberInput } from '@/components/forms/NumberInput'
 import styles from './previsionnel.module.css'
 
 export default function PrefillBudgetDialog({
@@ -95,10 +96,9 @@ export default function PrefillBudgetDialog({
               <label className={forms.label} htmlFor="prefill-coefficient">
                 Coefficient (%)
               </label>
-              <input
+              <NumberInput
                 id="prefill-coefficient"
                 name="coefficientPercent"
-                type="number"
                 min={1}
                 max={1000}
                 step={1}

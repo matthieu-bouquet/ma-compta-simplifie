@@ -10,6 +10,7 @@ import CloturerExerciceButton from '../CloturerExerciceButton'
 import ComptePaiementRow from '../ComptePaiementRow'
 import CompteRowExercice from '../CompteRowExercice'
 import forms from '@/components/forms/forms.module.css'
+import { NumberInput } from '@/components/forms/NumberInput'
 import layout from '../exerciceConfig.module.css'
 import type { Account } from '@prisma/client'
 
@@ -165,9 +166,8 @@ export default async function ConfigurationExercicePage({ params }: { params: { 
                   <label className={forms.label} htmlFor="exercice-mp-solde">
                     Solde initial à l&apos;ouverture (€)
                   </label>
-                  <input
+                  <NumberInput
                     id="exercice-mp-solde"
-                    type="number"
                     step="0.01"
                     min="0"
                     name="soldeInitial"
