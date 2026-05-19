@@ -81,24 +81,6 @@ export default async function SaisiePage({
     )
   }
 
-  const STANDARD_JOURNAUX: { code: string; name: string }[] = [
-    { code: 'AC', name: 'Achats' },
-    { code: 'BQ', name: 'Banque' },
-    { code: 'CA', name: 'Caisse' },
-    { code: 'OD', name: 'Opérations Diverses' },
-    { code: 'VE', name: 'Ventes' },
-  ]
-
-  await prisma.$transaction(
-    STANDARD_JOURNAUX.map((j) =>
-      prisma.journal.upsert({
-        where: { code: j.code },
-        update: { name: j.name },
-        create: { code: j.code, name: j.name },
-      }),
-    ),
-  )
-
   const journaux = (await prisma.journal.findMany({ orderBy: { code: 'asc' } })).map((j) => ({
     ...j,
     nom: j.name,

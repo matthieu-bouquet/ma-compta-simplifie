@@ -79,7 +79,10 @@ export default function CompteRowExercice({
   }
 
   return (
-    <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+    <tr
+      data-testid={`exercice-plan-account-row-${compte.numero}`}
+      style={{ borderBottom: '1px solid var(--border-color)' }}
+    >
       <td style={{ padding: '0.5rem 0', fontWeight: 'bold' }}>{compte.numero}</td>
       <td>{compte.libelle}</td>
       <td style={{ textAlign: 'right', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>

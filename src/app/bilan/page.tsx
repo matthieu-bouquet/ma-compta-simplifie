@@ -113,11 +113,11 @@ export default async function BilanPage({
 
   return (
     <div>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 className="page-title no-topbar-pad" style={{ margin: 0 }}>
+      <div className={styles.pageHeader}>
+        <h1 className={`page-title no-topbar-pad ${styles.pageTitle}`}>
           Compte de Résultat Détaillé
         </h1>
-        <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-start' }}>
+        <div className={styles.downloadRow}>
           <DownloadPdfButton
             associationName={association?.name ?? 'Association'}
             includeClass8CvnSection={includeClass8CvnSection}
@@ -137,36 +137,36 @@ export default async function BilanPage({
         </div>
       </div>
       
-      <div className="card" style={{ marginBottom: '2rem' }}>
+      <div className={`card ${styles.synthesisCard}`}>
         <h2 className="card-title">Synthèse de l&apos;exercice</h2>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.25rem', fontWeight: 600 }}>
-          <span style={{ color: 'var(--danger)' }}>Charges : {totalCharges.toFixed(2)} €</span>
-          <span style={{ color: 'var(--success)' }}>Produits : {totalProduits.toFixed(2)} €</span>
-          <span style={{ color: resultat >= 0 ? 'var(--success)' : 'var(--danger)', fontSize: '1.5rem', fontWeight: 700 }}>
+        <div className={styles.synthesisRow}>
+          <span className={styles.chargesTotal}>Charges : {totalCharges.toFixed(2)} €</span>
+          <span className={styles.produitsTotal}>Produits : {totalProduits.toFixed(2)} €</span>
+          <span className={`${styles.resultTotal} ${resultat >= 0 ? styles.resultPositive : styles.resultNegative}`}>
             Résultat Net : {resultat >= 0 ? '+' : ''}{resultat.toFixed(2)} €
           </span>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+      <div className={styles.columnsGrid}>
         {/* Colonne Charges */}
         <div className="card">
-          <h2 className="card-title" style={{ color: 'var(--danger)' }}>Charges (Classe 6)</h2>
+          <h2 className={`card-title ${styles.sectionTitleCharges}`}>Charges (Classe 6)</h2>
           {comptesCharges.length === 0 ? (
             <p>Aucune charge enregistrée.</p>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <table className={styles.dataTable}>
               <thead>
-                <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-                  <th style={{ padding: '0.75rem 0' }}>Compte</th>
-                  <th style={{ textAlign: 'right' }}>Montant</th>
+                <tr className={styles.dataTableHead}>
+                  <th className={styles.dataTableTh}>Compte</th>
+                  <th className={styles.dataTableThRight}>Montant</th>
                 </tr>
               </thead>
               <tbody>
                 {comptesCharges.map(c => (
-                  <tr key={c.numero} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '0.5rem 0' }}>{c.numero} - {c.libelle}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 500 }}>{c.solde.toFixed(2)} €</td>
+                  <tr key={c.numero} className={styles.dataTableRow}>
+                    <td className={styles.dataTableCell}>{c.numero} - {c.libelle}</td>
+                    <td className={styles.dataTableAmount}>{c.solde.toFixed(2)} €</td>
                   </tr>
                 ))}
               </tbody>
@@ -176,22 +176,22 @@ export default async function BilanPage({
 
         {/* Colonne Produits */}
         <div className="card">
-          <h2 className="card-title" style={{ color: 'var(--success)' }}>Produits (Classe 7)</h2>
+          <h2 className={`card-title ${styles.sectionTitleProduits}`}>Produits (Classe 7)</h2>
           {comptesProduits.length === 0 ? (
             <p>Aucun produit enregistré.</p>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <table className={styles.dataTable}>
               <thead>
-                <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-                  <th style={{ padding: '0.75rem 0' }}>Compte</th>
-                  <th style={{ textAlign: 'right' }}>Montant</th>
+                <tr className={styles.dataTableHead}>
+                  <th className={styles.dataTableTh}>Compte</th>
+                  <th className={styles.dataTableThRight}>Montant</th>
                 </tr>
               </thead>
               <tbody>
                 {comptesProduits.map(c => (
-                  <tr key={c.numero} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '0.5rem 0' }}>{c.numero} - {c.libelle}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 500 }}>{c.solde.toFixed(2)} €</td>
+                  <tr key={c.numero} className={styles.dataTableRow}>
+                    <td className={styles.dataTableCell}>{c.numero} - {c.libelle}</td>
+                    <td className={styles.dataTableAmount}>{c.solde.toFixed(2)} €</td>
                   </tr>
                 ))}
               </tbody>
@@ -201,7 +201,7 @@ export default async function BilanPage({
       </div>
 
       {includeClass8CvnSection ? (
-        <div className="card" style={{ marginTop: '2rem' }}>
+        <div className={`card ${styles.cvnSection}`}>
           <h2 className={`card-title ${styles.noMargin}`}>Contributions volontaires en nature (Classe 8)</h2>
 
           {!cvnIsBalanced ? (

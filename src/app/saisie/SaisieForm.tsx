@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { forwardRef, useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { createEcriture } from '@/actions/ecritureActions'
 import { getCustomer411Preview, getSupplier401Preview } from '@/actions/counterpartyActions'
 import {
@@ -35,46 +35,18 @@ import {
   listOpenCustomerReceivables,
   listOpenSupplierPayables,
 } from '@/actions/treasuryActions'
-
-type Journal = { id: string; code: string; nom: string }
-type Compte = { id: string; numero: string; libelle: string }
-type LigneForm = { compteId: string; debit: number; credit: number }
-
-type CounterpartyLite = { id: string; name: string; kind: string }
-
-type TypeOperation =
-  | 'DEPENSE'
-  | 'RECETTE'
-  | 'TRANSFERT'
-  | 'REGLEMENT_FOURNISSEUR'
-  | 'ENCAISSEMENT_CLIENT'
-
-const DateInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function DateInput(
-  props,
-  ref
-) {
-  return <input ref={ref} {...props} />
-})
-
-function findThirdPartyAccount(comptes: Compte[], rootPrefix: string): Compte | undefined {
-  const exact = comptes.find((c) => c.numero === rootPrefix)
-  if (exact) return exact
-  return comptes.find((c) => c.numero.startsWith(rootPrefix))
-}
-
-function journalCodeForPayment(compte: Compte | undefined): 'BQ' | 'CA' {
-  if (!compte) return 'BQ'
-  return compte.numero.startsWith('53') ? 'CA' : 'BQ'
-}
-
-function quickDocOperationLineIndex(op: TypeOperation): number {
-  if (op === 'REGLEMENT_FOURNISSEUR') return 0
-  if (op === 'ENCAISSEMENT_CLIENT') return 0
-  if (op === 'TRANSFERT') return 0
-  if (op === 'DEPENSE') return 0
-  if (op === 'RECETTE') return 1
-  return 0
-}
+import {
+  DateInput,
+  findThirdPartyAccount,
+  journalCodeForPayment,
+  quickDocOperationLineIndex,
+  type Compte,
+  type CounterpartyLite,
+  type Journal,
+  type LigneForm,
+  type TypeOperation,
+} from './saisieFormTypes'
+import SaisieFormModeBar from './SaisieFormModeBar'
 
 export default function SaisieForm({
   journaux,
@@ -747,49 +719,16 @@ export default function SaisieForm({
         }}
       />
 
-      <div className={styles.modeBar}>
-        <button
-          type="button"
-          className={`btn ${mode === 'OPERATIONS' ? 'btn-primary' : ''} ${mode === 'OPERATIONS' ? styles.modeBtnActive : ''} ${styles.modeBtn}`}
-          onClick={() => {
-            setMode('OPERATIONS')
-            setTypeOperation('DEPENSE')
-            setError('')
-            setSuccess('')
-            setTabParam('ops')
-          }}
-        >
-          Dépense / recette
-        </button>
-        <button
-          type="button"
-          className={`btn ${mode === 'TREASURY' ? 'btn-primary' : ''} ${mode === 'TREASURY' ? styles.modeBtnActive : ''} ${styles.modeBtn}`}
-          onClick={() => {
-            setMode('TREASURY')
-            setTypeOperation('REGLEMENT_FOURNISSEUR')
-            setTreasuryAllocationsByLineId({})
-            setTreasuryOpenItems(null)
-            setError('')
-            setSuccess('')
-            setTabParam('treasury')
-          }}
-        >
-          Règlement / Encaissement
-        </button>
-        <button
-          type="button"
-          className={`btn ${mode === 'AVANCE' ? 'btn-primary' : ''} ${mode === 'AVANCE' ? styles.modeBtnActive : ''} ${styles.modeBtn}`}
-          onClick={() => {
-            setMode('AVANCE')
-            setError('')
-            setSuccess('')
-            /* Bottom list follows ops tab (classes 6 & 7), not treasury (class 5). */
-            setTabParam('ops')
-          }}
-        >
-          Saisie Avancée (Multiple)
-        </button>
-      </div>
+      <SaisieFormModeBar
+        mode={mode}
+        setMode={setMode}
+        setTypeOperation={setTypeOperation}
+        setError={setError}
+        setSuccess={setSuccess}
+        setTreasuryAllocationsByLineId={setTreasuryAllocationsByLineId}
+        setTreasuryOpenItems={setTreasuryOpenItems}
+        setTabParam={setTabParam}
+      />
 
       <form onSubmit={handleSubmit} className={styles.form}>
         {error ? <div className={`card ${forms.alertError}`}>{error}</div> : null}
@@ -851,6 +790,7 @@ export default function SaisieForm({
                   </button>
                   <button
                     type="button"
+                    data-testid="saisie-operation-recette"
                     className={`${styles.operationBtn} ${styles.operationBtnBorder} ${typeOperation === 'RECETTE' ? styles.operationBtnRecetteActive : ''}`}
                     onClick={() => switchTypeOperation('RECETTE')}
                   >

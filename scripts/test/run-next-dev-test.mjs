@@ -19,6 +19,18 @@ const reset = spawn(process.platform === 'win32' ? 'node.exe' : 'node', [path.jo
 reset.on('exit', (code) => {
   if (code !== 0) process.exit(code ?? 1)
 
+  const seed = spawn(process.platform === 'win32' ? 'node.exe' : 'node', [path.join(root, 'prisma/seed.mjs')], {
+    stdio: 'inherit',
+    cwd: root,
+    env: process.env,
+  })
+  seed.on('exit', (seedCode) => {
+    if (seedCode !== 0) process.exit(seedCode ?? 1)
+    startNextDev()
+  })
+})
+
+function startNextDev() {
   const nextBin = path.join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'next.cmd' : 'next')
   const port = process.env.PORT || '3002'
 
@@ -30,5 +42,5 @@ reset.on('exit', (code) => {
   })
 
   child.on('exit', (c) => process.exit(c ?? 1))
-})
+}
 

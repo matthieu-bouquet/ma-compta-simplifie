@@ -1,0 +1,129 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.emptyState {
+  color: var(--text-secondary);
+}
+
+.legendWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.legendBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: white;
+  cursor: pointer;
+}
+
+.legendBtnHidden {
+  background: rgba(2, 6, 23, 0.03);
+}
+
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.legendLabelHidden {
+  opacity: 0.6;
+}
+
+.chartWrap {
+  position: relative;
+}
+
+.monthHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.monthTitle {
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.monthSelect {
+  height: 36px;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color);
+  background: white;
+  color: var(--text-primary);
+  padding: 0 0.6rem;
+  outline: none;
+  min-width: 160px;
+}
+
+.footnote {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 10050;
+  pointer-events: none;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.65rem;
+  background: rgba(15, 23, 42, 0.92);
+  color: white;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  min-width: 220px;
+}
+
+.tooltipTitle {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.tooltipRows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tooltipRow {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.tooltipRowInner {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.tooltipLabel {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.tooltipValue {
+  font-weight: 700;
+}
+
+.tooltipMuted {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}

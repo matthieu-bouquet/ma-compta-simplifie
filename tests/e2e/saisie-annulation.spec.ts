@@ -1,86 +1,37 @@
 import { test, expect } from '@playwright/test'
-import path from 'node:path'
-import { PrismaClient } from '@prisma/client'
-
-function getTestDbUrl() {
-  const p = path.join(process.cwd(), '.tmp', 'e2e.db')
-  return `file:${p}`
-}
+import { createE2EPrisma, setContextCookies } from './helpers/db'
+import { seedBalancedExpenseEntry, seedSaisieBase } from './helpers/fixtures'
 
 test("annuler une écriture: wording distinct et fermeture de modal", async ({ page }) => {
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
 
   let associationId: string
   let fiscalYearId: string
 
   try {
-    const assoc = await prisma.association.create({
-      data: {
-        name: 'Association SAISIE E2E',
-        chartTemplateId: '00000000-0000-0000-0000-000000000001',
-      },
-    })
-    associationId = assoc.id
-
-    const fy = await prisma.fiscalYear.create({
-      data: {
-        associationId,
-        startDate: new Date('2026-01-01'),
-        endDate: new Date('2026-12-31'),
-        status: 'OPEN',
-      },
-    })
-    fiscalYearId = fy.id
-
-    const journal = await prisma.journal.upsert({
-      where: { code: 'OD' },
-      update: { name: 'Opérations Diverses' },
-      create: { code: 'OD', name: 'Opérations Diverses' },
-    })
+    const seeded = await seedSaisieBase(prisma, { name: 'Association SAISIE E2E' })
+    associationId = seeded.associationId
+    fiscalYearId = seeded.fiscalYearId
 
     const debitAccount = await prisma.account.create({
       data: { fiscalYearId, number: '601', name: 'Achats' },
     })
-    const creditAccount = await prisma.account.create({
-      data: { fiscalYearId, number: '512', name: 'Banque' },
-    })
 
-    await prisma.entry.create({
-      data: {
-        fiscalYearId,
-        journalId: journal.id,
-        date: new Date('2026-02-01'),
-        description: 'Test annulation saisie',
-        referenceNumber: 'OD-000001',
-        referenceSequence: 1,
-        lines: {
-          create: [
-            {
-              accountId: debitAccount.id,
-              accountNumber: debitAccount.number,
-              accountName: debitAccount.name,
-              debitCents: 1000,
-              creditCents: 0,
-            },
-            {
-              accountId: creditAccount.id,
-              accountNumber: creditAccount.number,
-              accountName: creditAccount.name,
-              debitCents: 0,
-              creditCents: 1000,
-            },
-          ],
-        },
+    await seedBalancedExpenseEntry(prisma, {
+      fiscalYearId,
+      description: 'Test annulation saisie',
+      debitAccount: { id: debitAccount.id, number: debitAccount.number, name: debitAccount.name },
+      creditAccount: {
+        id: seeded.accounts.bank512.id,
+        number: seeded.accounts.bank512.number,
+        name: 'Banque',
       },
     })
   } finally {
     await prisma.$disconnect()
   }
 
-  await page.context().addCookies([
-    { name: 'currentAssociationId', value: associationId, path: '/', domain: '127.0.0.1' },
-    { name: 'currentExerciceId', value: fiscalYearId, path: '/', domain: '127.0.0.1' },
-  ])
+  await setContextCookies(page, { associationId: associationId!, fiscalYearId: fiscalYearId! })
 
   await page.goto('/saisie')
 
@@ -103,12 +54,25 @@ test("annuler une écriture: wording distinct et fermeture de modal", async ({ p
   await expect(page.locator('dialog[open]')).toHaveCount(0)
 
   // Une seule contrepassation doit être créée (pas de double soumission).
-  const prismaCheck = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prismaCheck = createE2EPrisma()
   try {
     const reversals = await prismaCheck.entry.count({
       where: { fiscalYearId, description: 'REVERSAL: Test annulation saisie' },
     })
     expect(reversals).toBe(1)
+
+    const originalLines = await prismaCheck.entryLine.findMany({
+      where: { entry: { fiscalYearId, description: 'Test annulation saisie' } },
+    })
+    const reversalLines = await prismaCheck.entryLine.findMany({
+      where: { entry: { fiscalYearId, description: 'REVERSAL: Test annulation saisie' } },
+    })
+    expect(originalLines.length).toBeGreaterThan(0)
+    expect(reversalLines.length).toBeGreaterThan(0)
+
+    const originalDebit = originalLines.reduce((s, l) => s + l.debitCents, 0)
+    const reversalCredit = reversalLines.reduce((s, l) => s + l.creditCents, 0)
+    expect(reversalCredit).toBe(originalDebit)
   } finally {
     await prismaCheck.$disconnect()
   }

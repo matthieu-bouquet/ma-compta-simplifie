@@ -5,6 +5,7 @@
 
 import { useMemo, useRef, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
+import chartStyles from './PaymentMethodsEvolutionChart.module.css'
 
 type InputLine = {
   montantDebit: number
@@ -354,16 +355,16 @@ export default function PaymentMethodsEvolutionChart({
 
   if (!data) return null
   if (!data.seriesMonthly.length) {
-    return <div style={{ color: 'var(--text-secondary)' }}>Aucun moyen de paiement (classe 5) sur cet exercice.</div>
+    return <div className={chartStyles.emptyState}>Aucun moyen de paiement (classe 5) sur cet exercice.</div>
   }
   if (!chartModel) return null
 
   const { width, height, pad, h, ticks, x, y, visibleSeriesMonthly } = chartModel
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div className={chartStyles.root}>
       {/* Toggles (mutualisés pour les 2 graphes) */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+      <div className={chartStyles.legendWrap}>
         {data.seriesMonthly.map((s, si) => {
           const hidden = hiddenSeriesIds.has(s.id)
           return (
@@ -373,28 +374,17 @@ export default function PaymentMethodsEvolutionChart({
               onClick={() => toggleSeries(s.id)}
               aria-pressed={!hidden}
               title={hidden ? 'Afficher ce compte' : 'Masquer ce compte'}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                padding: '6px 10px',
-                borderRadius: 999,
-                border: '1px solid var(--border-color)',
-                background: hidden ? 'rgba(2,6,23,0.03)' : 'white',
-                cursor: 'pointer',
-              }}
+              className={`${chartStyles.legendBtn} ${hidden ? chartStyles.legendBtnHidden : ''}`}
             >
               <span
                 aria-hidden="true"
+                className={chartStyles.legendSwatch}
                 style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 99,
                   background: COLORS[si % COLORS.length],
                   opacity: hidden ? 0.35 : 1,
                 }}
               />
-              <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', opacity: hidden ? 0.6 : 1 }}>
+              <span className={`${chartStyles.legendLabel} ${hidden ? chartStyles.legendLabelHidden : ''}`}>
                 {s.label}
               </span>
             </button>
@@ -403,7 +393,7 @@ export default function PaymentMethodsEvolutionChart({
       </div>
 
       {/* Graphe global (mensuel) */}
-      <div style={{ position: 'relative' }}>
+      <div className={chartStyles.chartWrap}>
         <svg
           ref={svgRef}
           viewBox={`0 0 ${width} ${height}`}
@@ -565,21 +555,12 @@ export default function PaymentMethodsEvolutionChart({
       </div>
 
       {/* Graphe détail du mois */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-        <div style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>Détail du mois</div>
+      <div className={chartStyles.monthHeader}>
+        <div className={chartStyles.monthTitle}>Détail du mois</div>
         <select
           value={effectiveMonthKey ?? ''}
           onChange={(e) => setSelectedMonthKey(e.target.value)}
-          style={{
-            height: '36px',
-            borderRadius: '0.5rem',
-            border: '1px solid var(--border-color)',
-            background: 'white',
-            color: 'var(--text-primary)',
-            padding: '0 0.6rem',
-            outline: 'none',
-            minWidth: 160,
-          }}
+          className={chartStyles.monthSelect}
           aria-label="Sélectionner un mois"
           title="Sélectionner un mois"
         >
@@ -605,7 +586,7 @@ export default function PaymentMethodsEvolutionChart({
         <div style={{ color: 'var(--text-secondary)' }}>Aucune donnée sur ce mois.</div>
       )}
 
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+      <div className={chartStyles.footnote}>
         Vue globale: 1 point par mois. Détail: 1 point par jour sur le mois sélectionné.
       </div>
     </div>
