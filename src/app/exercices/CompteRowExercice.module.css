@@ -1,0 +1,61 @@
+.row {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tdNum {
+  padding: 0.5rem 0;
+  font-weight: 700;
+}
+
+.tdNumInput {
+  padding: 0.5rem 0;
+}
+
+.numeroInput {
+  width: 80px;
+  padding: 0.25rem;
+}
+
+.libelleInput {
+  width: 100%;
+  padding: 0.25rem;
+}
+
+.tdActions {
+  text-align: right;
+}
+
+.rowActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.iconBtn {
+  padding: 0.35rem;
+  line-height: 0;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconBtnPrimary {
+  padding: 0.35rem;
+  line-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconBtnDanger {
+  padding: 0.35rem;
+  line-height: 0;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

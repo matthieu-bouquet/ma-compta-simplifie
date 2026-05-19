@@ -9,6 +9,7 @@ import DocumentsTableClient from './DocumentsTableClient'
 import styles from './page.module.css'
 import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
 import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
+import { resolveSelectedFiscalYearId } from '@/lib/fiscalYearSelection'
 
 export default async function DocumentsPage({
   searchParams,
@@ -42,12 +43,10 @@ export default async function DocumentsPage({
     )
   }
 
-  const selectedFiscalYearId =
-    (spExerciceId && fiscalYears.some((e) => e.id === spExerciceId)
-      ? spExerciceId
-      : cookieExerciceId && fiscalYears.some((e) => e.id === cookieExerciceId)
-        ? cookieExerciceId
-        : fiscalYears.find((e) => e.status === 'OPEN')?.id || fiscalYears[0]?.id) || null
+  const selectedFiscalYearId = resolveSelectedFiscalYearId(fiscalYears, {
+    urlExerciceId: spExerciceId,
+    cookieExerciceId: cookieExerciceId,
+  })
 
   const fiscalYear = selectedFiscalYearId ? fiscalYears.find((e) => e.id === selectedFiscalYearId) : null
 

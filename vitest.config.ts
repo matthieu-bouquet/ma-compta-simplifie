@@ -7,6 +7,12 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.test.ts'],
     setupFiles: ['./tests/setup/env.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.ts', 'src/**/*.d.ts'],
+    },
   },
   resolve: {
     alias: {

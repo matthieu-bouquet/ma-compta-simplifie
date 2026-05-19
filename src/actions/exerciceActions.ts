@@ -28,10 +28,14 @@ export async function getFiscalYears(associationId?: string | null) {
 export async function createFiscalYear(formData: FormData) {
   const startDateStr = formData.get('dateDebut') as string
   const endDateStr = formData.get('dateFin') as string
-  const associationId = formData.get('associationId') as string
 
-  if (!startDateStr || !endDateStr || !associationId) {
-    throw new Error('Start/end dates and association are required.')
+  const associationId = await getCurrentAssociationId()
+  if (!associationId) {
+    throw new Error('Association non sélectionnée.')
+  }
+
+  if (!startDateStr || !endDateStr) {
+    throw new Error('Start/end dates are required.')
   }
 
   const isYYYYMMDD = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s)
@@ -99,7 +103,7 @@ export async function createFiscalYear(formData: FormData) {
     throw new Error('Global chart of accounts is empty. Please configure it first.')
   }
 
-  await prisma.fiscalYear.create({
+  const created = await prisma.fiscalYear.create({
     data: {
       startDate,
       endDate,
@@ -111,7 +115,18 @@ export async function createFiscalYear(formData: FormData) {
           name: a.name,
         }))
       }
-    }
+    },
+    select: { id: true },
+  })
+
+  await writeAuditEvent({
+    associationId,
+    fiscalYearId: created.id,
+    actor: associationId,
+    action: 'FISCAL_YEAR_CREATE',
+    entityType: 'FiscalYear',
+    entityId: created.id,
+    data: { startDate: startDateStr, endDate: endDateStr },
   })
 
   revalidatePath('/exercices')

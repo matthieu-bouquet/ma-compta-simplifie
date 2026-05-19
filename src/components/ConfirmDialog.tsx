@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useId, useRef } from 'react'
 import styles from './ConfirmDialog.module.css'
 
 export default function ConfirmDialog({
@@ -25,6 +25,8 @@ export default function ConfirmDialog({
   trigger: (opts: { open: () => void }) => React.ReactNode
   onConfirm: (opts: { close: () => void }) => Promise<void> | void
 }) {
+  const titleId = useId()
+  const descriptionId = useId()
   const dialogRef = useRef<HTMLDialogElement | null>(null)
 
   const open = useCallback(() => {
@@ -53,8 +55,8 @@ export default function ConfirmDialog({
         className={styles.dialog}
         onMouseDown={onBackdropMouseDown}
         onCancel={onCancel}
-        aria-labelledby="confirm-dialog-title"
-        aria-describedby={description ? 'confirm-dialog-description' : undefined}
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
       >
         <div className={styles.panel}>
           <div className={styles.body}>
@@ -70,11 +72,11 @@ export default function ConfirmDialog({
                 <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </button>
-            <h3 id="confirm-dialog-title" className={styles.title}>
+            <h3 id={titleId} className={styles.title}>
               {title}
             </h3>
             {description ? (
-              <p className={styles.description} id="confirm-dialog-description">
+              <p className={styles.description} id={descriptionId}>
                 {description}
               </p>
             ) : null}

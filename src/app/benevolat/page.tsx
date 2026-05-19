@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 import { getCurrentExerciceId } from '@/lib/exerciceContext'
 import { getCurrentAssociation } from '@/lib/currentAssociation'
+import { resolveSelectedFiscalYearId } from '@/lib/fiscalYearSelection'
 import { isAssociationLegalForm } from '@/lib/legalForms'
 import forms from '@/components/forms/forms.module.css'
 import styles from './benevolat.module.css'
@@ -66,12 +67,10 @@ export default async function VolunteeringPage({
     )
   }
 
-  const fiscalYearId =
-    (spExerciceId && fiscalYears.some((e) => e.id === spExerciceId)
-      ? spExerciceId
-      : cookieExerciceId && fiscalYears.some((e) => e.id === cookieExerciceId)
-        ? cookieExerciceId
-        : fiscalYears.find((e) => e.status === 'OPEN')?.id || fiscalYears[0].id)
+  const fiscalYearId = resolveSelectedFiscalYearId(fiscalYears, {
+    urlExerciceId: spExerciceId,
+    cookieExerciceId: cookieExerciceId,
+  })!
 
   const rows = await prisma.inKindContribution.findMany({
     where: {

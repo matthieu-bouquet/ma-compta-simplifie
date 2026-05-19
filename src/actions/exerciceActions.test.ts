@@ -14,6 +14,12 @@ vi.mock('@/lib/associationContext', () => ({
   getCurrentAssociationId: async () => currentAssociationId,
 }))
 
+const writeAuditEvent = vi.fn()
+
+vi.mock('@/lib/audit', () => ({
+  writeAuditEvent: (...args: unknown[]) => writeAuditEvent(...args),
+}))
+
 import { updateOpeningBalance } from '@/actions/exerciceActions'
 import { createFiscalYear } from '@/actions/exerciceActions'
 
@@ -81,6 +87,11 @@ describe('updateOpeningBalance', () => {
 })
 
 describe('createFiscalYear', () => {
+  beforeEach(() => {
+    currentAssociationId = null
+    writeAuditEvent.mockClear()
+  })
+
   it('stores start/end as the exact calendar dates (no timezone day shift)', async () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
@@ -91,9 +102,9 @@ describe('createFiscalYear', () => {
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'FY date storage test' } })
+      currentAssociationId = assoc.id
 
       const fd = new FormData()
-      fd.set('associationId', assoc.id)
       fd.set('dateDebut', '2025-09-01')
       fd.set('dateFin', '2026-08-31')
 
@@ -105,9 +116,26 @@ describe('createFiscalYear', () => {
       expect(fy).toBeTruthy()
       expect(fy?.startDate.toISOString().slice(0, 10)).toBe('2025-09-01')
       expect(fy?.endDate.toISOString().slice(0, 10)).toBe('2026-08-31')
+
+      expect(writeAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          associationId: assoc.id,
+          fiscalYearId: fy!.id,
+          action: 'FISCAL_YEAR_CREATE',
+          entityType: 'FiscalYear',
+          entityId: fy!.id,
+        }),
+      )
     } finally {
       await prisma.$disconnect()
     }
+  })
+
+  it('requires current association cookie', async () => {
+    const fd = new FormData()
+    fd.set('dateDebut', '2025-09-01')
+    fd.set('dateFin', '2026-08-31')
+    await expect(createFiscalYear(fd)).rejects.toThrow('Association non sélectionnée.')
   })
 
   it('rejects when end date is before start date', async () => {
@@ -120,9 +148,9 @@ describe('createFiscalYear', () => {
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'FY invalid range test' } })
+      currentAssociationId = assoc.id
 
       const fd = new FormData()
-      fd.set('associationId', assoc.id)
       fd.set('dateDebut', '2025-09-01')
       fd.set('dateFin', '2025-08-31')
 

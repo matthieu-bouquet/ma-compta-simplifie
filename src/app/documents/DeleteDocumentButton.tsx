@@ -5,6 +5,7 @@
 
 import { useState, useTransition } from 'react'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import iconStyles from '@/components/iconActionButton.module.css'
 import { deleteDocument } from '@/actions/documentActions'
 import { Trash2 } from 'lucide-react'
 
@@ -19,7 +20,7 @@ export default function DeleteDocumentButton({
   const [error, setError] = useState<string | null>(null)
 
   return (
-    <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+    <div className={iconStyles.wrapEnd}>
       <ConfirmDialog
         title="Supprimer le document ?"
         description={`Cette action est irréversible. Document : ${documentLabel}`}
@@ -29,18 +30,11 @@ export default function DeleteDocumentButton({
         trigger={({ open }) => (
           <button
             type="button"
-            className="btn"
+            className={`btn ${iconStyles.iconBtnNeutral}`}
             onClick={open}
             disabled={isPending}
             title="Supprimer"
             aria-label="Supprimer"
-            style={{
-              padding: '0.35rem',
-              border: '1px solid var(--border-color)',
-              backgroundColor: 'transparent',
-              color: 'var(--danger)',
-              lineHeight: 0,
-            }}
           >
             <Trash2 size={16} aria-hidden="true" />
           </button>
@@ -57,12 +51,7 @@ export default function DeleteDocumentButton({
           })
         }}
       />
-      {error ? (
-        <div className="text-danger" style={{ fontSize: '0.85rem', maxWidth: '260px', textAlign: 'right' }}>
-          {error}
-        </div>
-      ) : null}
+      {error ? <div className={iconStyles.errorEnd}>{error}</div> : null}
     </div>
   )
 }
-

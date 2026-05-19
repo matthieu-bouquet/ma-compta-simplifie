@@ -59,3 +59,98 @@
   flex-shrink: 0;
 }
 
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  margin: 0;
+}
+
+.downloadRow {
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.synthesisCard {
+  margin-bottom: 2rem;
+}
+
+.synthesisRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.chargesTotal {
+  color: var(--danger);
+}
+
+.produitsTotal {
+  color: var(--success);
+}
+
+.resultTotal {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.resultPositive {
+  color: var(--success);
+}
+
+.resultNegative {
+  color: var(--danger);
+}
+
+.columnsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.sectionTitleCharges {
+  color: var(--danger);
+}
+
+.sectionTitleProduits {
+  color: var(--success);
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.dataTableHead {
+  border-bottom: 2px solid var(--border-color);
+}
+
+.dataTableTh {
+  padding: 0.75rem 0;
+}
+
+.dataTableThRight {
+  text-align: right;
+}
+
+.dataTableRow {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dataTableCell {
+  padding: 0.5rem 0;
+}
+
+.dataTableAmount {
+  text-align: right;
+  font-weight: 500;
+}
+
+.cvnSection {
+  margin-top: 2rem;
+}
+

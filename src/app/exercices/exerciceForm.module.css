@@ -3,3 +3,7 @@
   flex-direction: column;
   gap: 1rem;
 }
+
+.formCard {
+  max-width: 500px;
+}

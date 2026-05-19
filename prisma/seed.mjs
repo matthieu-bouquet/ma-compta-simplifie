@@ -1,16 +1,17 @@
 import { PrismaClient } from '@prisma/client'
 
+const STANDARD_JOURNALS = [
+  { code: 'AC', name: 'Achats' },
+  { code: 'BQ', name: 'Banque' },
+  { code: 'CA', name: 'Caisse' },
+  { code: 'OD', name: 'Opérations Diverses' },
+  { code: 'VE', name: 'Ventes' },
+]
+
 const prisma = new PrismaClient()
 
 async function main() {
-  const journals = [
-    { code: 'BQ', name: 'Banque' },
-    { code: 'AC', name: 'Achats' },
-    { code: 'VE', name: 'Ventes' },
-    { code: 'OD', name: 'Opérations Diverses' },
-  ]
-
-  for (const j of journals) {
+  for (const j of STANDARD_JOURNALS) {
     await prisma.journal.upsert({
       where: { code: j.code },
       update: { name: j.name },

@@ -1,0 +1,23 @@
+.dangerZone {
+  margin-top: 3rem;
+  padding: 1.5rem;
+  background-color: rgba(239, 68, 68, 0.05);
+  border: 1px solid var(--danger);
+  border-radius: 0.5rem;
+}
+
+.dangerTitle {
+  color: var(--danger);
+  margin-bottom: 0.5rem;
+}
+
+.dangerText {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.closeBtn {
+  background-color: var(--danger);
+  color: white;
+  border: none;
+}

@@ -38,3 +38,69 @@
   font-size: 0.95rem;
 }
 
+.pageGrid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+}
+
+.formNote {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.dataTableHead {
+  border-bottom: 2px solid var(--border-color);
+}
+
+.dataTableTh {
+  padding: 0.75rem 0;
+}
+
+.dataTableRow {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dataTableCell {
+  padding: 0.75rem 0;
+}
+
+.statusPill {
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.statusOpen {
+  background-color: rgba(151, 206, 102, 0.1);
+  color: var(--success);
+}
+
+.statusClosed {
+  background-color: rgba(100, 116, 139, 0.1);
+  color: var(--text-secondary);
+}
+
+.rowActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.configLink {
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
