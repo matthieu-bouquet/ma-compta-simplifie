@@ -338,9 +338,7 @@ export default function EntitiesPage() {
                 <tr key={entity.id} className={styles.tr}>
                   <td className={`${styles.td} ${styles.tdName}`}>
                     <div className={styles.nameRow}>
-                      <Link href={`/parametres/entites/${entity.id}`} className={styles.entityLink}>
-                        {entity.nom}
-                      </Link>
+                      <span className={styles.entityName}>{entity.nom}</span>
                       {entity.cloturee && <span className={styles.badgeClosed}>Clôturée</span>}
                     </div>
                   </td>

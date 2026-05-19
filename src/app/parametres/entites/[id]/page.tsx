@@ -4,27 +4,35 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import { useCallback, useEffect, useState, startTransition } from 'react'
+import { useParams } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import ParametreLayout from '@/components/ParametreLayout'
 import forms from '@/components/forms/forms.module.css'
 import { getAssociation, type AssociationDetail } from '@/actions/associationActions'
 import styles from './entityDetail.module.css'
 
-export default function EntityDetailPage({ params }: { params: { id: string } }) {
+export default function EntityDetailPage() {
+  const params = useParams<{ id: string }>()
+  const id = params?.id
   const [entity, setEntity] = useState<AssociationDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const loadEntity = useCallback(async () => {
+    if (!id) {
+      setError('Identifiant entité manquant')
+      setLoading(false)
+      return
+    }
     try {
-      const data = await getAssociation(params.id)
+      const data = await getAssociation(id)
       setEntity(data)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement')
     } finally {
       setLoading(false)
     }
-  }, [params.id])
+  }, [id])
 
   useEffect(() => {
     startTransition(() => {

@@ -34,6 +34,7 @@ import DeleteBudgetLineButton from '../DeleteBudgetLineButton'
 import AddBudgetLineForm from '../AddBudgetLineForm'
 import BudgetForecastPdfDownload from '../BudgetForecastPdfDownload'
 import forms from '@/components/forms/forms.module.css'
+import { NumberInput } from '@/components/forms/NumberInput'
 import styles from '../previsionnel.module.css'
 
 function realizedAmountCellText(totals: FiscalYearNetTotals, accountNumber: string): string {
@@ -423,10 +424,9 @@ export default async function PrevisionnelDetailPage({
                             forecastCents={line.amountCents}
                           />
                         ) : null}
-                        <input
+                        <NumberInput
                           id={`amt-charges-${line.id}`}
                           name="amountEuros"
-                          type="number"
                           step="0.01"
                           min="0"
                           className={`${forms.compactInput} ${styles.budgetAmountInput}`}
@@ -530,10 +530,9 @@ export default async function PrevisionnelDetailPage({
                             forecastCents={line.amountCents}
                           />
                         ) : null}
-                        <input
+                        <NumberInput
                           id={`amt-produits-${line.id}`}
                           name="amountEuros"
-                          type="number"
                           step="0.01"
                           min="0"
                           className={`${forms.compactInput} ${styles.budgetAmountInput}`}
@@ -646,10 +645,9 @@ export default async function PrevisionnelDetailPage({
                               forecastCents={line.amountCents}
                             />
                           ) : null}
-                          <input
+                          <NumberInput
                             id={`amt-cvn-${line.id}`}
                             name="amountEuros"
-                            type="number"
                             step="0.01"
                             min="0"
                             className={`${forms.compactInput} ${styles.budgetAmountInput}`}

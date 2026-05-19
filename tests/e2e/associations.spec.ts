@@ -11,6 +11,6 @@ test('create association shows its name in list', async ({ page }) => {
   await page.getByRole('button', { name: 'Créer' }).click()
 
   await expect(page.getByText('Entité créée avec succès')).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Association E2E' })).toBeVisible()
+  await expect(page.getByText('Association E2E', { exact: true })).toBeVisible()
 })
 

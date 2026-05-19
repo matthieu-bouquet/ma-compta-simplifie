@@ -9,6 +9,7 @@ import { getCurrentAssociation } from '@/lib/currentAssociation'
 import { getFiscalYears } from '@/actions/exerciceActions'
 import { createBudget } from '@/actions/budgetActions'
 import forms from '@/components/forms/forms.module.css'
+import { NumberInput } from '@/components/forms/NumberInput'
 import styles from '../previsionnel.module.css'
 import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
 
@@ -140,10 +141,9 @@ export default async function NewPrevisionnelPage() {
                     <label className={forms.label} htmlFor="budget-coefficient">
                       Coefficient (%)
                     </label>
-                    <input
+                    <NumberInput
                       id="budget-coefficient"
                       name="coefficientPercent"
-                      type="number"
                       min={1}
                       max={1000}
                       step={1}

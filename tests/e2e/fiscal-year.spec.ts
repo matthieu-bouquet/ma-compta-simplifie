@@ -8,11 +8,11 @@ test('create fiscal year from exercises page', async ({ page }) => {
   await page.getByRole('button', { name: 'Créer' }).click()
   await expect(page.getByText('Entité créée avec succès')).toBeVisible()
 
-  // Extract the association id from the details link
-  const assocLink = page.getByRole('link', { name: 'Association FY E2E' })
-  const href = await assocLink.getAttribute('href')
-  expect(href).toBeTruthy()
-  const associationId = href!.split('/').pop()!
+  // Extract the association id from the edit link in the entity row
+  const row = page.locator('tr', { hasText: 'Association FY E2E' })
+  const editHref = await row.getByRole('link', { name: 'Modifier' }).getAttribute('href')
+  expect(editHref).toBeTruthy()
+  const associationId = editHref!.split('/').at(-2)!
   expect(associationId.length).toBeGreaterThan(10)
 
   // Set context cookie directly (mimics the TopBar selection)

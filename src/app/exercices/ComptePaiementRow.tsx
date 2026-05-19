@@ -8,6 +8,7 @@ import { updateSoldeInitial } from '@/actions/exerciceActions'
 import { deleteCompteForExercice } from '@/actions/compteActions'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import forms from '@/components/forms/forms.module.css'
+import { NumberInput } from '@/components/forms/NumberInput'
 import styles from './comptePaiementRow.module.css'
 
 export default function ComptePaiementRow({
@@ -62,9 +63,8 @@ export default function ComptePaiementRow({
             <label className="sr-only" htmlFor={`solde-edit-${compte.id}`}>
               Solde de départ (€)
             </label>
-            <input
+            <NumberInput
               id={`solde-edit-${compte.id}`}
-              type="number"
               step="0.01"
               name="soldeInitial"
               defaultValue={soldeDepart}

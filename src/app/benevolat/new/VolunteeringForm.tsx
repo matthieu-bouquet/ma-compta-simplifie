@@ -13,6 +13,7 @@ import {
 } from '@/lib/entryDateValidation'
 import { Calculator, ClipboardList, ListChecks, ScrollText } from 'lucide-react'
 import forms from '@/components/forms/forms.module.css'
+import { NumberInput } from '@/components/forms/NumberInput'
 import styles from './volunteeringForm.module.css'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
@@ -192,9 +193,8 @@ export default function VolunteeringForm({ fiscalYearId }: { fiscalYearId: strin
             <label className={forms.label} htmlFor="vol-hours">
               Heures *
             </label>
-            <input
+            <NumberInput
               id="vol-hours"
-              type="number"
               min="0.01"
               step="0.01"
               className={forms.input}
@@ -208,9 +208,8 @@ export default function VolunteeringForm({ fiscalYearId }: { fiscalYearId: strin
             <label className={forms.label} htmlFor="vol-hourlyRate">
               Taux (€/h) *
             </label>
-            <input
+            <NumberInput
               id="vol-hourlyRate"
-              type="number"
               min="0.01"
               step="0.01"
               className={forms.input}
