@@ -88,6 +88,55 @@ describe('createVolunteeringContribution', () => {
     }
   })
 
+  it('rejects invalid hours and missing CVN accounts when recorded', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'CVN guards' } })
+      currentAssociationId = assoc.id
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+        select: { id: true },
+      })
+
+      await expect(
+        createVolunteeringContribution({
+          fiscalYearId: fy.id,
+          date: '2026-02-01',
+          description: 'Bad hours',
+          hours: 0,
+          hourlyRate: 20,
+          valuationMethod: 'Test',
+          meetsAnc2112Essential: true,
+          meetsAnc2112Measurable: true,
+          isRecorded: false,
+        }),
+      ).rejects.toThrow('heures')
+
+      await expect(
+        createVolunteeringContribution({
+          fiscalYearId: fy.id,
+          date: '2026-02-01',
+          description: 'No accounts',
+          hours: 1,
+          hourlyRate: 20,
+          valuationMethod: 'Test',
+          meetsAnc2112Essential: true,
+          meetsAnc2112Measurable: true,
+          isRecorded: true,
+        }),
+      ).rejects.toThrow('864/875')
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
   it('stores the contribution for annex even when not recorded (no entry)', async () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()

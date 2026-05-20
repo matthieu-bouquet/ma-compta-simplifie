@@ -126,6 +126,75 @@ describe('budgetActions CRUD', () => {
     }
   })
 
+  it('rejects budget line on class-5 account and closed association', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({
+        data: { name: 'Budget guards', legalFormCode: 'ASSOCIATION' },
+      })
+      currentAssociationId = assoc.id
+
+      const fd = new FormData()
+      fd.set('name', 'Budget guards')
+      await createBudget(fd)
+      const budget = (await getBudgetsForCurrentAssociation())[0]!
+
+      const badLine = new FormData()
+      badLine.set('budgetId', budget.id)
+      badLine.set('accountNumber', '512')
+      badLine.set('amountEuros', '10')
+      await expect(upsertBudgetLine(badLine)).rejects.toThrow('prévisionnel')
+
+      const tmplLine = new FormData()
+      tmplLine.set('budgetId', budget.id)
+      tmplLine.set('accountNumber', '606')
+      tmplLine.set('accountName', 'Achats non stockés')
+      tmplLine.set('amountEuros', '99')
+      await upsertBudgetLine(tmplLine)
+      const detail = await getBudgetDetail(budget.id)
+      expect(detail?.lines.find((l) => l.accountNumber === '606')?.accountName).toBe(
+        'Achats non stockés',
+      )
+
+      await prisma.association.update({
+        where: { id: assoc.id },
+        data: { isClosed: true },
+      })
+      const closedFd = new FormData()
+      closedFd.set('budgetId', budget.id)
+      closedFd.set('accountNumber', '701')
+      closedFd.set('accountName', 'Cotisations')
+      closedFd.set('amountEuros', '1')
+      await expect(upsertBudgetLine(closedFd)).rejects.toThrow('clôturée')
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
+  it('rejects invalid budget line amount', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'Budget amount' } })
+      currentAssociationId = assoc.id
+      const fd = new FormData()
+      fd.set('name', 'Budget amount')
+      await createBudget(fd)
+      const budget = (await getBudgetsForCurrentAssociation())[0]!
+
+      const lineFd = new FormData()
+      lineFd.set('budgetId', budget.id)
+      lineFd.set('accountNumber', '606')
+      lineFd.set('amountEuros', '-5')
+      await expect(upsertBudgetLine(lineFd)).rejects.toThrow('Montant invalide')
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
   it('rejects create without name', async () => {
     const dbUrl = process.env.DATABASE_URL
     const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
