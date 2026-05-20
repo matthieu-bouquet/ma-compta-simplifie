@@ -98,8 +98,11 @@ test('ops list: colonne compte de paiement et filtres client', async ({ page }) 
   })
 
   await expect(page.getByRole('columnheader', { name: 'Compte de paiement' })).toBeVisible()
-  await expect(opsTable.getByRole('cell', { name: '512 - Banque' })).toBeVisible()
-  await expect(opsTable.getByRole('cell', { name: '53 - Caisse' })).toBeVisible()
+  await expect(page.getByText('2/2', { exact: true })).toBeVisible()
+  const banqueRow = opsTable.locator('tbody tr').filter({ hasText: 'Achat banque OpsList E2E' })
+  const caisseRow = opsTable.locator('tbody tr').filter({ hasText: 'Achat caisse OpsList E2E' })
+  await expect(banqueRow.getByRole('cell', { name: '512 - Banque' })).toBeVisible()
+  await expect(caisseRow.getByRole('cell', { name: '53 - Caisse' })).toBeVisible()
 
   await page.locator('#saisie-ops-filtre-paiement').click()
   await page.keyboard.type('53')

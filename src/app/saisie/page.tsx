@@ -11,6 +11,7 @@ import { getCurrentExerciceId } from '@/lib/exerciceContext'
 import { Paperclip } from 'lucide-react'
 import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
 import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
+import { listRecurringExpenseTemplates } from '@/actions/recurringExpenseTemplateActions'
 import { mapOpsEntryLineToRow } from '@/lib/mapOpsListRow'
 import { resolveSelectedFiscalYearId } from '@/lib/fiscalYearSelection'
 import { toLocalYmd } from '@/lib/vatStatementPayload'
@@ -38,7 +39,10 @@ const OPS_ENTRY_INCLUDE = {
       },
     },
   },
-  documents: { select: { id: true }, take: 1 },
+  documents: {
+    select: { document: { select: { id: true, mimeType: true, originalName: true } } },
+    take: 1,
+  },
 } as const
 
 export default async function SaisiePage({
@@ -93,7 +97,7 @@ export default async function SaisiePage({
     .filter((c) => c.number.startsWith('5'))
     .map((c) => ({ value: c.id, label: `${c.number} - ${c.libelle}` }))
 
-  const [fournisseurs, clients, associationVat] = await Promise.all([
+  const [fournisseurs, clients, associationVat, recurringTemplates] = await Promise.all([
     prisma.counterparty.findMany({
       where: { associationId, kind: 'SUPPLIER' },
       orderBy: { name: 'asc' },
@@ -108,6 +112,7 @@ export default async function SaisiePage({
       where: { id: associationId },
       select: { vatLiable: true },
     }),
+    listRecurringExpenseTemplates(associationId),
   ])
 
   const activeTab: 'ops' | 'treasury' = tab === 'treasury' ? 'treasury' : 'ops'
@@ -156,6 +161,7 @@ export default async function SaisiePage({
           exerciceEndDate={exerciceOuvert.endDate.toISOString()}
           vatLiable={associationVat?.vatLiable ?? false}
           initialTab={activeTab === 'treasury' ? 'TREASURY' : 'OPERATIONS'}
+          recurringTemplates={recurringTemplates}
         />
       </div>
 

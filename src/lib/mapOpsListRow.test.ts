@@ -12,7 +12,9 @@ describe('mapOpsEntryLineToRow', () => {
       accountName: 'Achats',
       debitCents: 10000,
       creditCents: 0,
-      documents: [{ id: 'doc-1' }],
+      documents: [
+        { document: { id: 'doc-1', mimeType: 'application/pdf', originalName: 'facture.pdf' } },
+      ],
       entry: {
         date: new Date('2026-02-10T12:00:00.000Z'),
         description: 'Facture fournisseur',
@@ -47,6 +49,9 @@ describe('mapOpsEntryLineToRow', () => {
     expect(row.debitEuros).toBe(100)
     expect(row.creditEuros).toBeNull()
     expect(row.hasDocument).toBe(true)
+    expect(row.documentId).toBe('doc-1')
+    expect(row.documentMimeType).toBe('application/pdf')
+    expect(row.documentOriginalName).toBe('facture.pdf')
     expect(row.ligneSummary).toContain('Facture fournisseur')
     expect(row.ligneSummary).toContain('606')
   })

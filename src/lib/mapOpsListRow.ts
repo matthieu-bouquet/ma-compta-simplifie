@@ -16,7 +16,7 @@ export type OpsEntryLineFromDb = {
   accountName: string
   debitCents: number
   creditCents: number
-  documents: { id: string }[]
+  documents: { document: { id: string; mimeType: string; originalName: string } }[]
   entry: {
     date: Date
     description: string
@@ -41,6 +41,7 @@ export function mapOpsEntryLineToRow(line: OpsEntryLineFromDb): OpsListRow {
   const libelle = line.entry.description
   const dateIso = toLocalYmd(new Date(line.entry.date))
   const accountLabel = `${line.accountNumber} - ${line.accountName}`
+  const document = line.documents[0]?.document ?? null
 
   return {
     id: line.id,
@@ -56,7 +57,10 @@ export function mapOpsEntryLineToRow(line: OpsEntryLineFromDb): OpsListRow {
     }),
     debitEuros: line.debitCents > 0 ? line.debitCents / 100 : null,
     creditEuros: line.creditCents > 0 ? line.creditCents / 100 : null,
-    hasDocument: line.documents.length > 0,
+    hasDocument: document != null,
+    documentId: document?.id ?? null,
+    documentMimeType: document?.mimeType ?? null,
+    documentOriginalName: document?.originalName ?? null,
     ligneSummary: `${new Date(line.entry.date).toLocaleDateString('fr-FR')} · ${libelle} · ${accountLabel}`,
   }
 }

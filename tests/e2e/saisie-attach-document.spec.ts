@@ -110,9 +110,7 @@ test('attach document from a saisie line via the faded paperclip', async ({ page
   await expect(page.locator('dialog[open]')).toHaveCount(0)
 
   const updatedRow = page.locator('tr', { hasText: 'Test attache pièce justificative' }).first()
-  await expect(
-    updatedRow.locator('span[aria-label="Une pièce justificative a été ajoutée"]')
-  ).toBeVisible()
+  await expect(updatedRow.getByRole('button', { name: 'Voir le document' })).toBeVisible()
 
   const prismaCheck = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
   try {

@@ -15,6 +15,9 @@ export type OpsListRow = {
   debitEuros: number | null
   creditEuros: number | null
   hasDocument: boolean
+  documentId: string | null
+  documentMimeType: string | null
+  documentOriginalName: string | null
   ligneSummary: string
 }
 

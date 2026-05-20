@@ -139,7 +139,7 @@ test('treasury tab: supplier settlement allocates payable and marks charge as pa
   await page.goto('/saisie?tab=ops')
   const opsRow = page.locator('tr', { hasText: payableEntryDescription }).first()
   await expect(opsRow).toBeVisible()
-  await expect(opsRow).toContainText('Payé')
+  await expect(opsRow.getByLabel('Payé')).toBeVisible()
 })
 
 test('treasury tab: customer receipt allocates receivable and marks product as received', async ({ page }) => {
@@ -264,6 +264,6 @@ test('treasury tab: customer receipt allocates receivable and marks product as r
   await page.goto('/saisie?tab=ops')
   const opsRow = page.locator('tr', { hasText: invoiceDescription }).first()
   await expect(opsRow).toBeVisible()
-  await expect(opsRow).toContainText('Perçu')
+  await expect(opsRow.getByLabel('Perçu')).toBeVisible()
 })
 

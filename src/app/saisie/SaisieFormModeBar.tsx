@@ -20,8 +20,6 @@ export default function SaisieFormModeBar({
   mode,
   setMode,
   setTypeOperation,
-  setError,
-  setSuccess,
   setTreasuryAllocationsByLineId,
   setTreasuryOpenItems,
   setTabParam,
@@ -29,8 +27,6 @@ export default function SaisieFormModeBar({
   mode: 'OPERATIONS' | 'TREASURY' | 'AVANCE'
   setMode: (mode: 'OPERATIONS' | 'TREASURY' | 'AVANCE') => void
   setTypeOperation: (op: TypeOperation) => void
-  setError: (msg: string) => void
-  setSuccess: (msg: string) => void
   setTreasuryAllocationsByLineId: (v: Record<string, number>) => void
   setTreasuryOpenItems: Dispatch<SetStateAction<TreasuryOpenItems>>
   setTabParam: (tab: 'ops' | 'treasury') => void
@@ -43,8 +39,6 @@ export default function SaisieFormModeBar({
         onClick={() => {
           setMode('OPERATIONS')
           setTypeOperation('DEPENSE')
-          setError('')
-          setSuccess('')
           setTabParam('ops')
         }}
       >
@@ -58,8 +52,6 @@ export default function SaisieFormModeBar({
           setTypeOperation('REGLEMENT_FOURNISSEUR')
           setTreasuryAllocationsByLineId({})
           setTreasuryOpenItems(null)
-          setError('')
-          setSuccess('')
           setTabParam('treasury')
         }}
       >
@@ -70,8 +62,6 @@ export default function SaisieFormModeBar({
         className={`btn ${mode === 'AVANCE' ? 'btn-primary' : ''} ${mode === 'AVANCE' ? styles.modeBtnActive : ''} ${styles.modeBtn}`}
         onClick={() => {
           setMode('AVANCE')
-          setError('')
-          setSuccess('')
           setTabParam('ops')
         }}
       >

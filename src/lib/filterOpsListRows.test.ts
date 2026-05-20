@@ -17,6 +17,9 @@ const rows: OpsListRow[] = [
     debitEuros: 50,
     creditEuros: null,
     hasDocument: false,
+    documentId: null,
+    documentMimeType: null,
+    documentOriginalName: null,
     ligneSummary: 'summary-1',
   },
   {
@@ -31,6 +34,9 @@ const rows: OpsListRow[] = [
     debitEuros: null,
     creditEuros: 120,
     hasDocument: true,
+    documentId: 'doc-2',
+    documentMimeType: 'image/png',
+    documentOriginalName: 'recu.png',
     ligneSummary: 'summary-2',
   },
 ]

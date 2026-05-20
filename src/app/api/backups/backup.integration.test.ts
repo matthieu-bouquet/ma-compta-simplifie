@@ -220,3 +220,115 @@ describe('backup export/import counterparties and settlement allocations', () =>
     }
   })
 })
+
+describe('backup export/import recurring expense templates', () => {
+  it('round-trips recurringExpenseTemplates linked to counterparties', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    expect(dbUrl).toBeTruthy()
+
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({
+        data: {
+          name: 'Backup template test',
+          chartTemplateId: CHART_TEMPLATE_ASSOCIATION_ID,
+        },
+      })
+
+      const supplier = await prisma.counterparty.create({
+        data: { associationId: assoc.id, kind: 'SUPPLIER', name: 'Fournisseur template' },
+      })
+
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+
+      const template = await prisma.recurringExpenseTemplate.create({
+        data: {
+          associationId: assoc.id,
+          title: 'Loyer backup',
+          operationType: 'DEPENSE',
+          amountCents: 75000,
+          counterpartyId: supplier.id,
+          operationAccountNumber: '601',
+          treasuryAccountNumber: '512',
+        },
+      })
+
+      const exportRes = await exportBackup(
+        new Request('http://localhost/api/backups/export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fiscalYearIds: [fy.id], budgetIds: [] }),
+        }),
+      )
+      expect(exportRes.ok).toBe(true)
+      const zipBuf = Buffer.from(await exportRes.arrayBuffer())
+
+      const zipRead = await JSZip.loadAsync(zipBuf)
+      const templatesJson = JSON.parse(
+        await zipRead.file('data/recurringExpenseTemplates.json')!.async('string'),
+      ) as {
+        id: string
+        title: string
+        operationType: string
+        amountCents: number
+        counterpartyId: string | null
+        operationAccountNumber: string
+        treasuryAccountNumber: string | null
+      }[]
+      expect(templatesJson).toHaveLength(1)
+      expect(templatesJson[0]!.title).toBe('Loyer backup')
+      expect(templatesJson[0]!.counterpartyId).toBe(supplier.id)
+
+      await prisma.association.deleteMany({ where: { id: assoc.id } })
+
+      const previewForm = new FormData()
+      previewForm.append('phase', 'preview')
+      previewForm.append('file', new File([zipBuf], 'backup.zip', { type: 'application/zip' }))
+
+      const previewRes = await importBackup(
+        new Request('http://localhost/api/backups/import', { method: 'POST', body: previewForm }),
+      )
+      expect(previewRes.ok).toBe(true)
+      const previewBody = (await previewRes.json()) as {
+        token: string
+        summary: { recurringExpenseTemplates: number }
+      }
+      expect(previewBody.summary.recurringExpenseTemplates).toBe(1)
+
+      const applyForm = new FormData()
+      applyForm.append('phase', 'apply')
+      applyForm.append('token', previewBody.token)
+      applyForm.append(
+        'decisions',
+        JSON.stringify({
+          overwriteAssociationIds: [],
+          overwriteFiscalYearIds: [],
+          overwriteBudgetIds: [],
+        }),
+      )
+
+      const applyRes = await importBackup(
+        new Request('http://localhost/api/backups/import', { method: 'POST', body: applyForm }),
+      )
+      expect(applyRes.ok).toBe(true)
+
+      const restored = await prisma.recurringExpenseTemplate.findUnique({ where: { id: template.id } })
+      expect(restored?.title).toBe('Loyer backup')
+      expect(restored?.operationType).toBe('DEPENSE')
+      expect(restored?.amountCents).toBe(75000)
+      expect(restored?.operationAccountNumber).toBe('601')
+      expect(restored?.treasuryAccountNumber).toBe('512')
+      expect(restored?.counterpartyId).toBe(supplier.id)
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+})
