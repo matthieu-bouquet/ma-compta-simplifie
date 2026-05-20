@@ -17,6 +17,7 @@ import type {
   BackupBudgetLineJson,
   BackupCounterpartyJson,
   BackupCounterpartySettlementAllocationJson,
+  BackupRecurringExpenseTemplateJson,
   BackupDocumentEntryLineJson,
   BackupDocumentJson,
   BackupEntryJson,
@@ -72,6 +73,7 @@ type PreviewResponse = {
     budgets: number
     documents: number
     counterparties: number
+    recurringExpenseTemplates: number
   }
   conflicts: {
     associations: ConflictAssociation[]
@@ -179,6 +181,9 @@ export async function POST(req: Request) {
       'data/counterparties.json',
       []
     )
+    const backupRecurringExpenseTemplates = await getZipJsonOptional<
+      BackupRecurringExpenseTemplateJson[]
+    >(zip, 'data/recurringExpenseTemplates.json', [])
     const backupDocuments = await getZipJson<BackupDocumentJson[]>(zip, 'data/documents.json')
 
     // Conflicts: associations
@@ -311,6 +316,7 @@ export async function POST(req: Request) {
         budgets: backupBudgets.length,
         documents: backupDocuments.length,
         counterparties: backupCounterparties.length,
+        recurringExpenseTemplates: backupRecurringExpenseTemplates.length,
       },
       conflicts: {
         associations: associationConflicts,
@@ -369,6 +375,11 @@ export async function POST(req: Request) {
   const budgets = await getZipJsonOptional<BackupBudgetJson[]>(zip, 'data/budgets.json', [])
   const budgetLines = await getZipJsonOptional<BackupBudgetLineJson[]>(zip, 'data/budgetLines.json', [])
   const counterparties = await getZipJsonOptional<BackupCounterpartyJson[]>(zip, 'data/counterparties.json', [])
+  const recurringExpenseTemplates = await getZipJsonOptional<BackupRecurringExpenseTemplateJson[]>(
+    zip,
+    'data/recurringExpenseTemplates.json',
+    [],
+  )
   const counterpartySettlementAllocations = await getZipJsonOptional<
     BackupCounterpartySettlementAllocationJson[]
   >(zip, 'data/counterpartySettlementAllocations.json', [])
@@ -441,6 +452,44 @@ export async function POST(req: Request) {
               name: String(c.name),
               createdAt: c.createdAt ? new Date(String(c.createdAt)) : undefined,
               updatedAt: c.updatedAt ? new Date(String(c.updatedAt)) : undefined,
+            },
+          })
+        } catch (e) {
+          if (!isUniqueConstraintError(e)) throw e
+        }
+      }
+    }
+
+    if (recurringExpenseTemplates.length > 0) {
+      const counterpartyIds = new Set(counterparties.map((c) => String(c.id)))
+      for (const t of recurringExpenseTemplates) {
+        let counterpartyId =
+          t.counterpartyId === null || t.counterpartyId === undefined
+            ? null
+            : String(t.counterpartyId)
+        if (counterpartyId && !counterpartyIds.has(counterpartyId)) {
+          const exists = await tx.counterparty.findUnique({
+            where: { id: counterpartyId },
+            select: { id: true },
+          })
+          if (!exists) counterpartyId = null
+        }
+        try {
+          await tx.recurringExpenseTemplate.create({
+            data: {
+              id: String(t.id),
+              associationId: String(t.associationId),
+              title: String(t.title),
+              operationType: String(t.operationType),
+              amountCents: Number(t.amountCents),
+              counterpartyId,
+              operationAccountNumber: String(t.operationAccountNumber),
+              treasuryAccountNumber:
+                t.treasuryAccountNumber === null || t.treasuryAccountNumber === undefined
+                  ? null
+                  : String(t.treasuryAccountNumber),
+              createdAt: t.createdAt ? new Date(String(t.createdAt)) : undefined,
+              updatedAt: t.updatedAt ? new Date(String(t.updatedAt)) : undefined,
             },
           })
         } catch (e) {
@@ -724,6 +773,7 @@ export async function POST(req: Request) {
       documentCount: documents.length,
       counterpartyCount: counterparties.length,
       counterpartySettlementAllocationCount: counterpartySettlementAllocations.length,
+      recurringExpenseTemplateCount: recurringExpenseTemplates.length,
       overwriteAssociationIds,
       overwriteFiscalYearIds,
       overwriteBudgetIds,

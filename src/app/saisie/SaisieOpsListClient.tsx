@@ -6,13 +6,16 @@
 import { forwardRef, useMemo, useState } from 'react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
-import { Paperclip } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import forms from '@/components/forms/forms.module.css'
 import AppSearchableSelect, { type AppSearchableOption } from '@/components/forms/AppSearchableSelect'
+import DocumentViewerDialog from '@/components/DocumentViewerDialog'
+import FloatingTooltipHost from '@/components/FloatingTooltipHost'
 import { filterOpsListRows, type OpsListRow } from '@/lib/filterOpsListRows'
 import { parseIsoDateStrict } from '@/lib/vatStatementPayload'
 import AttachDocumentButton from './AttachDocumentButton'
 import DeleteLigneButton from './DeleteLigneButton'
+import OpsLineStatusIcon from './OpsLineStatusIcon'
 import styles from './saisieList.module.css'
 
 const DateInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function DateInput(
@@ -165,9 +168,10 @@ export default function SaisieOpsListClient({
                 <th className={styles.th}>Libellé</th>
                 <th className={styles.th}>Compte</th>
                 <th className={styles.th}>Compte de paiement</th>
-                <th className={`${styles.th} ${styles.nowrap}`}>Statut</th>
-                <th className={`${styles.th} ${styles.thRight}`}>Débit</th>
-                <th className={`${styles.th} ${styles.thRight}`}>Crédit</th>
+                <th className={styles.thCenter} title="Statut" aria-label="Statut">
+                  Statut
+                </th>
+                <th className={`${styles.th} ${styles.thRight}`}>Montant</th>
                 <th className={styles.thCenter} title="Pièce" aria-label="Pièce">
                   Pièce
                 </th>
@@ -196,21 +200,40 @@ export default function SaisieOpsListClient({
                       <span className={styles.paymentEmpty}>—</span>
                     )}
                   </td>
-                  <td className={`${styles.td} ${styles.nowrap}`}>{row.statusLabel}</td>
-                  <td className={`${styles.td} ${styles.tdRight}`}>{formatEuros(row.debitEuros)}</td>
-                  <td className={`${styles.td} ${styles.tdRight}`}>{formatEuros(row.creditEuros)}</td>
                   <td className={styles.tdCenter}>
-                    {row.hasDocument ? (
-                      <span
-                        aria-label="Une pièce justificative a été ajoutée"
-                        className={`has-tooltip ${styles.docBadge}`}
-                        data-tooltip="Justificatif ajouté"
-                      >
-                        <Paperclip size={14} aria-hidden="true" />
-                      </span>
-                    ) : (
-                      <AttachDocumentButton ligneId={row.id} ligneSummary={row.ligneSummary} />
-                    )}
+                    <OpsLineStatusIcon status={row.statusLabel} />
+                  </td>
+                  <td className={`${styles.td} ${styles.tdRight}`}>
+                    {row.debitEuros != null ? (
+                      <span className={styles.amountDebit}>{formatEuros(row.debitEuros)}</span>
+                    ) : row.creditEuros != null ? (
+                      <span className={styles.amountCredit}>{formatEuros(row.creditEuros)}</span>
+                    ) : null}
+                  </td>
+                  <td className={styles.tdCenter}>
+                    <div className={styles.pieceActions}>
+                      {row.hasDocument && row.documentId ? (
+                        <DocumentViewerDialog
+                          documentId={row.documentId}
+                          mimeType={row.documentMimeType}
+                          title={row.documentOriginalName ?? 'Document'}
+                          trigger={({ open }) => (
+                            <FloatingTooltipHost label="Voir le document">
+                              <button
+                                type="button"
+                                className={`btn ${styles.iconBtn}`}
+                                onClick={open}
+                                aria-label="Voir le document"
+                              >
+                                <Eye size={16} aria-hidden="true" />
+                              </button>
+                            </FloatingTooltipHost>
+                          )}
+                        />
+                      ) : (
+                        <AttachDocumentButton ligneId={row.id} ligneSummary={row.ligneSummary} />
+                      )}
+                    </div>
                   </td>
                   <td className={styles.tdActions}>
                     <DeleteLigneButton ligneId={row.id} />

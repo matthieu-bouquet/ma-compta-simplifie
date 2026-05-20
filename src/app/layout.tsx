@@ -9,6 +9,7 @@ import { getCurrentAssociation } from "@/lib/currentAssociation";
 import { isAssociationLegalForm } from "@/lib/legalForms";
 import TopBar from "@/components/TopBar";
 import SidebarNav from "@/components/SidebarNav";
+import AppToaster from "@/components/AppToaster";
 import { PRODUCT_DISPLAY_NAME } from "@/lib/productDisplayName";
 
 export const metadata: Metadata = {
@@ -51,6 +52,7 @@ export default async function RootLayout({
             {children}
           </main>
         </div>
+        <AppToaster />
       </body>
     </html>
   );

@@ -22,6 +22,15 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Composant**: utiliser `src/components/ConfirmDialog.tsx` pour les confirmations.
 <!-- END:ui-safety-rules -->
 
+<!-- BEGIN:action-feedback-toasts -->
+## Action feedback (toasts)
+
+- **Retour utilisateur après action**: pour confirmer le succès, signaler un avertissement ou une erreur suite à une action (création, enregistrement, suppression, import, etc.), utiliser **`appToast`** (`src/lib/appToast.ts`) — pas de bandeau vert/rouge inline dans le formulaire ou la page.
+- **API**: `appToast.success(message)` (vert / OK), `appToast.warning(message)` (orange), `appToast.error(message)` (rouge).
+- **Infrastructure**: le conteneur global est `src/components/AppToaster.tsx` (monté dans `src/app/layout.tsx`), position **haut droite**.
+- **Exceptions**: messages de validation persistants sur un champ, états vides, ou erreurs contextuelles liées à un contrôle précis peuvent rester inline ; le résultat global de l’action soumise passe par le toast.
+<!-- END:action-feedback-toasts -->
+
 <!-- BEGIN:engineering-standards -->
 ## Engineering standards (language, DRY, KISS)
 

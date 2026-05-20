@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import Link from "next/link";
-import { Building, DatabaseBackup, Settings, Users } from "lucide-react";
+import { Bookmark, Building, DatabaseBackup, Settings, Users } from "lucide-react";
 import styles from "./parametres.module.css";
 
 export default function ParametresPage() {
@@ -53,6 +53,21 @@ export default function ParametresPage() {
             des exercices. Ajoutez, modifiez ou supprimez des comptes.
           </p>
           <div className={styles.cardCtaSuccess}>Configurer le plan →</div>
+        </Link>
+
+        <Link
+          href="/parametres/depenses-recurrentes"
+          className={`card ${styles.cardLink}`}
+        >
+          <div className={styles.cardHeader}>
+            <Bookmark className={`w-8 h-8 ${styles.iconPrimary}`} />
+            <h2 className={styles.cardTitle}>Dépenses récurrentes</h2>
+          </div>
+          <p className={styles.cardText}>
+            Modèles de saisie (dépenses, recettes, virements) par entité. Création depuis la saisie
+            ou administration ici.
+          </p>
+          <div className={styles.cardCtaPrimary}>Gérer les modèles →</div>
         </Link>
 
         <Link

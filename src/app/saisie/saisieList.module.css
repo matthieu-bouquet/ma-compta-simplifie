@@ -100,17 +100,52 @@
   color: var(--text-secondary);
 }
 
-.docBadge {
+.statusIcon {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.4rem;
+  justify-content: center;
+  padding: 0.2rem;
   border-radius: 999px;
-  border: 1px solid rgba(66, 120, 186, 0.35);
-  background: rgba(66, 120, 186, 0.08);
-  color: var(--primary);
-  font-weight: 700;
-  font-size: 0.8rem;
-  line-height: 1;
+  line-height: 0;
+}
+
+.statusIconPaid {
+  color: var(--success);
+  background-color: rgba(151, 206, 102, 0.12);
+}
+
+.statusIconPending {
+  color: var(--warning);
+  background-color: rgba(245, 158, 11, 0.12);
+}
+
+.statusEmpty {
+  color: var(--text-secondary);
+}
+
+.amountDebit {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.amountCredit {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.pieceActions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.iconBtn {
+  padding: 0.35rem;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  line-height: 0;
+  border-radius: 0.5rem;
 }
 
 .footer {

@@ -29,6 +29,7 @@ model Association {
   fiscalYears   FiscalYear[]
   budgets       Budget[]
   counterparties Counterparty[]
+  recurringExpenseTemplates RecurringExpenseTemplate[]
 }
 
 // Third parties (suppliers / customers) scoped to the association (UI: Paramètres → Fournisseurs et clients).
@@ -41,11 +42,35 @@ model Counterparty {
   name           String
 
   entries Entry[]
+  recurringExpenseTemplates RecurringExpenseTemplate[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([associationId, kind])
+}
+
+/// Quick-entry template (UI: dépense courante / modèle de saisie), scoped to association.
+model RecurringExpenseTemplate {
+  id            String      @id @default(uuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+
+  title         String
+  operationType String // DEPENSE | RECETTE | TRANSFERT
+  amountCents   Int
+
+  counterpartyId String?
+  counterparty   Counterparty? @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+
+  operationAccountNumber String
+  treasuryAccountNumber  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([associationId, title])
+  @@unique([associationId, title, operationType])
 }
 
 model Budget {

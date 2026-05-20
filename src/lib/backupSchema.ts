@@ -35,6 +35,20 @@ export type BackupCounterpartyJson = {
   updatedAt?: string | Date
 }
 
+/** Quick-entry templates (dépenses courantes), scoped to an association. */
+export type BackupRecurringExpenseTemplateJson = {
+  id: string
+  associationId: string
+  title: string
+  operationType: string
+  amountCents: number
+  counterpartyId?: string | null
+  operationAccountNumber: string
+  treasuryAccountNumber?: string | null
+  createdAt?: string | Date
+  updatedAt?: string | Date
+}
+
 /** Links payable/receivable lines to settlement lines (treasury allocations). */
 export type BackupCounterpartySettlementAllocationJson = {
   id: string

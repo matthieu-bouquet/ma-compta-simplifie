@@ -13,13 +13,22 @@ import {
 } from '@/lib/entryDateValidation'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import CounterpartyCreateDialog from '@/components/CounterpartyCreateDialog'
-import forms from '@/components/forms/forms.module.css'
+import { appToast } from '@/lib/appToast'
 import styles from './saisieForm.module.css'
 import {
   COUNTERPARTY_KIND_CUSTOMER,
   COUNTERPARTY_KIND_SUPPLIER,
 } from '@/lib/counterparty'
 import { normalizeEurosAmount } from '@/lib/money'
+import {
+  applyTemplateToSaisieState,
+  buildTemplateFromSaisieState,
+  canBuildTemplateFromSaisie,
+} from '@/lib/recurringExpenseTemplate'
+import {
+  createRecurringExpenseTemplate,
+  type RecurringExpenseTemplateDto,
+} from '@/actions/recurringExpenseTemplateActions'
 import { splitTtcToHtAndVatEuros } from '@/lib/vatSplit'
 import type { QuickVatInput } from '@/lib/vatQuickEntry'
 import {
@@ -58,6 +67,7 @@ export default function SaisieForm({
   exerciceEndDate,
   vatLiable,
   initialTab = 'OPERATIONS',
+  recurringTemplates = [],
 }: {
   journaux: Journal[]
   comptes: Compte[]
@@ -68,6 +78,7 @@ export default function SaisieForm({
   exerciceEndDate: string
   vatLiable: boolean
   initialTab?: 'OPERATIONS' | 'TREASURY'
+  recurringTemplates?: RecurringExpenseTemplateDto[]
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -114,9 +125,8 @@ export default function SaisieForm({
   const [quickDocuments, setQuickDocuments] = useState<(File | null)[]>([null])
   const [advancedEntryDocuments, setAdvancedEntryDocuments] = useState<(File | null)[]>([null])
   const [fileInputsResetKey, setFileInputsResetKey] = useState(0)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
 
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   const setTabParam = (tab: 'ops' | 'treasury') => {
     const next = new URLSearchParams(searchParams?.toString() ?? '')
@@ -309,13 +319,79 @@ export default function SaisieForm({
     })
   }
 
+  const saisieStateForTemplate = useMemo(
+    () => ({
+      libelle,
+      typeOperation,
+      montant,
+      supplierId,
+      customerId,
+      compteOperationId,
+      comptePaiementId,
+      dejaRegle,
+    }),
+    [
+      libelle,
+      typeOperation,
+      montant,
+      supplierId,
+      customerId,
+      compteOperationId,
+      comptePaiementId,
+      dejaRegle,
+    ],
+  )
+
+  const canSaveAsRecurringTemplate = useMemo(
+    () => mode === 'OPERATIONS' && canBuildTemplateFromSaisie(saisieStateForTemplate, comptes),
+    [mode, saisieStateForTemplate, comptes],
+  )
+
+  const applyRecurringTemplate = (templateId: string) => {
+    const template = recurringTemplates.find((t) => t.id === templateId)
+    if (!template) return
+    const result = applyTemplateToSaisieState(template, comptes)
+    if ('error' in result) {
+      appToast.error(result.error)
+      return
+    }
+    const { state, missingAccountNumbers } = result
+    switchTypeOperation(state.typeOperation)
+    setLibelle(state.libelle)
+    setMontant(state.montant)
+    setSupplierId(state.supplierId)
+    setCustomerId(state.customerId)
+    setCompteOperationId(state.compteOperationId)
+    setComptePaiementId(state.comptePaiementId)
+    setDejaRegle(state.dejaRegle)
+    setSelectedTemplateId(templateId)
+    if (missingAccountNumbers.length > 0) {
+      appToast.warning(
+        `Compte(s) absent(s) sur cet exercice : ${missingAccountNumbers.join(', ')}. Complétez la saisie.`,
+      )
+    }
+  }
+
+  const saveAsRecurringTemplate = async () => {
+    const built = buildTemplateFromSaisieState(saisieStateForTemplate, comptes)
+    if (!built.ok) {
+      appToast.error(built.error)
+      return
+    }
+    try {
+      const created = await createRecurringExpenseTemplate(built.data)
+      appToast.success(`Modèle « ${created.title} » enregistré.`)
+      router.refresh()
+    } catch (err: unknown) {
+      appToast.error(err instanceof Error ? err.message : 'Erreur')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
-    setSuccess('')
 
     if (mode === 'TREASURY') {
-      setError("Utilisez le bouton « Enregistrer » de l'onglet Règlement / Encaissement.")
+      appToast.warning("Utilisez le bouton « Enregistrer » de l'onglet Règlement / Encaissement.")
       return
     }
 
@@ -329,13 +405,13 @@ export default function SaisieForm({
     let journalId = selectedJournalId || journaux[0]?.id || ''
 
     if (!date) {
-      setError('Veuillez choisir une date.')
+      appToast.error('Veuillez choisir une date.')
       return
     }
 
     const dateStr = calendarDateInTimeZone(date, ENTRY_DATE_TIMEZONE)
     if (isEntryDateAfterToday(dateStr)) {
-      setError("La date d'écriture ne peut pas être dans le futur.")
+      appToast.error("La date d'écriture ne peut pas être dans le futur.")
       return
     }
 
@@ -356,7 +432,7 @@ export default function SaisieForm({
         compteById,
       })
       if (!built.ok) {
-        setError(built.error)
+        appToast.error(built.error)
         return
       }
       lignesToSubmit = built.lignesToSubmit
@@ -366,7 +442,7 @@ export default function SaisieForm({
     } else {
       const builtAdvanced = buildAdvancedSubmitPayload({ lignes, isEquilibre, totalDebit })
       if (!builtAdvanced.ok) {
-        setError(builtAdvanced.error)
+        appToast.error(builtAdvanced.error)
         return
       }
       lignesToSubmit = builtAdvanced.lignesToSubmit
@@ -396,7 +472,9 @@ export default function SaisieForm({
         documentsByLine,
         quickVat: quickVatPayload ?? null,
       })
-      setSuccess('Écriture enregistrée avec succès.')
+      appToast.success('Écriture enregistrée avec succès.')
+
+      setSelectedTemplateId(null)
       setLibelle('')
       setQuickDocuments([null])
       setFileInputsResetKey((k) => k + 1)
@@ -416,14 +494,12 @@ export default function SaisieForm({
       }
       router.refresh()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      appToast.error(err instanceof Error ? err.message : 'Erreur')
     }
   }
 
   const handleTreasurySave = async () => {
     try {
-      setError('')
-      setSuccess('')
       if (!date) throw new Error('Veuillez choisir une date.')
       const dateStr = calendarDateInTimeZone(date, ENTRY_DATE_TIMEZONE)
       if (isEntryDateAfterToday(dateStr)) throw new Error("La date d'écriture ne peut pas être dans le futur.")
@@ -457,12 +533,12 @@ export default function SaisieForm({
         })
       }
 
-      setSuccess('Opération enregistrée.')
+      appToast.success('Opération enregistrée.')
       setTreasuryAllocationsByLineId({})
       setTreasuryOpenItems(null)
       router.refresh()
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Erreur.')
+      appToast.error(e instanceof Error ? e.message : 'Erreur.')
     }
   }
 
@@ -547,6 +623,12 @@ export default function SaisieForm({
     updateAdvancedDocument,
     removeAdvancedDocument,
     handleTreasurySave,
+    recurringTemplates,
+    selectedTemplateId,
+    setSelectedTemplateId,
+    applyRecurringTemplate,
+    canSaveAsRecurringTemplate,
+    saveAsRecurringTemplate,
   }
 
   return (
@@ -576,8 +658,6 @@ export default function SaisieForm({
         mode={mode}
         setMode={setMode}
         setTypeOperation={setTypeOperation}
-        setError={setError}
-        setSuccess={setSuccess}
         setTreasuryAllocationsByLineId={setTreasuryAllocationsByLineId}
         setTreasuryOpenItems={setTreasuryOpenItems}
         setTabParam={setTabParam}
@@ -585,9 +665,6 @@ export default function SaisieForm({
 
       <SaisieFormProvider value={formContext}>
         <form onSubmit={handleSubmit} className={styles.form}>
-          {error ? <div className={`card ${forms.alertError}`}>{error}</div> : null}
-          {success ? <div className={`card ${forms.alertSuccess}`}>{success}</div> : null}
-
           <SaisieFormCommonHeader />
 
           {mode === 'OPERATIONS' ? <SaisieFormOperationsPanel /> : null}

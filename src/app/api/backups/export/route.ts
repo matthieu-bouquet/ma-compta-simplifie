@@ -130,6 +130,13 @@ export async function POST(req: Request) {
         })
       : []
 
+  const recurringExpenseTemplates =
+    associationIds.length > 0
+      ? await prisma.recurringExpenseTemplate.findMany({
+          where: { associationId: { in: associationIds } },
+        })
+      : []
+
   let accounts: Awaited<ReturnType<typeof prisma.account.findMany>> = []
   let journalSequences: Awaited<ReturnType<typeof prisma.journalSequence.findMany>> = []
   let entries: Awaited<ReturnType<typeof prisma.entry.findMany>> = []
@@ -217,6 +224,7 @@ export async function POST(req: Request) {
     jsonFile('data/inKindContributions.json', inKindContributions),
     jsonFile('data/counterparties.json', counterparties),
     jsonFile('data/counterpartySettlementAllocations.json', counterpartySettlementAllocations),
+    jsonFile('data/recurringExpenseTemplates.json', recurringExpenseTemplates),
   ]
 
   await writeAuditEvent({
@@ -230,6 +238,7 @@ export async function POST(req: Request) {
       documentCount: documents.length,
       counterpartyCount: counterparties.length,
       counterpartySettlementAllocationCount: counterpartySettlementAllocations.length,
+      recurringExpenseTemplateCount: recurringExpenseTemplates.length,
     },
   })
 

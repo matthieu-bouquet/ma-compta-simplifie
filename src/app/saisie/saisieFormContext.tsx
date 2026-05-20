@@ -7,6 +7,7 @@ import { createContext, useContext, type Dispatch, type SetStateAction } from 'r
 import type { getCustomer411Preview, getSupplier401Preview } from '@/actions/counterpartyActions'
 import type { listOpenCustomerReceivables, listOpenSupplierPayables } from '@/actions/treasuryActions'
 import type { splitTtcToHtAndVatEuros } from '@/lib/vatSplit'
+import type { RecurringExpenseTemplateDto } from '@/actions/recurringExpenseTemplateActions'
 import type { Journal, LigneForm, TypeOperation } from './saisieFormTypes'
 
 export type SaisieFormMode = 'OPERATIONS' | 'TREASURY' | 'AVANCE'
@@ -85,6 +86,12 @@ export type SaisieFormContextValue = {
   updateAdvancedDocument: (docIndex: number, file: File | null) => void
   removeAdvancedDocument: (docIndex: number) => void
   handleTreasurySave: () => Promise<void>
+  recurringTemplates: RecurringExpenseTemplateDto[]
+  selectedTemplateId: string | null
+  setSelectedTemplateId: (id: string | null) => void
+  applyRecurringTemplate: (templateId: string) => void
+  canSaveAsRecurringTemplate: boolean
+  saveAsRecurringTemplate: () => Promise<void>
 }
 
 const SaisieFormContext = createContext<SaisieFormContextValue | null>(null)

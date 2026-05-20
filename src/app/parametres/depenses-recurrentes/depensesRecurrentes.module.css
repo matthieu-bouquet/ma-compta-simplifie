@@ -1,0 +1,90 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.tableCard {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.th {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 2px solid var(--border-color);
+  font-weight: 600;
+}
+
+.thActions {
+  text-align: right;
+  width: 1%;
+}
+
+.td {
+  padding: 0.65rem 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.tdEmpty {
+  padding: 1rem 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.tdAccounts {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.actionsCell {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.iconActions {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.iconButton {
+  padding: 0.45rem;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.iconButton:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+.formGrid {
+  display: grid;
+  gap: 1rem;
+  max-width: 40rem;
+}
+
+.typeStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.typeBtnActive {
+  font-weight: 600;
+}
+
+.panel {
+  margin-bottom: 1.75rem;
+}

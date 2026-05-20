@@ -1,0 +1,40 @@
+.toaster {
+  --width: 22rem;
+  z-index: 10000;
+}
+
+:global([data-sonner-toast][data-styled='true']).toast {
+  box-shadow: var(--shadow-md);
+}
+
+:global([data-sonner-toast][data-styled='true']).success {
+  background-color: var(--success) !important;
+  border-color: color-mix(in srgb, var(--success) 70%, #000) !important;
+  color: #14532d;
+}
+
+:global([data-sonner-toast][data-styled='true']).warning {
+  background-color: var(--warning) !important;
+  border-color: color-mix(in srgb, var(--warning) 70%, #000) !important;
+  color: #78350f;
+}
+
+:global([data-sonner-toast][data-styled='true']).error {
+  background-color: var(--danger) !important;
+  border-color: color-mix(in srgb, var(--danger) 70%, #000) !important;
+  color: #fff;
+}
+
+:global([data-sonner-toast][data-styled='true']).success [data-description],
+:global([data-sonner-toast][data-styled='true']).warning [data-description],
+:global([data-sonner-toast][data-styled='true']).error [data-description] {
+  color: inherit;
+}
+
+:global([data-sonner-toast][data-styled='true']).success [data-close-button],
+:global([data-sonner-toast][data-styled='true']).warning [data-close-button],
+:global([data-sonner-toast][data-styled='true']).error [data-close-button] {
+  background-color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: inherit;
+}
