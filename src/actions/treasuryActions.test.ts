@@ -26,6 +26,84 @@ describe('treasuryActions allocations', () => {
     currentAssociationId = null
   })
 
+  it('rejects settlement when allocation sum differs from payment amount', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'Treasury sum guard' } })
+      currentAssociationId = assoc.id
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+      const supplier = await prisma.counterparty.create({
+        data: { associationId: assoc.id, kind: 'SUPPLIER', name: 'S' },
+      })
+      const journal = await prisma.journal.upsert({
+        where: { code: 'AC' },
+        update: {},
+        create: { code: 'AC', name: 'Achats' },
+      })
+      const acc601 = await prisma.account.create({
+        data: { fiscalYearId: fy.id, number: '601', name: 'Achats' },
+      })
+      const acc401 = await prisma.account.create({
+        data: { fiscalYearId: fy.id, number: '401', name: 'Fournisseurs' },
+      })
+      const bank = await prisma.account.create({
+        data: { fiscalYearId: fy.id, number: '512', name: 'Banque' },
+      })
+      const expense = await prisma.entry.create({
+        data: {
+          fiscalYearId: fy.id,
+          journalId: journal.id,
+          date: new Date('2026-02-01'),
+          description: 'Dette',
+          counterpartyId: supplier.id,
+          lines: {
+            create: [
+              {
+                accountId: acc601.id,
+                accountNumber: '601',
+                accountName: 'Achats',
+                debitCents: 5000,
+                creditCents: 0,
+              },
+              {
+                accountId: acc401.id,
+                accountNumber: '401',
+                accountName: 'Fournisseurs',
+                debitCents: 0,
+                creditCents: 5000,
+              },
+            ],
+          },
+        },
+        include: { lines: true },
+      })
+      const payableLine = expense.lines.find((l) => l.accountNumber.startsWith('401'))!
+
+      await expect(
+        createSupplierSettlement({
+          fiscalYearId: fy.id,
+          date: '2026-03-01',
+          counterpartyId: supplier.id,
+          treasuryAccountId: bank.id,
+          description: 'Mismatch sum',
+          amountEuros: 50,
+          allocations: [{ payableLineId: payableLine.id, amountEuros: 30 }],
+        }),
+      ).rejects.toThrow('somme des affectations')
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
   it('tracks supplier payable remaining via allocations (partial then full)', async () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()

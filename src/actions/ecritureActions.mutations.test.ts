@@ -18,7 +18,12 @@ vi.mock('@/lib/audit', () => ({
   writeAuditEvent: vi.fn(),
 }))
 
-import { createEntry, deleteEntryByLineId, reverseEntryByLineId } from '@/actions/ecritureActions'
+import {
+  createEcriture,
+  createEntry,
+  deleteEntryByLineId,
+  reverseEntryByLineId,
+} from '@/actions/ecritureActions'
 
 async function seedBalancedEntry(prisma: PrismaClient, fiscalYearId: string) {
   const journal = await prisma.journal.upsert({
@@ -184,6 +189,51 @@ describe('ecritureActions mutations', () => {
           ],
         }),
       ).rejects.toThrow("L'écriture n'est pas équilibrée")
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
+  it('createEcriture delegates to createEntry with French field names', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    expect(dbUrl).toBeTruthy()
+
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'createEcriture test' } })
+      currentAssociationId = assoc.id
+
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+
+      const debit = await prisma.account.create({
+        data: { fiscalYearId: fy.id, number: '606', name: 'Achats' },
+      })
+      const credit = await prisma.account.create({
+        data: { fiscalYearId: fy.id, number: '512', name: 'Banque' },
+      })
+
+      await createEcriture({
+        date: '2026-04-01',
+        libelle: 'Legacy wrapper',
+        exerciceId: fy.id,
+        lignes: [
+          { compteId: debit.id, debit: 15, credit: 0 },
+          { compteId: credit.id, debit: 0, credit: 15 },
+        ],
+      })
+
+      const entry = await prisma.entry.findFirst({
+        where: { fiscalYearId: fy.id, description: 'Legacy wrapper' },
+      })
+      expect(entry).toBeTruthy()
     } finally {
       await prisma.$disconnect()
     }

@@ -20,10 +20,59 @@ vi.mock('@/lib/audit', () => ({
   writeAuditEvent: (...args: unknown[]) => writeAuditEvent(...args),
 }))
 
-import { updateOpeningBalance } from '@/actions/exerciceActions'
-import { createFiscalYear } from '@/actions/exerciceActions'
+import {
+  addPaymentAccount,
+  closeFiscalYear,
+  createFiscalYear,
+  deleteFiscalYear,
+  getFiscalYears,
+  updateOpeningBalance,
+} from '@/actions/exerciceActions'
 
 describe('updateOpeningBalance', () => {
+  it('updates existing opening balance entry when called again', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'Opening update' } })
+      currentAssociationId = assoc.id
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+      const cash = await prisma.account.create({
+        data: { fiscalYearId: fy.id, number: '512', name: 'Banque' },
+      })
+
+      const fd1 = new FormData()
+      fd1.set('exerciceId', fy.id)
+      fd1.set('compteId', cash.id)
+      fd1.set('soldeInitial', '100')
+      await updateOpeningBalance(fd1)
+
+      const fd2 = new FormData()
+      fd2.set('exerciceId', fy.id)
+      fd2.set('compteId', cash.id)
+      fd2.set('soldeInitial', '250')
+      await updateOpeningBalance(fd2)
+
+      const entry = await prisma.entry.findFirst({
+        where: { fiscalYearId: fy.id, description: { startsWith: 'Opening balance:' } },
+        include: { lines: true },
+      })
+      expect(entry).toBeTruthy()
+      const cashLine = entry!.lines.find((l) => l.accountId === cash.id)
+      expect(cashLine?.debitCents).toBe(25000)
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
   beforeEach(() => {
     currentAssociationId = null
   })
@@ -86,6 +135,144 @@ describe('updateOpeningBalance', () => {
   })
 })
 
+describe('getFiscalYears and deleteFiscalYear', () => {
+  beforeEach(() => {
+    currentAssociationId = null
+  })
+
+  it('lists fiscal years for current association and deletes open year', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'FY list/delete' } })
+      currentAssociationId = assoc.id
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+
+      const list = await getFiscalYears()
+      expect(list.some((f) => f.id === fy.id)).toBe(true)
+
+      await deleteFiscalYear(fy.id)
+      expect(await prisma.fiscalYear.findUnique({ where: { id: fy.id } })).toBeNull()
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
+  it('rejects delete on closed fiscal year', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'FY delete closed' } })
+      currentAssociationId = assoc.id
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'CLOSED',
+        },
+      })
+
+      await expect(deleteFiscalYear(fy.id)).rejects.toThrow('closed')
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+})
+
+describe('addPaymentAccount', () => {
+  beforeEach(() => {
+    currentAssociationId = null
+  })
+
+  it('creates class-5 account with opening balance entry', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'Payment account' } })
+      currentAssociationId = assoc.id
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+
+      const fd = new FormData()
+      fd.set('exerciceId', fy.id)
+      fd.set('numero', '531')
+      fd.set('libelle', 'Caisse')
+      fd.set('soldeInitial', '50')
+
+      await addPaymentAccount(fd)
+
+      const acc = await prisma.account.findFirst({
+        where: { fiscalYearId: fy.id, number: '531' },
+      })
+      expect(acc).toBeTruthy()
+
+      const obEntry = await prisma.entry.findFirst({
+        where: { fiscalYearId: fy.id, description: { startsWith: 'Opening balance:' } },
+        include: { lines: true },
+      })
+      expect(obEntry?.lines.some((l) => l.accountNumber === '531' && l.debitCents === 5000)).toBe(true)
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+})
+
+describe('closeFiscalYear', () => {
+  beforeEach(() => {
+    currentAssociationId = null
+    writeAuditEvent.mockClear()
+  })
+
+  it('sets fiscal year status to CLOSED and writes audit', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'Close FY test' } })
+      currentAssociationId = assoc.id
+
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+
+      await closeFiscalYear(fy.id)
+
+      const updated = await prisma.fiscalYear.findUnique({ where: { id: fy.id } })
+      expect(updated?.status).toBe('CLOSED')
+      expect(writeAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'FISCAL_YEAR_CLOSE',
+          fiscalYearId: fy.id,
+        }),
+      )
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+})
+
 describe('createFiscalYear', () => {
   beforeEach(() => {
     currentAssociationId = null
@@ -136,6 +323,48 @@ describe('createFiscalYear', () => {
     fd.set('dateDebut', '2025-09-01')
     fd.set('dateFin', '2026-08-31')
     await expect(createFiscalYear(fd)).rejects.toThrow('Association non sélectionnée.')
+  })
+
+  it('rejects invalid date format and duplicate fiscal year', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'FY dup test' } })
+      currentAssociationId = assoc.id
+
+      const fdBad = new FormData()
+      fdBad.set('dateDebut', '01/01/2026')
+      fdBad.set('dateFin', '2026-12-31')
+      await expect(createFiscalYear(fdBad)).rejects.toThrow('Invalid date format')
+
+      const fd = new FormData()
+      fd.set('dateDebut', '2026-01-01')
+      fd.set('dateFin', '2026-12-31')
+      await createFiscalYear(fd)
+      await expect(createFiscalYear(fd)).rejects.toThrow('already exists')
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
+  it('rejects create when association is closed', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({
+        data: { name: 'Closed assoc FY', isClosed: true },
+      })
+      currentAssociationId = assoc.id
+
+      const fd = new FormData()
+      fd.set('dateDebut', '2026-01-01')
+      fd.set('dateFin', '2026-12-31')
+      await expect(createFiscalYear(fd)).rejects.toThrow('association is closed')
+    } finally {
+      await prisma.$disconnect()
+    }
   })
 
   it('rejects when end date is before start date', async () => {

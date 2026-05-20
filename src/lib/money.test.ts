@@ -2,13 +2,33 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import { describe, expect, it } from 'vitest'
-import { normalizeEurosAmount, eurosToCents } from '@/lib/money'
+import {
+  centsToEuros,
+  eurosToCents,
+  formatEurosFromCents,
+  normalizeEurosAmount,
+} from '@/lib/money'
 import { splitTtcToHtAndVatCents } from '@/lib/vatSplit'
 
 describe('normalizeEurosAmount', () => {
   it('prevents floating glitches around integer cents', () => {
     expect(normalizeEurosAmount(4.999999)).toBe(5)
     expect(normalizeEurosAmount(5.000001)).toBe(5)
+  })
+})
+
+describe('centsToEuros', () => {
+  it('converts integer cents to euros', () => {
+    expect(centsToEuros(500)).toBe(5)
+    expect(centsToEuros(0)).toBe(0)
+  })
+})
+
+describe('formatEurosFromCents', () => {
+  it('formats with fr-FR currency when Intl is available', () => {
+    const formatted = formatEurosFromCents(12345)
+    expect(formatted).toMatch(/123/)
+    expect(formatted).toMatch(/€|EUR/)
   })
 })
 
