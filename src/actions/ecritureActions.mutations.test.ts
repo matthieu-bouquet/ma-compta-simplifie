@@ -213,12 +213,6 @@ describe('ecritureActions mutations', () => {
         },
       })
 
-      const journal = await prisma.journal.upsert({
-        where: { code: 'OD' },
-        update: {},
-        create: { code: 'OD', name: 'OD' },
-      })
-
       const debit = await prisma.account.create({
         data: { fiscalYearId: fy.id, number: '606', name: 'Achats' },
       })
