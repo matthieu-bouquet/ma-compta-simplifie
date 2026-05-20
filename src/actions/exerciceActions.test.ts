@@ -20,8 +20,7 @@ vi.mock('@/lib/audit', () => ({
   writeAuditEvent: (...args: unknown[]) => writeAuditEvent(...args),
 }))
 
-import { updateOpeningBalance } from '@/actions/exerciceActions'
-import { createFiscalYear } from '@/actions/exerciceActions'
+import { closeFiscalYear, createFiscalYear, updateOpeningBalance } from '@/actions/exerciceActions'
 
 describe('updateOpeningBalance', () => {
   beforeEach(() => {
@@ -80,6 +79,45 @@ describe('updateOpeningBalance', () => {
       expect(obLine).toBeTruthy()
       expect(obLine?.debitCents).toBe(0)
       expect(obLine?.creditCents).toBe(10000)
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+})
+
+describe('closeFiscalYear', () => {
+  beforeEach(() => {
+    currentAssociationId = null
+    writeAuditEvent.mockClear()
+  })
+
+  it('sets fiscal year status to CLOSED and writes audit', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'Close FY test' } })
+      currentAssociationId = assoc.id
+
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+
+      await closeFiscalYear(fy.id)
+
+      const updated = await prisma.fiscalYear.findUnique({ where: { id: fy.id } })
+      expect(updated?.status).toBe('CLOSED')
+      expect(writeAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'FISCAL_YEAR_CLOSE',
+          fiscalYearId: fy.id,
+        }),
+      )
     } finally {
       await prisma.$disconnect()
     }

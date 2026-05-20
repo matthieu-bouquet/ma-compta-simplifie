@@ -9,9 +9,19 @@ export default defineConfig({
     setupFiles: ['./tests/setup/env.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'lcov'],
-      include: ['src/**/*.{ts,tsx}'],
+      reporter: ['text', 'lcov', 'html'],
+      include: [
+        'src/lib/**/*.{ts,tsx}',
+        'src/actions/**/*.ts',
+        'src/app/api/**/*.ts',
+      ],
       exclude: ['src/**/*.test.ts', 'src/**/*.d.ts'],
+      thresholds: {
+        lines: 55,
+        branches: 38,
+        functions: 42,
+        statements: 54,
+      },
     },
   },
   resolve: {
@@ -29,4 +39,3 @@ export default defineConfig({
     },
   },
 })
-

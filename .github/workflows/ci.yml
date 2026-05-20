@@ -30,14 +30,17 @@ jobs:
         run: npm run lint
 
       - name: Unit tests
-        run: npm run test:unit
-        env:
-          CI: true
-
-      - name: Unit test coverage
         run: npm run test:unit:coverage
         env:
           CI: true
+
+      - name: Upload unit test coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-coverage
+          path: coverage/
+          if-no-files-found: ignore
 
       - name: Build
         run: npm run build
