@@ -20,7 +20,14 @@ vi.mock('@/lib/audit', () => ({
   writeAuditEvent: (...args: unknown[]) => writeAuditEvent(...args),
 }))
 
-import { closeFiscalYear, createFiscalYear, updateOpeningBalance } from '@/actions/exerciceActions'
+import {
+  addPaymentAccount,
+  closeFiscalYear,
+  createFiscalYear,
+  deleteFiscalYear,
+  getFiscalYears,
+  updateOpeningBalance,
+} from '@/actions/exerciceActions'
 
 describe('updateOpeningBalance', () => {
   beforeEach(() => {
@@ -79,6 +86,105 @@ describe('updateOpeningBalance', () => {
       expect(obLine).toBeTruthy()
       expect(obLine?.debitCents).toBe(0)
       expect(obLine?.creditCents).toBe(10000)
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+})
+
+describe('getFiscalYears and deleteFiscalYear', () => {
+  beforeEach(() => {
+    currentAssociationId = null
+  })
+
+  it('lists fiscal years for current association and deletes open year', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'FY list/delete' } })
+      currentAssociationId = assoc.id
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+
+      const list = await getFiscalYears()
+      expect(list.some((f) => f.id === fy.id)).toBe(true)
+
+      await deleteFiscalYear(fy.id)
+      expect(await prisma.fiscalYear.findUnique({ where: { id: fy.id } })).toBeNull()
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
+  it('rejects delete on closed fiscal year', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'FY delete closed' } })
+      currentAssociationId = assoc.id
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'CLOSED',
+        },
+      })
+
+      await expect(deleteFiscalYear(fy.id)).rejects.toThrow('closed')
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+})
+
+describe('addPaymentAccount', () => {
+  beforeEach(() => {
+    currentAssociationId = null
+  })
+
+  it('creates class-5 account with opening balance entry', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'Payment account' } })
+      currentAssociationId = assoc.id
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+
+      const fd = new FormData()
+      fd.set('exerciceId', fy.id)
+      fd.set('numero', '531')
+      fd.set('libelle', 'Caisse')
+      fd.set('soldeInitial', '50')
+
+      await addPaymentAccount(fd)
+
+      const acc = await prisma.account.findFirst({
+        where: { fiscalYearId: fy.id, number: '531' },
+      })
+      expect(acc).toBeTruthy()
+
+      const obEntry = await prisma.entry.findFirst({
+        where: { fiscalYearId: fy.id, description: { startsWith: 'Opening balance:' } },
+        include: { lines: true },
+      })
+      expect(obEntry?.lines.some((l) => l.accountNumber === '531' && l.debitCents === 5000)).toBe(true)
     } finally {
       await prisma.$disconnect()
     }

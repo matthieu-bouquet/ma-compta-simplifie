@@ -21,6 +21,8 @@ vi.mock('@/lib/associationContext', () => ({
 import {
   createCounterparty,
   deleteCounterparty,
+  getCustomer411BalanceCents,
+  getCustomer411Preview,
   getSupplier401Preview,
   listCounterparties,
   updateCounterparty,
@@ -119,6 +121,70 @@ describe('counterpartyActions', () => {
       const preview = await getSupplier401Preview(fy.id, supplier.id)
       expect(preview.balanceCents).toBe(3000)
       expect(preview.movements).toHaveLength(1)
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
+  it('getCustomer411Preview and balance reflect receivable', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'CP customer preview' } })
+      currentAssociationId = assoc.id
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+      const customer = await createCounterparty({ name: 'Client A', kind: 'CUSTOMER' })
+      const journal = await prisma.journal.upsert({
+        where: { code: 'VT' },
+        update: {},
+        create: { code: 'VT', name: 'Ventes' },
+      })
+      const acc706 = await prisma.account.create({
+        data: { fiscalYearId: fy.id, number: '706', name: 'Cotisations' },
+      })
+      const acc411 = await prisma.account.create({
+        data: { fiscalYearId: fy.id, number: '411', name: 'Clients' },
+      })
+
+      await prisma.entry.create({
+        data: {
+          fiscalYearId: fy.id,
+          journalId: journal.id,
+          date: new Date('2026-03-01'),
+          description: 'Facture client',
+          counterpartyId: customer.id,
+          lines: {
+            create: [
+              {
+                accountId: acc411.id,
+                accountNumber: '411',
+                accountName: 'Clients',
+                debitCents: 8000,
+                creditCents: 0,
+              },
+              {
+                accountId: acc706.id,
+                accountNumber: '706',
+                accountName: 'Cotisations',
+                debitCents: 0,
+                creditCents: 8000,
+              },
+            ],
+          },
+        },
+      })
+
+      const preview = await getCustomer411Preview(fy.id, customer.id)
+      expect(preview.balanceCents).toBe(8000)
+      expect(await getCustomer411BalanceCents(fy.id, customer.id)).toBe(8000)
     } finally {
       await prisma.$disconnect()
     }
