@@ -31,7 +31,7 @@
     "*.{ts,tsx,mjs,js}": "eslint --max-warnings 0 --no-warn-ignored"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "^7.8.0",
     "@types/react-datepicker": "^6.2.0",
     "archiver": "^7.0.1",
     "jspdf": "^4.2.1",
@@ -64,7 +64,7 @@
     "eslint-config-next": "16.2.4",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.5",
-    "prisma": "^5.22.0",
+    "prisma": "^7.8.0",
     "to-ico": "^1.1.5",
     "ts-node": "^10.9.2",
     "tsx": "^4.22.3",
