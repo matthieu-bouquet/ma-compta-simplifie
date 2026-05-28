@@ -7,7 +7,7 @@ test('plan comptable: add account shows success toast', async ({ page }) => {
   await page.getByRole('button', { name: 'Ajouter un compte' }).click()
   await page.getByLabel(/^Numéro/).fill('88888')
   await page.getByLabel(/^Libellé/).fill('Compte toast E2E')
-  await page.getByRole('button', { name: 'Ajouter' }).click()
+  await page.getByRole('button', { name: 'Ajouter', exact: true }).click()
 
   await expectToastVisible(page, 'Compte ajouté avec succès')
 })

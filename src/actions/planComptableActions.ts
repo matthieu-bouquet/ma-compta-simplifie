@@ -79,7 +79,10 @@ export async function initializeTemplateAccounts(code: ChartTemplateCode) {
   return await getTemplateAccounts(template.id)
 }
 
-export async function syncTemplateWithDefault(code: ChartTemplateCode) {
+export async function syncTemplateWithDefault(
+  code: ChartTemplateCode,
+  opts?: { revalidate?: boolean },
+) {
   const template = await getOrCreateTemplate(code)
   const existing = await prisma.chartTemplateAccount.findMany({
     where: { chartTemplateId: template.id },
@@ -96,7 +99,9 @@ export async function syncTemplateWithDefault(code: ChartTemplateCode) {
         name: c.libelle,
       })),
     })
-    revalidatePath('/parametres/plan-comptable')
+    if (opts?.revalidate !== false) {
+      revalidatePath('/parametres/plan-comptable')
+    }
   }
   const rows = await getTemplateAccounts(template.id)
   return {

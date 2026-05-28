@@ -5,7 +5,7 @@ import { syncTemplateWithDefault } from '@/actions/planComptableActions'
 import PlanComptablePageClient from './PlanComptablePageClient'
 
 export default async function PlanComptablePage() {
-  const sync = await syncTemplateWithDefault('ASSOCIATION')
+  const sync = await syncTemplateWithDefault('ASSOCIATION', { revalidate: false })
   return (
     <PlanComptablePageClient
       initialTemplateCode="ASSOCIATION"
