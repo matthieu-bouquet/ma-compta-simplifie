@@ -56,6 +56,7 @@ Donc la stratégie la plus robuste est : **un job de build par OS** (GitHub Acti
 - Résoudre les symlinks et **copier le répertoire réel** pour les paquets concernés (dont `@prisma/client`, `@prisma/adapter-better-sqlite3`, `better-sqlite3`).
 - **Bundler une fermeture minimale de dépendances `@prisma/*`** à partir du paquet `prisma` (file d’attente BFS sur `dependencies`), plutôt que tout `node_modules/@prisma` — limite la taille tout en satisfaisant le CLI et les imports runtime.
 - Copier le **projet Prisma** (schéma, migrations) et le **CLI** (`prisma`, `.bin/prisma`) dans l’arborescence standalone utilisée pour le package.
+- **`scripts/rebuild-better-sqlite3-for-electron.mjs`** (après ce script) : recompile `better-sqlite3` pour l’ABI **Electron** (sinon `ERR_DLOPEN_FAILED` / `NODE_MODULE_VERSION` mismatch au runtime Next).
 
 Référence : taille dominée surtout par les **engines** Prisma, pas par le nombre de paquets JS.
 
