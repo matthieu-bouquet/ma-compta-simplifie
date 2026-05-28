@@ -60,9 +60,6 @@ function resolvePackageDir(root, packageName) {
   return path.join(root, "node_modules", packageName);
 }
 
-/** Non-scoped packages required at runtime for Prisma 7 + SQLite adapter (native `.node` binary). */
-const EXPLICIT_RUNTIME_PACKAGES = new Set(["better-sqlite3", "bindings", "file-uri-to-path"]);
-
 function copyPackageIntoStandalone(root, standaloneNm, packageName) {
   const pkgDir = resolvePackageDir(root, packageName);
   if (!pkgDir || !fs.existsSync(pkgDir)) return false;
@@ -106,10 +103,7 @@ function bundlePrismaDependencyClosure(root, standaloneNm) {
 
     enqueueDeps(pkgJson, queue, seen);
 
-    const shouldCopy =
-      name.startsWith("@") || EXPLICIT_RUNTIME_PACKAGES.has(name) || name === "better-sqlite3";
-    if (!shouldCopy) continue;
-
+    // Copy the full dependency closure (Prisma 7 CLI needs non-scoped packages like `effect` via @prisma/config).
     if (copyPackageIntoStandalone(root, standaloneNm, name)) {
       copiedPackages.add(name);
     }
