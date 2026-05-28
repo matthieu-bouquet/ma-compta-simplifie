@@ -25,6 +25,7 @@ import {
   deleteCompteForExercice,
   updateCompteForExercice,
 } from '@/actions/compteActions'
+import { expectAuditCalled } from '../../tests/helpers/expectAudit'
 
 describe('compteActions', () => {
   beforeEach(() => {
@@ -66,15 +67,9 @@ describe('compteActions', () => {
       await deleteCompteForExercice(fy.id, acc!.id)
       expect(await prisma.account.findUnique({ where: { id: acc!.id } })).toBeNull()
 
-      expect(writeAuditEvent).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'ACCOUNT_CREATE', entityType: 'Account' }),
-      )
-      expect(writeAuditEvent).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'ACCOUNT_UPDATE', entityType: 'Account' }),
-      )
-      expect(writeAuditEvent).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'ACCOUNT_DELETE', entityType: 'Account', entityId: acc!.id }),
-      )
+      expectAuditCalled(writeAuditEvent, 'ACCOUNT_CREATE', { entityType: 'Account' })
+      expectAuditCalled(writeAuditEvent, 'ACCOUNT_UPDATE', { entityType: 'Account' })
+      expectAuditCalled(writeAuditEvent, 'ACCOUNT_DELETE', { entityType: 'Account', entityId: acc!.id })
     } finally {
       await prisma.$disconnect()
     }

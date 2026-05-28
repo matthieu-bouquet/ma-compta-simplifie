@@ -27,6 +27,7 @@ import {
   getTemplateAccountsForFiscalYearCreation,
   syncTemplateWithDefault,
 } from '@/actions/planComptableActions'
+import { expectAuditCalled } from '../../tests/helpers/expectAudit'
 
 describe('planComptableActions', () => {
   beforeEach(() => {
@@ -88,18 +89,12 @@ describe('planComptableActions', () => {
     const after = await getTemplateAccounts(template!.id)
     expect(after.some((a) => a.number === '99999')).toBe(false)
 
-    expect(writeAuditEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'CHART_TEMPLATE_ACCOUNT_CREATE',
-        entityType: 'ChartTemplateAccount',
-      }),
-    )
-    expect(writeAuditEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'CHART_TEMPLATE_ACCOUNT_DELETE',
-        entityType: 'ChartTemplateAccount',
-        entityId: added!.id,
-      }),
-    )
+    expectAuditCalled(writeAuditEvent, 'CHART_TEMPLATE_ACCOUNT_CREATE', {
+      entityType: 'ChartTemplateAccount',
+    })
+    expectAuditCalled(writeAuditEvent, 'CHART_TEMPLATE_ACCOUNT_DELETE', {
+      entityType: 'ChartTemplateAccount',
+      entityId: added!.id,
+    })
   })
 })

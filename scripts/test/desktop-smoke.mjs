@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 /**
  * Post-build smoke checks for the Electron desktop bundle (no GUI).
- * Verifies compiled main/preload and Next standalone server entry exist.
+ * 1) Verifies build artifacts exist.
+ * 2) Starts standalone Next server briefly and checks HTTP 200 on /.
  */
+import { spawn } from 'node:child_process'
 import fs from 'node:fs'
+import http from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -24,4 +27,61 @@ if (missing.length > 0) {
   process.exit(1)
 }
 
-console.log('[desktop-smoke] OK — desktop artifacts present')
+const standaloneDir = path.join(root, '.next/standalone')
+const port = 3199 + Math.floor(Math.random() * 100)
+const host = '127.0.0.1'
+
+function waitForHttpOk(url, timeoutMs = 60_000) {
+  const started = Date.now()
+  return new Promise((resolve, reject) => {
+    const tick = () => {
+      const req = http.get(url, (res) => {
+        res.resume()
+        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 400) {
+          resolve(undefined)
+          return
+        }
+        if (Date.now() - started > timeoutMs) {
+          reject(new Error(`Unexpected status ${res.statusCode}`))
+          return
+        }
+        setTimeout(tick, 500)
+      })
+      req.on('error', () => {
+        if (Date.now() - started > timeoutMs) {
+          reject(new Error(`Timeout waiting for ${url}`))
+          return
+        }
+        setTimeout(tick, 500)
+      })
+    }
+    tick()
+  })
+}
+
+const child = spawn(process.execPath, ['server.js'], {
+  cwd: standaloneDir,
+  env: {
+    ...process.env,
+    PORT: String(port),
+    HOSTNAME: host,
+    DATABASE_URL: process.env.DATABASE_URL || `file:${path.join(root, 'prisma/dev.db')}`,
+  },
+  stdio: ['ignore', 'pipe', 'pipe'],
+})
+
+let stderr = ''
+child.stderr?.on('data', (c) => {
+  stderr += c.toString()
+})
+
+try {
+  await waitForHttpOk(`http://${host}:${port}/`)
+  console.log('[desktop-smoke] OK — artifacts present and standalone server responded on /')
+} catch (e) {
+  console.error('[desktop-smoke] Standalone server check failed:', e instanceof Error ? e.message : e)
+  if (stderr) console.error(stderr.slice(-2000))
+  process.exit(1)
+} finally {
+  child.kill('SIGTERM')
+}
