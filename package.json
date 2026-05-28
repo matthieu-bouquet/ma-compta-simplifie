@@ -64,7 +64,7 @@
     "dotenv": "^17.4.2",
     "electron": "41.7.1",
     "electron-builder": "^26.8.1",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.2.4",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.5",
