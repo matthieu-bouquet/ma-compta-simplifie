@@ -66,7 +66,7 @@ Référence : taille dominée surtout par les **engines** Prisma, pas par le nom
 |---------|----------|
 | **DB utilisateur (prod)** | Fichier sous `app.getPath('userData')` (dossier stabilisé, voir ci‑dessous), fichier `app.db`, `DATABASE_URL=file:…`. |
 | **Première installation** | Copie de `prisma/template.db` vers `app.db` si absent (initialisation rapide). |
-| **Quand migrer** | Pas à chaque démarrage : fichier marqueur `db-migrations.json` ; migrations si première création DB ou **version app** différente de celle enregistrée (`app.getVersion()`). |
+| **Quand migrer** | À **chaque** démarrage prod : `prisma migrate deploy` (no-op si rien en attente). Le marqueur `db-migrations.json` trace la dernière exécution. |
 | **Comment migrer** | Appeler le CLI Prisma embarqué : `node_modules/prisma/build/index.js`. En environnement packagé, **`node` système souvent absent** → exécuter avec **`process.execPath`** et **`ELECTRON_RUN_AS_NODE=1`** (voir ci‑dessous). |
 
 ### Décision importante : migrations Prisma **sans** `utilityProcess`
