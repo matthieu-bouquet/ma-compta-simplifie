@@ -45,6 +45,18 @@ function configurePathsBeforeReady() {
 
 configurePathsBeforeReady()
 
+const gotSingleInstanceLock = app.requestSingleInstanceLock()
+if (!gotSingleInstanceLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    }
+  })
+}
+
 // If a parent environment sets this, Electron will run as Node (no GUI).
 // We only set it for spawned child processes.
 delete process.env.ELECTRON_RUN_AS_NODE

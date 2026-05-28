@@ -12,6 +12,7 @@ import {
   assertFiscalYearWritable,
 } from '@/lib/accountingGuards'
 import { writeAuditEvent } from '@/lib/audit'
+import { parseFiscalYearId } from '@/lib/fiscalYearValidation'
 import { eurosToCents } from '@/lib/money'
 import { getOrCreateJournalByCode } from '@/lib/journals'
 
@@ -133,6 +134,7 @@ export async function createFiscalYear(formData: FormData) {
 }
 
 export async function closeFiscalYear(id: string) {
+  parseFiscalYearId(id)
   const associationId = await getCurrentAssociationId()
   if (!associationId) throw new Error('Association non sélectionnée.')
   await assertFiscalYearBelongsToCurrentAssociation({ fiscalYearId: id, associationId })
@@ -155,6 +157,7 @@ export async function closeFiscalYear(id: string) {
 }
 
 export async function deleteFiscalYear(id: string) {
+  parseFiscalYearId(id)
   const associationId = await getCurrentAssociationId()
   if (!associationId) throw new Error('Association non sélectionnée.')
   await assertFiscalYearWritable({ fiscalYearId: id, associationId })

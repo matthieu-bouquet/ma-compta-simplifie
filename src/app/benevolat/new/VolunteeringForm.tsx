@@ -19,6 +19,7 @@ import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { forwardRef } from 'react'
 import { createPortal } from 'react-dom'
+import { appToast } from '@/lib/appToast'
 
 const DateInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function DateInput(
   props,
@@ -35,9 +36,6 @@ function PopperToBody({ children }: { children?: React.ReactNode }) {
 export default function VolunteeringForm({ fiscalYearId }: { fiscalYearId: string }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-
   const [date, setDate] = useState<Date | null>(() => new Date())
   const [description, setDescription] = useState('')
   const [contributorName, setContributorName] = useState('')
@@ -54,8 +52,6 @@ export default function VolunteeringForm({ fiscalYearId }: { fiscalYearId: strin
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-    setSuccess(null)
     setLoading(true)
 
     try {
@@ -81,12 +77,12 @@ export default function VolunteeringForm({ fiscalYearId }: { fiscalYearId: strin
         isRecorded,
         documentFile,
       })
-      setSuccess('Saisie enregistrée.')
+      appToast.success('Saisie enregistrée.')
       router.push('/benevolat')
       router.refresh()
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : null
-      setError(message ?? 'Erreur lors de l’enregistrement.')
+      appToast.error(message ?? 'Erreur lors de l’enregistrement.')
     } finally {
       setLoading(false)
     }
@@ -94,13 +90,6 @@ export default function VolunteeringForm({ fiscalYearId }: { fiscalYearId: strin
 
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
-      {error ? (
-        <div className={`card ${styles.alertError}`}>{error}</div>
-      ) : null}
-      {success ? (
-        <div className={`card ${styles.alertSuccess}`}>{success}</div>
-      ) : null}
-
       <div className={`card ${styles.sectionCard} ${styles.detailCardStatic}`}>
         <div className={styles.detailSectionIntro}>
           <div className={styles.sectionIcon} aria-hidden="true">

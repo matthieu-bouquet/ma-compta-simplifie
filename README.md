@@ -72,6 +72,17 @@ Multi-platform build and packaging: see [`desktop/ELECTRON_BUILD.md`](desktop/EL
 - **[`AGENTS.md`](AGENTS.md)** — product rules (France / accounting), UI, Next.js backend, tests, forms.
 - **[`AGENTS_CONTEXT.md`](AGENTS_CONTEXT.md)** — functional and technical overview (associations, fiscal years, journals, desktop).
 
+### Where to put code
+
+| Layer | Path | Use for |
+|-------|------|---------|
+| Server Actions | `src/actions/*` | CRUD and business mutations (default) |
+| Domain logic | `src/lib/*` | Reusable rules (guards, money, journals, validation) |
+| API routes | `src/app/api/**/route.ts` | Binary/streaming only (ZIP, PDF, CSV); set `runtime = 'nodejs'` |
+| UI | `src/app/**`, `src/components/**` | Pages and components; shared form styles in `src/components/forms/` |
+
+Workflow: branch off `main` → PR → CI (`lint`, `test:unit:coverage`, `build`, `test:e2e`). Pre-commit runs ESLint on staged files via Husky + lint-staged.
+
 ## License
 
 This project is licensed under the **GNU General Public License v3.0 or later** (`GPL-3.0-or-later`, SPDX). See [`LICENSE`](LICENSE), [`NOTICE`](NOTICE), and [`COPYING`](COPYING).

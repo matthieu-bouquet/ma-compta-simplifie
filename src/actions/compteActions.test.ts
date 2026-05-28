@@ -14,15 +14,23 @@ vi.mock('@/lib/associationContext', () => ({
   getCurrentAssociationId: async () => currentAssociationId,
 }))
 
+const writeAuditEvent = vi.fn()
+
+vi.mock('@/lib/audit', () => ({
+  writeAuditEvent: (...args: unknown[]) => writeAuditEvent(...args),
+}))
+
 import {
   createCompteForExercice,
   deleteCompteForExercice,
   updateCompteForExercice,
 } from '@/actions/compteActions'
+import { expectAuditCalled } from '../../tests/helpers/expectAudit'
 
 describe('compteActions', () => {
   beforeEach(() => {
     currentAssociationId = null
+    writeAuditEvent.mockClear()
   })
 
   it('creates, updates and deletes an account on open fiscal year', async () => {
@@ -58,6 +66,10 @@ describe('compteActions', () => {
 
       await deleteCompteForExercice(fy.id, acc!.id)
       expect(await prisma.account.findUnique({ where: { id: acc!.id } })).toBeNull()
+
+      expectAuditCalled(writeAuditEvent, 'ACCOUNT_CREATE', { entityType: 'Account' })
+      expectAuditCalled(writeAuditEvent, 'ACCOUNT_UPDATE', { entityType: 'Account' })
+      expectAuditCalled(writeAuditEvent, 'ACCOUNT_DELETE', { entityType: 'Account', entityId: acc!.id })
     } finally {
       await prisma.$disconnect()
     }

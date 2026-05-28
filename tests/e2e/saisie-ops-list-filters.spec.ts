@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 import { PrismaClient } from '@prisma/client'
+import { expectToastVisible } from './helpers/toast'
 
 function getTestDbUrl() {
   const p = path.join(process.cwd(), '.tmp', 'e2e.db')
@@ -42,7 +43,7 @@ async function seedOpsListBase(prisma: PrismaClient) {
       { fiscalYearId: fy.id, number: '606', name: 'Achats non stockés' },
       { fiscalYearId: fy.id, number: '401', name: 'Fournisseurs' },
       { fiscalYearId: fy.id, number: '512', name: 'Banque' },
-      { fiscalYearId: fy.id, number: '53', name: 'Caisse' },
+      { fiscalYearId: fy.id, number: '530', name: 'Caisse OpsList E2E' },
     ],
   })
 
@@ -77,21 +78,27 @@ test('ops list: colonne compte de paiement et filtres client', async ({ page }) 
 
   await page.goto('/saisie')
 
-  async function createPaidExpense(libelle: string, montant: string, comptePaiement: string) {
-    await page.locator('#saisie-libelle').fill(libelle)
-    await page.locator('#saisie-montant').fill(montant)
-    await page.locator('#saisie-compte-paiement').click()
-    await page.keyboard.type(comptePaiement)
-    await page.keyboard.press('Enter')
-    await page.locator('#saisie-compte-operation').click()
-    await page.keyboard.type('606')
-    await page.keyboard.press('Enter')
-    await page.getByRole('button', { name: "Enregistrer l'écriture" }).click()
-    await expect(page.getByText('Écriture enregistrée avec succès.')).toBeVisible()
+  async function selectSearchableOption(inputId: string, optionLabel: string) {
+    const input = page.locator(`#${inputId}`)
+    await input.click()
+    await input.fill(optionLabel)
+    await page.getByRole('option', { name: optionLabel }).click()
   }
 
-  await createPaidExpense('Achat banque OpsList E2E', '40', '512')
-  await createPaidExpense('Achat caisse OpsList E2E', '25', '53')
+  async function createPaidExpense(libelle: string, montant: string, comptePaiementLabel: string) {
+    await page.locator('#saisie-libelle').fill(libelle)
+    await page.locator('#saisie-montant').fill(montant)
+    await selectSearchableOption('saisie-compte-paiement', comptePaiementLabel)
+    await selectSearchableOption('saisie-compte-operation', '606 - Achats non stockés')
+    await page.getByRole('button', { name: "Enregistrer l'écriture" }).click()
+    await expectToastVisible(page, 'Écriture enregistrée avec succès.')
+    await expect(
+      page.locator('[data-testid="saisie-ops-row"]').filter({ hasText: libelle }),
+    ).toBeVisible()
+  }
+
+  await createPaidExpense('Achat banque OpsList E2E', '40', '512 - Banque')
+  await createPaidExpense('Achat caisse OpsList E2E', '25', '530 - Caisse OpsList E2E')
 
   const opsTable = page.getByRole('table').filter({
     has: page.getByRole('columnheader', { name: 'Compte de paiement' }),
@@ -102,11 +109,9 @@ test('ops list: colonne compte de paiement et filtres client', async ({ page }) 
   const banqueRow = opsTable.locator('tbody tr').filter({ hasText: 'Achat banque OpsList E2E' })
   const caisseRow = opsTable.locator('tbody tr').filter({ hasText: 'Achat caisse OpsList E2E' })
   await expect(banqueRow.getByRole('cell', { name: '512 - Banque' })).toBeVisible()
-  await expect(caisseRow.getByRole('cell', { name: '53 - Caisse' })).toBeVisible()
+  await expect(caisseRow.getByRole('cell', { name: '530 - Caisse OpsList E2E' })).toBeVisible()
 
-  await page.locator('#saisie-ops-filtre-paiement').click()
-  await page.keyboard.type('53')
-  await page.keyboard.press('Enter')
+  await selectSearchableOption('saisie-ops-filtre-paiement', '530 - Caisse OpsList E2E')
 
   await expect(opsTable.getByRole('cell', { name: 'Achat caisse OpsList E2E' })).toBeVisible()
   await expect(opsTable.getByRole('cell', { name: 'Achat banque OpsList E2E' })).toHaveCount(0)

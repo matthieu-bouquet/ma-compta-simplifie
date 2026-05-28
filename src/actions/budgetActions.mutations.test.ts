@@ -178,7 +178,9 @@ describe('budgetActions CRUD', () => {
     const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
 
     try {
-      const assoc = await prisma.association.create({ data: { name: 'Budget amount' } })
+      const assoc = await prisma.association.create({
+        data: { name: 'Budget amount', legalFormCode: 'ASSOCIATION' },
+      })
       currentAssociationId = assoc.id
       const fd = new FormData()
       fd.set('name', 'Budget amount')
@@ -188,6 +190,7 @@ describe('budgetActions CRUD', () => {
       const lineFd = new FormData()
       lineFd.set('budgetId', budget.id)
       lineFd.set('accountNumber', '606')
+      lineFd.set('accountName', 'Achats')
       lineFd.set('amountEuros', '-5')
       await expect(upsertBudgetLine(lineFd)).rejects.toThrow('Montant invalide')
     } finally {

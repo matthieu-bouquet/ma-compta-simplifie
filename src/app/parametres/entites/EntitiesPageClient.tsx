@@ -15,6 +15,7 @@ import FormSection from '@/components/forms/FormSection'
 import forms from '@/components/forms/forms.module.css'
 import styles from './entites.module.css'
 import { useSearchParams } from 'next/navigation'
+import { appToast } from '@/lib/appToast'
 
 type EntityRow = Association & {
   nom?: string
@@ -48,9 +49,6 @@ export default function EntitiesPageClient({
     telephone: '',
     vatLiable: false,
   })
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-
   useEffect(() => {
     if (initialEntities.length === 0) {
       loadEntities()
@@ -62,7 +60,7 @@ export default function EntitiesPageClient({
       const data = await getAssociations()
       setEntities(data)
     } catch {
-      setError('Erreur lors du chargement des entités')
+      appToast.error('Erreur lors du chargement des entités')
     } finally {
       setLoading(false)
     }
@@ -70,9 +68,6 @@ export default function EntitiesPageClient({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError('')
-    setSuccess('')
-
     try {
       const form = new FormData()
       for (const [key, value] of Object.entries(formData)) {
@@ -82,7 +77,7 @@ export default function EntitiesPageClient({
       form.append('vatLiable', formData.vatLiable ? 'on' : '')
 
       await createAssociation(form)
-      setSuccess('Entité créée avec succès')
+      appToast.success('Entité créée avec succès')
       setFormData({
         nom: '',
         siret: '',
@@ -98,7 +93,7 @@ export default function EntitiesPageClient({
       setShowForm(false)
       loadEntities()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la création')
+      appToast.error(err instanceof Error ? err.message : 'Erreur lors de la création')
     }
   }
 
@@ -123,9 +118,6 @@ export default function EntitiesPageClient({
           Nouvelle entité
         </button>
       </div>
-
-      {error && <div className={`card ${forms.alertError}`}>{error}</div>}
-      {success && <div className={`card ${forms.alertSuccess}`}>{success}</div>}
 
       {showForm && (
         <div className={`card ${forms.cardForm}`}>
@@ -407,15 +399,13 @@ export default function EntitiesPageClient({
                             </button>
                           )}
                           onConfirm={async ({ close }) => {
-                            setError('')
-                            setSuccess('')
                             try {
                               await deleteAssociation(entity.id)
-                              setSuccess('Entité supprimée')
+                              appToast.success('Entité supprimée')
                               await loadEntities()
                               close()
                             } catch (err: unknown) {
-                              setError(err instanceof Error ? err.message : 'Erreur lors de la suppression')
+                              appToast.error(err instanceof Error ? err.message : 'Erreur lors de la suppression')
                             }
                           }}
                         />
@@ -439,15 +429,13 @@ export default function EntitiesPageClient({
                             </button>
                           )}
                           onConfirm={async ({ close }) => {
-                            setError('')
-                            setSuccess('')
                             try {
                               await cloturerAssociation(entity.id)
-                              setSuccess('Entité clôturée')
+                              appToast.success('Entité clôturée')
                               await loadEntities()
                               close()
                             } catch (err: unknown) {
-                              setError(err instanceof Error ? err.message : 'Erreur lors de la clôture')
+                              appToast.error(err instanceof Error ? err.message : 'Erreur lors de la clôture')
                             }
                           }}
                         />

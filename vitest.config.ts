@@ -16,11 +16,12 @@ export default defineConfig({
         'src/app/api/**/*.ts',
       ],
       exclude: ['src/**/*.test.ts', 'src/**/*.d.ts'],
+      // Floors aligned with measured baseline (~May 2026); small margin vs flaky branch counts.
       thresholds: {
-        lines: 70,
-        branches: 54,
-        functions: 75,
-        statements: 68,
+        statements: 73,
+        branches: 60,
+        functions: 82,
+        lines: 78,
       },
     },
   },

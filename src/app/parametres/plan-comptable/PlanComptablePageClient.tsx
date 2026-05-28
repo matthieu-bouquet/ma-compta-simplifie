@@ -5,9 +5,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  addCompteToPlanGlobal,
-  deleteCompteFromPlanGlobal,
-  updateCompteInPlanGlobal,
+  addAccountToTemplate,
+  deleteAccountFromTemplate,
+  updateAccountInTemplate,
   type LegacyPlanComptableAccount,
   syncTemplateWithDefault,
 } from '@/actions/planComptableActions'
@@ -19,6 +19,7 @@ import type { ChartTemplateCode } from '@/lib/planComptable'
 import forms from '@/components/forms/forms.module.css'
 import styles from './planComptable.module.css'
 import pageStyles from './planComptablePage.module.css'
+import { appToast } from '@/lib/appToast'
 
 export default function PlanComptablePageClient({
   initialTemplateCode = 'ASSOCIATION',
@@ -38,8 +39,6 @@ export default function PlanComptablePageClient({
     numero: '',
     libelle: ''
   })
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingNumero, setEditingNumero] = useState('')
   const [editingLibelle, setEditingLibelle] = useState('')
@@ -48,19 +47,17 @@ export default function PlanComptablePageClient({
   const loadPlanComptable = useCallback(async () => {
     try {
       setLoading(true)
-      setError('')
-      setSuccess('')
 
       // S'assurer que le template existe et contient les comptes par défaut (sync additive).
       const sync = await syncTemplateWithDefault(templateCode)
       if (sync.addedCount > 0) {
-        setSuccess(`Plan comptable mis à jour (+${sync.addedCount} compte(s) ajouté(s))`)
+        appToast.success(`Plan comptable mis à jour (+${sync.addedCount} compte(s) ajouté(s))`)
       }
       setTemplateId(sync.template.id)
 
       setPlanComptable(sync.data)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du chargement du plan comptable')
+      appToast.error(err instanceof Error ? err.message : 'Erreur lors du chargement du plan comptable')
     } finally {
       setLoading(false)
     }
@@ -76,32 +73,29 @@ export default function PlanComptablePageClient({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError('')
-    setSuccess('')
-
     try {
       if (!templateId) throw new Error('Template non chargé.')
       const form = new FormData()
       form.append('numero', formData.numero)
       form.append('libelle', formData.libelle)
 
-      await addCompteToPlanGlobal(templateId, form)
-      setSuccess('Compte ajouté avec succès')
+      await addAccountToTemplate(templateId, form)
+      appToast.success('Compte ajouté avec succès')
       setFormData({ numero: '', libelle: '' })
       setShowForm(false)
       loadPlanComptable()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erreur lors de l'ajout du compte")
+      appToast.error(err instanceof Error ? err.message : "Erreur lors de l'ajout du compte")
     }
   }
 
   async function handleDelete(id: string) {
     try {
-      await deleteCompteFromPlanGlobal(id)
-      setSuccess('Compte supprimé avec succès')
+      await deleteAccountFromTemplate(id)
+      appToast.success('Compte supprimé avec succès')
       loadPlanComptable()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la suppression du compte')
+      appToast.error(err instanceof Error ? err.message : 'Erreur lors de la suppression du compte')
     }
   }
 
@@ -109,8 +103,6 @@ export default function PlanComptablePageClient({
     setEditingId(compte.id)
     setEditingNumero(compte.numero)
     setEditingLibelle(compte.libelle)
-    setError('')
-    setSuccess('')
   }
 
   function cancelEdit() {
@@ -122,23 +114,21 @@ export default function PlanComptablePageClient({
 
   async function saveEdit(compteId: string) {
     if (!editingNumero || !editingLibelle) {
-      setError('Le numéro et le libellé sont requis')
+      appToast.warning('Le numéro et le libellé sont requis')
       return
     }
     setSavingEdit(true)
-    setError('')
-    setSuccess('')
     try {
       if (!templateId) throw new Error('Template non chargé.')
       const form = new FormData()
       form.append('numero', editingNumero)
       form.append('libelle', editingLibelle)
-      await updateCompteInPlanGlobal(templateId, compteId, form)
-      setSuccess('Compte modifié avec succès')
+      await updateAccountInTemplate(templateId, compteId, form)
+      appToast.success('Compte modifié avec succès')
       cancelEdit()
       await loadPlanComptable()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la modification du compte')
+      appToast.error(err instanceof Error ? err.message : 'Erreur lors de la modification du compte')
     } finally {
       setSavingEdit(false)
     }
@@ -202,10 +192,6 @@ export default function PlanComptablePageClient({
           existants.
         </p>
       </div>
-
-      {error ? <div className={`card ${forms.alertError}`}>{error}</div> : null}
-
-      {success ? <div className={`card ${forms.alertSuccess}`}>{success}</div> : null}
 
       {showForm ? (
         <div className={`card ${pageStyles.formCard}`}>
