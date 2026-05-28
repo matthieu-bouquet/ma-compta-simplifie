@@ -15,6 +15,7 @@ import { getOrCreateJournalByCode } from '@/lib/journals'
 import { assertEntryDateNotAfterToday, assertEntryDateWithinFiscalYear } from '@/lib/entryDateValidation'
 import { reverseEntryInTransaction } from '@/lib/reverseEntryInTransaction'
 import { buildEntryLinesFromQuickVat, type QuickVatInput } from '@/lib/vatQuickEntry'
+import { parseCreateEntryCore } from '@/lib/entryActionValidation'
 
 export async function createEntry(data: {
   date: string,
@@ -29,9 +30,11 @@ export async function createEntry(data: {
   quickVat?: QuickVatInput | null,
   documentsByLine?: File[][],
 }) {
-  if (!data.fiscalYearId) {
-    throw new Error('Fiscal year is required.')
-  }
+  parseCreateEntryCore({
+    date: data.date,
+    description: data.description,
+    fiscalYearId: data.fiscalYearId,
+  })
 
   const associationId = await getCurrentAssociationId()
   if (!associationId) throw new Error('Association non sélectionnée.')

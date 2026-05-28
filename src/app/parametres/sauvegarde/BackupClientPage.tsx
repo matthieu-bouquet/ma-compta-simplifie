@@ -8,6 +8,7 @@ import { ChevronDown, ChevronUp, Download, Upload } from 'lucide-react'
 import styles from './sauvegarde.module.css'
 import { getBackupSelectionTree, type BackupSelectionAssociation } from '@/actions/backupActions'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import { appToast } from '@/lib/appToast'
 
 type SelectionState = {
   associationIds: Set<string>
@@ -53,8 +54,6 @@ function isFullTreeSelection(tree: BackupSelectionAssociation[], s: SelectionSta
 export default function BackupClientPage() {
   const [tree, setTree] = useState<BackupSelectionAssociation[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string>('')
-  const [success, setSuccess] = useState<string>('')
   const [collapsedAssociationIds, setCollapsedAssociationIds] = useState<Set<string>>(new Set())
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importToken, setImportToken] = useState<string | null>(null)
@@ -108,7 +107,7 @@ export default function BackupClientPage() {
           budgetIds: new Set<string>(),
         })
       } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : 'Erreur lors du chargement des entités/exercices')
+        appToast.error(e instanceof Error ? e.message : 'Erreur lors du chargement des entités/exercices')
       } finally {
         setLoading(false)
       }
@@ -124,13 +123,11 @@ export default function BackupClientPage() {
   }, [selection])
 
   async function exportBackup() {
-    setError('')
-    setSuccess('')
     try {
       const fiscalYearIds = Array.from(selection.fiscalYearIds)
       const budgetIds = Array.from(selection.budgetIds)
       if (fiscalYearIds.length === 0 && budgetIds.length === 0) {
-        setError('Sélectionnez au moins un exercice ou un prévisionnel.')
+        appToast.warning('Sélectionnez au moins un exercice ou un prévisionnel.')
         return
       }
 
@@ -155,15 +152,13 @@ export default function BackupClientPage() {
       a.click()
       a.remove()
       URL.revokeObjectURL(url)
-      setSuccess('Sauvegarde téléchargée.')
+      appToast.success('Sauvegarde téléchargée.')
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Erreur lors du téléchargement.')
+      appToast.error(e instanceof Error ? e.message : 'Erreur lors du téléchargement.')
     }
   }
 
   async function previewImport() {
-    setError('')
-    setSuccess('')
     setImportPreview(null)
     setImportToken(null)
     setOverwriteAssociationIds(new Set())
@@ -171,7 +166,7 @@ export default function BackupClientPage() {
     setOverwriteBudgetIds(new Set())
 
     if (!importFile) {
-      setError('Sélectionnez un fichier ZIP.')
+      appToast.warning('Sélectionnez un fichier ZIP.')
       return
     }
 
@@ -187,17 +182,15 @@ export default function BackupClientPage() {
       const data = await res.json()
       setImportToken(data.token)
       setImportPreview({ summary: data.summary, conflicts: data.conflicts })
-      setSuccess('Sauvegarde analysée.')
+      appToast.success('Sauvegarde analysée.')
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erreur lors de l'analyse.")
+      appToast.error(e instanceof Error ? e.message : "Erreur lors de l'analyse.")
     }
   }
 
   async function applyImport() {
-    setError('')
-    setSuccess('')
     if (!importToken) {
-      setError('Analyse requise avant import.')
+      appToast.warning('Analyse requise avant import.')
       return
     }
 
@@ -220,7 +213,7 @@ export default function BackupClientPage() {
         const err = await res.json().catch(() => null)
         throw new Error(err?.error || "Erreur lors de l'import.")
       }
-      setSuccess('Sauvegarde importée.')
+      appToast.success('Sauvegarde importée.')
       setImportPreview(null)
       setImportToken(null)
       setImportFile(null)
@@ -228,7 +221,7 @@ export default function BackupClientPage() {
       setOverwriteFiscalYearIds(new Set())
       setOverwriteBudgetIds(new Set())
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erreur lors de l'import.")
+      appToast.error(e instanceof Error ? e.message : "Erreur lors de l'import.")
     } finally {
       setImporting(false)
     }
@@ -319,9 +312,6 @@ export default function BackupClientPage() {
 
   return (
     <div className={styles.wrap}>
-      {error ? <div className={`card ${styles.alertError}`}>{error}</div> : null}
-      {success ? <div className={`card ${styles.alertSuccess}`}>{success}</div> : null}
-
       <div className={`card ${styles.card}`}>
         <div className={styles.cardHeader}>
           <div>

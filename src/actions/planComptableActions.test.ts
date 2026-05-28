@@ -1,11 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
+
+let currentAssociationId: string | null = null
+
+vi.mock('@/lib/associationContext', () => ({
+  getCurrentAssociationId: async () => currentAssociationId,
+}))
+
+const writeAuditEvent = vi.fn()
+
+vi.mock('@/lib/audit', () => ({
+  writeAuditEvent: (...args: unknown[]) => writeAuditEvent(...args),
+}))
+
 import {
   addAccountToTemplate,
   deleteAccountFromTemplate,
@@ -16,6 +29,11 @@ import {
 } from '@/actions/planComptableActions'
 
 describe('planComptableActions', () => {
+  beforeEach(() => {
+    currentAssociationId = null
+    writeAuditEvent.mockClear()
+  })
+
   it('lists chart templates', async () => {
     const templates = await getChartTemplates()
     expect(templates.length).toBeGreaterThan(0)
@@ -69,5 +87,19 @@ describe('planComptableActions', () => {
     await deleteAccountFromTemplate(added!.id)
     const after = await getTemplateAccounts(template!.id)
     expect(after.some((a) => a.number === '99999')).toBe(false)
+
+    expect(writeAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'CHART_TEMPLATE_ACCOUNT_CREATE',
+        entityType: 'ChartTemplateAccount',
+      }),
+    )
+    expect(writeAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'CHART_TEMPLATE_ACCOUNT_DELETE',
+        entityType: 'ChartTemplateAccount',
+        entityId: added!.id,
+      }),
+    )
   })
 })

@@ -5,7 +5,26 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { getCurrentAssociationId } from '@/lib/associationContext'
+import { writeAuditEvent } from '@/lib/audit'
 import { defaultAccountsForTemplate, type ChartTemplateCode } from '@/lib/planComptable'
+
+async function auditChartTemplateChange(evt: {
+  action: string
+  entityId: string
+  data: unknown
+}) {
+  const associationId = await getCurrentAssociationId()
+  await writeAuditEvent({
+    associationId: associationId ?? null,
+    fiscalYearId: null,
+    actor: associationId ?? null,
+    action: evt.action,
+    entityType: 'ChartTemplateAccount',
+    entityId: evt.entityId,
+    data: evt.data,
+  })
+}
 
 export async function getChartTemplates() {
   return await prisma.chartTemplate.findMany({ orderBy: { code: 'asc' } })
@@ -103,7 +122,13 @@ export async function addAccountToTemplate(templateId: string, formData: FormDat
     throw new Error('An account with this number already exists.')
   }
 
-  await prisma.chartTemplateAccount.create({
+  const created = await prisma.chartTemplateAccount.create({
+    data: { chartTemplateId: templateId, number, name },
+  })
+
+  await auditChartTemplateChange({
+    action: 'CHART_TEMPLATE_ACCOUNT_CREATE',
+    entityId: created.id,
     data: { chartTemplateId: templateId, number, name },
   })
 
@@ -130,24 +155,44 @@ export async function updateAccountInTemplate(templateId: string, id: string, fo
     throw new Error('An account with this number already exists.')
   }
 
-  await prisma.chartTemplateAccount.update({
+  const updated = await prisma.chartTemplateAccount.update({
     where: { id },
     data: { number, name }
+  })
+
+  await auditChartTemplateChange({
+    action: 'CHART_TEMPLATE_ACCOUNT_UPDATE',
+    entityId: updated.id,
+    data: { chartTemplateId: templateId, number: updated.number, name: updated.name },
   })
 
   revalidatePath('/parametres/plan-comptable')
 }
 
 export async function deleteAccountFromTemplate(id: string) {
+  const existing = await prisma.chartTemplateAccount.findUnique({
+    where: { id },
+    select: { id: true, chartTemplateId: true, number: true, name: true },
+  })
+  if (!existing) throw new Error('Chart template account not found.')
+
   await prisma.chartTemplateAccount.delete({
     where: { id }
+  })
+
+  await auditChartTemplateChange({
+    action: 'CHART_TEMPLATE_ACCOUNT_DELETE',
+    entityId: id,
+    data: {
+      chartTemplateId: existing.chartTemplateId,
+      number: existing.number,
+      name: existing.name,
+    },
   })
 
   revalidatePath('/parametres/plan-comptable')
 }
 
-// Backward-compatible exports (UI still uses FR names).
-// TODO: migrate UI imports to English and remove.
 export type LegacyPlanComptableAccount = { id: string; numero: string; libelle: string }
 
 function toLegacyAccountRow(row: { id: string; number: string; name: string }): LegacyPlanComptableAccount {
@@ -172,8 +217,3 @@ export async function initializePlanComptableGlobal(templateCode: ChartTemplateC
   const rows = await initializeTemplateAccounts(templateCode)
   return rows.map(toLegacyAccountRow)
 }
-
-// Backward-compat convenience exports used by the settings UI (now multi-template).
-export const addCompteToPlanGlobal = addAccountToTemplate
-export const updateCompteInPlanGlobal = updateAccountInTemplate
-export const deleteCompteFromPlanGlobal = deleteAccountFromTemplate

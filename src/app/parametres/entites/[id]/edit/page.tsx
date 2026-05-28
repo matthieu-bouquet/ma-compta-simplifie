@@ -12,14 +12,13 @@ import forms from '@/components/forms/forms.module.css'
 import styles from '../../entites.module.css'
 import { getAssociation, updateAssociation, type AssociationDetail } from '@/actions/associationActions'
 import { LEGAL_FORM_OPTIONS } from '@/lib/legalForms'
+import { appToast } from '@/lib/appToast'
 
 export default function EditEntityPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [formData, setFormData] = useState({
     nom: '',
     siret: '',
@@ -35,11 +34,10 @@ export default function EditEntityPage() {
 
   const load = useCallback(async (entityId: string) => {
     setLoading(true)
-    setError('')
     try {
       const a: AssociationDetail | null = await getAssociation(entityId)
       if (!a) {
-        setError('Entité introuvable')
+        appToast.error('Entité introuvable')
         return
       }
       setFormData({
@@ -55,7 +53,7 @@ export default function EditEntityPage() {
         vatLiable: Boolean(a.vatLiable),
       })
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur lors du chargement')
+      appToast.error(err instanceof Error ? err.message : 'Erreur lors du chargement')
     } finally {
       setLoading(false)
     }
@@ -82,11 +80,9 @@ export default function EditEntityPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!id) {
-      setError("Identifiant d'entité manquant dans l’URL")
+      appToast.error("Identifiant d'entité manquant dans l’URL")
       return
     }
-    setError('')
-    setSuccess('')
     try {
       const form = new FormData()
       for (const [key, value] of Object.entries(formData)) {
@@ -95,10 +91,10 @@ export default function EditEntityPage() {
       }
       form.append('vatLiable', formData.vatLiable ? 'on' : '')
       await updateAssociation(id, form)
-      setSuccess('Entité modifiée')
+      appToast.success('Entité modifiée')
       router.push('/parametres/entites')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la modification')
+      appToast.error(err instanceof Error ? err.message : 'Erreur lors de la modification')
     }
   }
 
@@ -112,9 +108,6 @@ export default function EditEntityPage() {
 
   return (
     <ParametreLayout title="Modifier l'entité" description="Mettre à jour les informations">
-      {error && <div className={`card ${forms.alertError}`}>{error}</div>}
-      {success && <div className={`card ${forms.alertSuccess}`}>{success}</div>}
-
       <div className="card">
         <form onSubmit={handleSubmit}>
           <div className={forms.sections}>

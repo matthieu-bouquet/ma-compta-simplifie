@@ -5,8 +5,10 @@ import { PrismaClient } from '@prisma/client'
 import { describe, expect, it, vi } from 'vitest'
 import JSZip from 'jszip'
 
+const writeAuditEvent = vi.fn().mockResolvedValue(undefined)
+
 vi.mock('@/lib/audit', () => ({
-  writeAuditEvent: vi.fn().mockResolvedValue(undefined),
+  writeAuditEvent: (...args: unknown[]) => writeAuditEvent(...args),
 }))
 
 import { POST as exportBackup } from '@/app/api/backups/export/route'
@@ -195,6 +197,13 @@ describe('backup export/import counterparties and settlement allocations', () =>
         new Request('http://localhost/api/backups/import', { method: 'POST', body: applyForm })
       )
       expect(applyRes.ok).toBe(true)
+
+      expect(writeAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'BACKUP_EXPORT', entityType: 'Backup' }),
+      )
+      expect(writeAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'BACKUP_IMPORT', entityType: 'Backup' }),
+      )
 
       const assocRestored = await prisma.association.findFirst({ where: { id: assoc.id } })
       expect(assocRestored?.vatLiable).toBe(true)
