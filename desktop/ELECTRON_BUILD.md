@@ -108,6 +108,7 @@ Référence : taille dominée surtout par les **engines** Prisma, pas par le nom
 | Post-traitement standalone + Prisma | `scripts/fix-standalone-symlinks.mjs` |
 | DB template avant build | `scripts/build-template-db.mjs`, `prisma/schema.prisma` |
 | Icônes | `scripts/generate-electron-icons.mjs`, `desktop/assets/` |
+| Politique de mises à jour npm / Dependabot | [`docs/dependencies.md`](../docs/dependencies.md), [`.github/dependabot.yml`](../.github/dependabot.yml) |
 
 ---
 

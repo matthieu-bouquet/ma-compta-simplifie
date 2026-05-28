@@ -4,7 +4,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 3
+    versioning-strategy: increase
     groups:
       next:
         patterns:
@@ -18,7 +19,54 @@ updates:
         patterns:
           - electron
           - electron-builder
+      react:
+        patterns:
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'
+      vitest:
+        patterns:
+          - vitest
+          - '@vitest/*'
+      playwright:
+        patterns:
+          - '@playwright/test'
+      eslint-typescript:
+        patterns:
+          - eslint
+          - eslint-*
+          - typescript
+          - '@types/node'
+      dev-tools:
+        patterns:
+          - husky
+          - lint-staged
+          - concurrently
+          - cross-env
+          - wait-on
+          - tsx
+          - ts-node
+          - dotenv
+          - yaml
+      pdf-export:
+        patterns:
+          - jspdf*
+          - archiver
+          - jszip
     # Electron 42+ breaks better-sqlite3 native rebuild (WiseLibs/better-sqlite3#1474).
     ignore:
       - dependency-name: electron
-        update-types: ["version-update:semver-major"]
+        update-types: ['version-update:semver-major']
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      - dependency-name: eslint
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      - dependency-name: archiver
+        update-types: ['version-update:semver-major']
+      - dependency-name: cross-env
+        update-types: ['version-update:semver-major']
+      - dependency-name: concurrently
+        update-types: ['version-update:semver-major']

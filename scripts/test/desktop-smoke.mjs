@@ -5,10 +5,14 @@
  * 2) Starts standalone Next server briefly and checks HTTP 200 on /.
  */
 import { spawn } from 'node:child_process'
+import { createRequire } from 'node:module'
 import fs from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+const require = createRequire(import.meta.url)
+const electronPath = require('electron')
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -59,10 +63,12 @@ function waitForHttpOk(url, timeoutMs = 60_000) {
   })
 }
 
-const child = spawn(process.execPath, ['server.js'], {
+// After desktop:build, better-sqlite3 in standalone targets Electron's ABI — match production.
+const child = spawn(electronPath, ['server.js'], {
   cwd: standaloneDir,
   env: {
     ...process.env,
+    ELECTRON_RUN_AS_NODE: '1',
     PORT: String(port),
     HOSTNAME: host,
     DATABASE_URL: process.env.DATABASE_URL || `file:${path.join(root, 'prisma/dev.db')}`,
