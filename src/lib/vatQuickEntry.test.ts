@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { buildEntryLinesFromQuickVat } from '@/lib/vatQuickEntry'
 
@@ -17,7 +17,7 @@ describe('buildEntryLinesFromQuickVat', () => {
   beforeEach(async () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     const assoc = await prisma.association.create({ data: { name: 'Quick VAT lib', vatLiable: true } })
     associationId = assoc.id
@@ -57,7 +57,7 @@ describe('buildEntryLinesFromQuickVat', () => {
   })
 
   it('rejects invalid VAT rate and conflicting settlement accounts', async () => {
-    const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } })
+    const prisma = createPrismaClient(process.env.DATABASE_URL)
     try {
       await expect(
         buildEntryLinesFromQuickVat(prisma, {
@@ -96,7 +96,7 @@ describe('buildEntryLinesFromQuickVat', () => {
   })
 
   it('builds credit expense on supplier account', async () => {
-    const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } })
+    const prisma = createPrismaClient(process.env.DATABASE_URL)
     try {
       const lines = await buildEntryLinesFromQuickVat(prisma, {
         fiscalYearId,
@@ -120,7 +120,7 @@ describe('buildEntryLinesFromQuickVat', () => {
   })
 
   it('builds settled revenue with treasury debit', async () => {
-    const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } })
+    const prisma = createPrismaClient(process.env.DATABASE_URL)
     try {
       const lines = await buildEntryLinesFromQuickVat(prisma, {
         fiscalYearId,
@@ -144,7 +144,7 @@ describe('buildEntryLinesFromQuickVat', () => {
   })
 
   it('builds credit revenue on customer account', async () => {
-    const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } })
+    const prisma = createPrismaClient(process.env.DATABASE_URL)
     try {
       const lines = await buildEntryLinesFromQuickVat(prisma, {
         fiscalYearId,
@@ -167,7 +167,7 @@ describe('buildEntryLinesFromQuickVat', () => {
   })
 
   it('rejects wrong third-party account class for flow', async () => {
-    const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } })
+    const prisma = createPrismaClient(process.env.DATABASE_URL)
     try {
       await expect(
         buildEntryLinesFromQuickVat(prisma, {

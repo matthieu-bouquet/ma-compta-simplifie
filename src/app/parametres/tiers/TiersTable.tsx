@@ -4,7 +4,7 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import { useMemo, useState } from 'react'
-import type { Counterparty } from '@prisma/client'
+import type { Counterparty } from '@/lib/db'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import CounterpartyCreateDialog from '@/components/CounterpartyCreateDialog'

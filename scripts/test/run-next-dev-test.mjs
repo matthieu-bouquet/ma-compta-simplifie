@@ -19,7 +19,8 @@ const reset = spawn(process.platform === 'win32' ? 'node.exe' : 'node', [path.jo
 reset.on('exit', (code) => {
   if (code !== 0) process.exit(code ?? 1)
 
-  const seed = spawn(process.platform === 'win32' ? 'node.exe' : 'node', [path.join(root, 'prisma/seed.mjs')], {
+  const tsxBin = path.join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx')
+  const seed = spawn(tsxBin, [path.join(root, 'prisma/seed.ts')], {
     stdio: 'inherit',
     cwd: root,
     env: process.env,

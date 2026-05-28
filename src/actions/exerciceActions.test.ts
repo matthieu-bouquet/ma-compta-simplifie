@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next/cache', () => ({
@@ -32,7 +32,7 @@ import {
 describe('updateOpeningBalance', () => {
   it('updates existing opening balance entry when called again', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Opening update' } })
@@ -81,9 +81,7 @@ describe('updateOpeningBalance', () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
 
-    const prisma = new PrismaClient({
-      datasources: { db: { url: dbUrl } },
-    })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Opening balance test' } })
@@ -142,7 +140,7 @@ describe('getFiscalYears and deleteFiscalYear', () => {
 
   it('lists fiscal years for current association and deletes open year', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'FY list/delete' } })
@@ -168,7 +166,7 @@ describe('getFiscalYears and deleteFiscalYear', () => {
 
   it('rejects delete on closed fiscal year', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'FY delete closed' } })
@@ -196,7 +194,7 @@ describe('addPaymentAccount', () => {
 
   it('creates class-5 account with opening balance entry', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Payment account' } })
@@ -242,7 +240,7 @@ describe('closeFiscalYear', () => {
 
   it('sets fiscal year status to CLOSED and writes audit', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Close FY test' } })
@@ -283,9 +281,7 @@ describe('createFiscalYear', () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
 
-    const prisma = new PrismaClient({
-      datasources: { db: { url: dbUrl } },
-    })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'FY date storage test' } })
@@ -327,7 +323,7 @@ describe('createFiscalYear', () => {
 
   it('rejects invalid date format and duplicate fiscal year', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'FY dup test' } })
@@ -350,7 +346,7 @@ describe('createFiscalYear', () => {
 
   it('rejects create when association is closed', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({
@@ -371,9 +367,7 @@ describe('createFiscalYear', () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
 
-    const prisma = new PrismaClient({
-      datasources: { db: { url: dbUrl } },
-    })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'FY invalid range test' } })

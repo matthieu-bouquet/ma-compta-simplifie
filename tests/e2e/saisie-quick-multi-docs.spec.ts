@@ -1,14 +1,8 @@
 import { test, expect } from '@playwright/test'
-import path from 'node:path'
-import { PrismaClient } from '@prisma/client'
-
-function getTestDbUrl() {
-  const p = path.join(process.cwd(), '.tmp', 'e2e.db')
-  return `file:${p}`
-}
+import { createE2EPrisma } from './helpers/db'
 
 test('saisie rapide: plusieurs justificatifs au submit (liés à la ligne catégorie)', async ({ page }) => {
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
 
   let associationId: string
   let fiscalYearId: string
@@ -89,7 +83,7 @@ test('saisie rapide: plusieurs justificatifs au submit (liés à la ligne catég
   await page.getByRole('button', { name: "Enregistrer l'écriture" }).click()
   await expect(page.getByText('Écriture enregistrée avec succès.')).toBeVisible()
 
-  const prismaCheck = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prismaCheck = createE2EPrisma()
   try {
     const entry = await prismaCheck.entry.findFirst({
       where: { fiscalYearId, description: 'E2E quick multi docs' },

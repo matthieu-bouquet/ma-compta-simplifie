@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import type { PrismaClient } from '@prisma/client'
+import type { PrismaClient } from '@/lib/db'
 
 export const CHART_TEMPLATE_ASSOCIATION = '00000000-0000-0000-0000-000000000001'
 export const CHART_TEMPLATE_TPE = '00000000-0000-0000-0000-000000000002'

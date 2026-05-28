@@ -1,14 +1,8 @@
 import { test, expect } from '@playwright/test'
-import path from 'node:path'
-import { PrismaClient } from '@prisma/client'
-
-function getTestDbUrl() {
-  const p = path.join(process.cwd(), '.tmp', 'e2e.db')
-  return `file:${p}`
-}
+import { createE2EPrisma } from './helpers/db'
 
 test('benevolat: entity selected but no fiscal year shows empty state', async ({ page }) => {
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
   let associationId: string
 
   try {
@@ -34,7 +28,7 @@ test('benevolat: entity selected but no fiscal year shows empty state', async ({
 })
 
 test('saisir du bénévolat et comptabiliser en classe 8', async ({ page }) => {
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
 
   let associationId: string
   let fiscalYearId: string
@@ -91,7 +85,7 @@ test('saisir du bénévolat et comptabiliser en classe 8', async ({ page }) => {
   await expect(page).toHaveURL('/benevolat')
   await expect(page.locator('table')).toContainText('Encadrement entraînement')
 
-  const prismaCheck = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prismaCheck = createE2EPrisma()
   try {
     const contribution = await prismaCheck.inKindContribution.findFirst({
       where: { associationId, fiscalYearId, kind: 'VOLUNTEERING', description: 'Encadrement entraînement' },

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 let currentAssociationId: string | null = null
@@ -25,7 +25,7 @@ describe('vatStatementActions', () => {
 
   it('builds payload for vat-liable association', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({
@@ -101,7 +101,7 @@ describe('vatStatementActions', () => {
 
   it('rejects non vat-liable association', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({

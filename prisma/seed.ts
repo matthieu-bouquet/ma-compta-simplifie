@@ -1,26 +1,23 @@
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '../src/lib/createPrismaClient'
 
-const prisma = new PrismaClient()
+const STANDARD_JOURNALS = [
+  { code: 'AC', name: 'Achats' },
+  { code: 'BQ', name: 'Banque' },
+  { code: 'CA', name: 'Caisse' },
+  { code: 'OD', name: 'Opérations Diverses' },
+  { code: 'VE', name: 'Ventes' },
+]
+
+const prisma = createPrismaClient()
 
 async function main() {
-  console.log('Seeding journals...')
-  
-  const journals = [
-    { code: 'BQ', name: 'Banque' },
-    { code: 'AC', name: 'Achats' },
-    { code: 'VE', name: 'Ventes' },
-    { code: 'OD', name: 'Opérations Diverses' }
-  ]
-
-  for (const j of journals) {
+  for (const j of STANDARD_JOURNALS) {
     await prisma.journal.upsert({
       where: { code: j.code },
-      update: {},
+      update: { name: j.name },
       create: j,
     })
   }
-
-  console.log('Seeding completed.')
 }
 
 main()

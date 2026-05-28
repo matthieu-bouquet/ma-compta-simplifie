@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { allocateEntryReferenceNumber } from '@/lib/journalNumbering'
 
 describe('allocateEntryReferenceNumber', () => {
   it('allocates sequential reference numbers per fiscal year and journal', async () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
-    const prisma = new PrismaClient({
-      datasources: { db: { url: dbUrl } },
-    })
+    const prisma = createPrismaClient(dbUrl)
     try {
       const association = await prisma.association.create({ data: { name: 'Test Association' } })
       const fy = await prisma.fiscalYear.create({

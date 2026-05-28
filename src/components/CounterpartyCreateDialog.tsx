@@ -4,7 +4,7 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import { useEffect, useRef, useState } from 'react'
-import type { Counterparty } from '@prisma/client'
+import type { Counterparty } from '@/lib/db'
 import { createCounterparty } from '@/actions/counterpartyActions'
 import {
   COUNTERPARTY_KIND_CUSTOMER,

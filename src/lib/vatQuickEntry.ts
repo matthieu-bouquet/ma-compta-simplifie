@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import type { Prisma } from '@prisma/client'
+import type { Prisma } from '@/lib/db'
 import { centsToEuros, eurosToCents } from '@/lib/money'
 import { splitTtcToHtAndVatCents } from '@/lib/vatSplit'
 import { ensureVatAccountsForAssociation } from '@/lib/vatAccounts'
@@ -22,7 +22,7 @@ export type QuickVatInput = {
 export type EntryLineInput = { accountId: string; debit: number; credit: number; documents?: File[] }
 
 async function loadAccount(
-  db: Prisma.TransactionClient | import('@prisma/client').PrismaClient,
+  db: Prisma.TransactionClient | import('@/lib/db').PrismaClient,
   fiscalYearId: string,
   accountId: string,
 ) {
@@ -34,7 +34,7 @@ async function loadAccount(
 }
 
 async function loadAccountByNumber(
-  db: Prisma.TransactionClient | import('@prisma/client').PrismaClient,
+  db: Prisma.TransactionClient | import('@/lib/db').PrismaClient,
   fiscalYearId: string,
   number: string,
 ) {
@@ -49,7 +49,7 @@ async function loadAccountByNumber(
  * Builds three balanced lines (charge/produit + TVA + trésorerie ou tiers) from a TTC amount.
  */
 export async function buildEntryLinesFromQuickVat(
-  db: Prisma.TransactionClient | import('@prisma/client').PrismaClient,
+  db: Prisma.TransactionClient | import('@/lib/db').PrismaClient,
   opts: {
     fiscalYearId: string
     associationId: string

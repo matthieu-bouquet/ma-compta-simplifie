@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BadgeCheck, Building2, CircleOff, Lock, Mail, MapPin, Pencil, Phone, Plus, Trash2 } from 'lucide-react'
-import { Association } from '@prisma/client'
+import { Association } from '@/lib/db'
 import ParametreLayout from '@/components/ParametreLayout'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { cloturerAssociation, createAssociation, deleteAssociation, getAssociations } from '@/actions/associationActions'

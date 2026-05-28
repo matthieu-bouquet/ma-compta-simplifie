@@ -1,16 +1,8 @@
 import { test, expect } from '@playwright/test'
-import path from 'node:path'
-import { PrismaClient } from '@prisma/client'
-
-function getTestDbUrl() {
-  const p = path.join(process.cwd(), '.tmp', 'e2e.db')
-  return `file:${p}`
-}
+import { createE2EPrisma } from './helpers/db'
 
 test('grand livre shows injected entry', async ({ page }) => {
-  const prisma = new PrismaClient({
-    datasources: { db: { url: getTestDbUrl() } },
-  })
+  const prisma = createE2EPrisma()
 
   let associationId: string
   let fiscalYearId: string
@@ -93,9 +85,7 @@ test('grand livre shows injected entry', async ({ page }) => {
 })
 
 test('grand livre VAT exports visible when entity is VAT liable', async ({ page }) => {
-  const prisma = new PrismaClient({
-    datasources: { db: { url: getTestDbUrl() } },
-  })
+  const prisma = createE2EPrisma()
 
   let associationId: string
   let fiscalYearId: string

@@ -1,14 +1,8 @@
 import { test, expect } from '@playwright/test'
-import path from 'node:path'
-import { PrismaClient } from '@prisma/client'
-
-function getTestDbUrl() {
-  const p = path.join(process.cwd(), '.tmp', 'e2e.db')
-  return `file:${p}`
-}
+import { createE2EPrisma } from './helpers/db'
 
 test('treasury tab: supplier settlement allocates payable and marks charge as paid', async ({ page }) => {
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
 
   let associationId: string
   let fiscalYearId: string
@@ -143,7 +137,7 @@ test('treasury tab: supplier settlement allocates payable and marks charge as pa
 })
 
 test('treasury tab: customer receipt allocates receivable and marks product as received', async ({ page }) => {
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
 
   let associationId: string
   let fiscalYearId: string

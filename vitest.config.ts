@@ -5,6 +5,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
+    // Single SQLite file + better-sqlite3: avoid parallel files fighting for DB locks.
+    fileParallelism: false,
     include: ['src/**/*.test.ts'],
     setupFiles: ['./tests/setup/env.ts'],
     coverage: {

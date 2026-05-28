@@ -2,7 +2,7 @@
   "appId": "com.macomptasimplifie.desktop",
   "productName": "MaComptaSimplifie",
   "executableName": "MaComptaSimplifie",
-  "electronVersion": "41.5.0",
+  "electronVersion": "41.7.1",
   "directories": {
     "output": "../dist-desktop"
   },

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const cookieSet = vi.fn()
@@ -34,7 +34,7 @@ describe('contextActions', () => {
 
   it('sets association and nearest fiscal year cookie', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Context FY pick' } })

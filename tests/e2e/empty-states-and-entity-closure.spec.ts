@@ -1,15 +1,9 @@
 import { test, expect } from '@playwright/test'
-import path from 'node:path'
-import { PrismaClient } from '@prisma/client'
-
-function getTestDbUrl() {
-  const p = path.join(process.cwd(), '.tmp', 'e2e.db')
-  return `file:${p}`
-}
+import { createE2EPrisma } from './helpers/db'
 
 test('empty state: no entity exists shows CTA to create entity', async ({ page }) => {
   // Ensure DB is empty for this test.
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
   try {
     await prisma.documentEntryLine.deleteMany({})
     await prisma.document.deleteMany({})
@@ -32,7 +26,7 @@ test('empty state: no entity exists shows CTA to create entity', async ({ page }
 
 test('empty state: stale entity cookie does not show fiscal year empty state', async ({ page }) => {
   // Ensure DB is empty for this test but cookie points to an entity id.
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
   try {
     await prisma.documentEntryLine.deleteMany({})
     await prisma.document.deleteMany({})
@@ -56,7 +50,7 @@ test('empty state: stale entity cookie does not show fiscal year empty state', a
 })
 
 test('empty state: entity selected but no fiscal year shows CTA to create fiscal year', async ({ page }) => {
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
   let associationId: string
   try {
     const assoc = await prisma.association.create({
@@ -84,7 +78,7 @@ test('empty state: entity selected but no fiscal year shows CTA to create fiscal
 })
 
 test('closed entity: banners shown and creation CTAs disabled', async ({ page }) => {
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
   let associationId: string
   try {
     const assoc = await prisma.association.create({

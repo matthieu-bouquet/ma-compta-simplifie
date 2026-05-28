@@ -1,11 +1,5 @@
 import { test, expect } from '@playwright/test'
-import path from 'node:path'
-import { PrismaClient } from '@prisma/client'
-
-function getTestDbUrl() {
-  const p = path.join(process.cwd(), '.tmp', 'e2e.db')
-  return `file:${p}`
-}
+import { createE2EPrisma } from './helpers/db'
 
 test("créer une entité avec 'Autre' et conserver à l'édition", async ({ page }) => {
   await page.goto('/parametres/entites')
@@ -31,7 +25,7 @@ test("créer une entité avec 'Autre' et conserver à l'édition", async ({ page
 })
 
 test("bénévolat n'est pas accessible pour une entité non-association", async ({ page }) => {
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
 
   let associationId: string
   try {

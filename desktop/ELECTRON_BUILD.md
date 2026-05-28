@@ -44,7 +44,7 @@ Donc la stratégie la plus robuste est : **un job de build par OS** (GitHub Acti
 - **`extraResources`** : (1) copie du standalone (`.next/standalone` → `Resources/app`) pour `server.js`, `.next`, etc. **electron-builder n’y inclut pas `node_modules`** (filtre interne sur ce type de copie). (2) **Entrée séparée** `{ "from": "../.next/standalone/node_modules", "to": "app/node_modules" }` après `fix-standalone-symlinks` — **obligatoire** pour `next`, Prisma CLI, etc. Sans (2), erreur au lancement : `Cannot find module 'next'` et repli migrate vers `npx` si `node_modules/prisma` est absent.
 - **`asar: true`** avec **`asarUnpack`** pour fichiers natifs (`*.node`, `*.dylib`, `*.so`) : requis pour les binaires natifs (dont moteurs Prisma).
 - **`productName` / `executableName`** : ASCII (`MaComptaSimplifie`) pour chemins du bundle ; libellé français uniquement via `mac.extendInfo` **`CFBundleDisplayName`** (Finder / Dock). Ne pas surcharger **`CFBundleName`** avec un libellé différent : Electron résout les **`… Helper.app`** avec ce nom ([`electron_main_delegate_mac.mm`](https://github.com/electron/electron/blob/main/shell/app/electron_main_delegate_mac.mm)) ; un écart avec `productName` provoque **`Unable to find helper app`** au lancement.
-- **`mac.identity: null`** : pas de re-signature macOS par electron-builder — évite le cas [electron-builder#9396](https://github.com/electron-userland/electron-builder/issues/9396) (ad hoc + `Electron Framework` / Team ID). **`electron`** est pinné sur la **dernière stable** du train majeur courant (`41.5.x` au moment du passage depuis la bêta 42) via `package.json` et `electronVersion` dans `electron-builder.json`. Si un souci spécifique **macOS très récent** réapparaît, consulter les releases Electron / issues ([ex. electron#49522](https://github.com/electron/electron/issues/49522)) et envisager une montée de version mineure ou le prochain train stable. Les builds mac restent **non signés** tant que `identity` est `null` : clic droit → Ouvrir ; pour release, `CSC_LINK` + identité Developer ID.
+- **`mac.identity: null`** : pas de re-signature macOS par electron-builder — évite le cas [electron-builder#9396](https://github.com/electron-userland/electron-builder/issues/9396) (ad hoc + `Electron Framework` / Team ID). **`electron`** reste sur le train **41.x** (dernier patch, ex. `41.7.1`) : `package.json` et `electronVersion` dans `electron-builder.json` doivent **toujours être alignés**. Ne pas monter en **Electron 42+** tant que [better-sqlite3#1474](https://github.com/WiseLibs/better-sqlite3/issues/1474) n’est pas résolu (échec `electron-rebuild` / API V8 `External::Value`). Dependabot ignore les bumps semver-major d’`electron`. Les builds mac restent **non signés** tant que `identity` est `null` : clic droit → Ouvrir ; pour release, `CSC_LINK` + identité Developer ID.
 - **Icônes** : `assets/icon.icns` (macOS), `.ico` / `.png` (Windows / Linux), alignées avec `npm run icons:electron`.
 
 ## Script `fix-standalone-symlinks.mjs`
@@ -53,9 +53,10 @@ Donc la stratégie la plus robuste est : **un job de build par OS** (GitHub Acti
 
 **Décision** :
 
-- Résoudre les symlinks et **copier le répertoire réel** pour les paquets concernés (dont `@prisma/client`).
-- **Bundler une fermeture minimale de dépendances `@prisma/*`** à partir du paquet `prisma` (file d’attente BFS sur `dependencies`), plutôt que tout `node_modules/@prisma` — limite la taille tout en satisfaisant le CLI et les imports runtime.
+- Résoudre les symlinks et **copier le répertoire réel** pour les paquets concernés (dont `@prisma/client`, `@prisma/adapter-better-sqlite3`, `better-sqlite3`).
+- **Bundler la fermeture de dépendances du CLI `prisma`** (BFS sur `dependencies`, y compris paquets non-scopés comme `effect` requis par `@prisma/config` en Prisma 7) + adaptateur SQLite.
 - Copier le **projet Prisma** (schéma, migrations) et le **CLI** (`prisma`, `.bin/prisma`) dans l’arborescence standalone utilisée pour le package.
+- **`scripts/rebuild-better-sqlite3-for-electron.mjs`** (après ce script) : recompile `better-sqlite3` pour l’ABI **Electron** (sinon `ERR_DLOPEN_FAILED` / `NODE_MODULE_VERSION` mismatch au runtime Next).
 
 Référence : taille dominée surtout par les **engines** Prisma, pas par le nombre de paquets JS.
 
@@ -65,7 +66,7 @@ Référence : taille dominée surtout par les **engines** Prisma, pas par le nom
 |---------|----------|
 | **DB utilisateur (prod)** | Fichier sous `app.getPath('userData')` (dossier stabilisé, voir ci‑dessous), fichier `app.db`, `DATABASE_URL=file:…`. |
 | **Première installation** | Copie de `prisma/template.db` vers `app.db` si absent (initialisation rapide). |
-| **Quand migrer** | Pas à chaque démarrage : fichier marqueur `db-migrations.json` ; migrations si première création DB ou **version app** différente de celle enregistrée (`app.getVersion()`). |
+| **Quand migrer** | À **chaque** démarrage prod : `prisma migrate deploy` (no-op si rien en attente). Le marqueur `db-migrations.json` trace la dernière exécution. |
 | **Comment migrer** | Appeler le CLI Prisma embarqué : `node_modules/prisma/build/index.js`. En environnement packagé, **`node` système souvent absent** → exécuter avec **`process.execPath`** et **`ELECTRON_RUN_AS_NODE=1`** (voir ci‑dessous). |
 
 ### Décision importante : migrations Prisma **sans** `utilityProcess`

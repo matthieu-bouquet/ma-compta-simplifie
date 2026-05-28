@@ -8,7 +8,7 @@ Ma Compta Simplifié est une app **offline-friendly** (web + desktop Electron) d
 
 ## Stack technique (résumé)
 - **Frontend/SSR**: Next.js App Router (`next` 16.2.4) + React 19 (`src/app/*`).
-- **Data**: Prisma (`prisma`/`@prisma/client`) + SQLite (`DATABASE_URL=file:...`).
+- **Data**: Prisma 7 (`prisma` CLI + client généré dans `src/generated/prisma`, imports app via `@/lib/db`) + SQLite (`DATABASE_URL=file:...`, adaptateur `@prisma/adapter-better-sqlite3`).
 - **Desktop**: Electron + `electron-builder` (packaging multi-OS) (`desktop/*`).
 - **Exports**: ZIP via `archiver`, PDF via `jspdf`/`jspdf-autotable`, CSV via route dédiée.
 
@@ -110,9 +110,10 @@ Voir `package.json`:
 - **Desktop dev**: `npm run desktop:dev`
 - **Desktop dist**: `npm run desktop:dist`
 
-Prisma:
-- `npx prisma generate`
-- `npx prisma migrate dev` (dev) / `npx prisma migrate deploy` (template DB)
+Prisma (config : `prisma.config.ts` à la racine) :
+- `npx prisma generate` (obligatoire après changement de schema ; `postinstall` le fait aussi)
+- `npx prisma migrate dev` (dev) puis **`npx prisma db seed`** si besoin des journaux standard
+- `npx prisma migrate deploy` (template DB, prod, Electron)
 
 ## Conventions UI (à respecter)
 Règles repo: `AGENTS.md`.

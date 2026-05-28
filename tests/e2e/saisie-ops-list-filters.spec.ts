@@ -1,12 +1,6 @@
 import { test, expect } from '@playwright/test'
-import path from 'node:path'
-import { PrismaClient } from '@prisma/client'
+import { createE2EPrisma } from './helpers/db'
 import { expectToastVisible } from './helpers/toast'
-
-function getTestDbUrl() {
-  const p = path.join(process.cwd(), '.tmp', 'e2e.db')
-  return `file:${p}`
-}
 
 async function seedOpsListBase(prisma: PrismaClient) {
   const assoc = await prisma.association.create({
@@ -59,7 +53,7 @@ async function seedOpsListBase(prisma: PrismaClient) {
 }
 
 test('ops list: colonne compte de paiement et filtres client', async ({ page }) => {
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
   let associationId: string
   let fiscalYearId: string
 
@@ -125,7 +119,7 @@ test('ops list: colonne compte de paiement et filtres client', async ({ page }) 
 })
 
 test('ops list: compte de paiement affiché après règlement différé', async ({ page }) => {
-  const prisma = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prisma = createE2EPrisma()
 
   let associationId: string
   let fiscalYearId: string
@@ -161,7 +155,7 @@ test('ops list: compte de paiement affiché après règlement différé', async 
   await page.getByRole('button', { name: "Enregistrer l'écriture" }).click()
   await expect(page.getByText('Écriture enregistrée avec succès.')).toBeVisible()
 
-  const prismaCheck = new PrismaClient({ datasources: { db: { url: getTestDbUrl() } } })
+  const prismaCheck = createE2EPrisma()
   try {
     const debtEntry = await prismaCheck.entry.findFirst({
       where: { fiscalYearId, counterpartyId: supplierId },

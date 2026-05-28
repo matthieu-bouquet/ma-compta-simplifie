@@ -225,19 +225,6 @@ function getMigrationMarkerPath() {
   return path.join(app.getPath('userData'), 'db-migrations.json')
 }
 
-function shouldRunMigrations(opts: { dbWasCreated: boolean }) {
-  if (opts.dbWasCreated) return true
-  const markerPath = getMigrationMarkerPath()
-  if (!fs.existsSync(markerPath)) return true
-  try {
-    const raw = fs.readFileSync(markerPath, 'utf8')
-    const parsed = JSON.parse(raw) as { appVersion?: string }
-    return parsed?.appVersion !== app.getVersion()
-  } catch {
-    return true
-  }
-}
-
 function writeMigrationMarker() {
   const markerPath = getMigrationMarkerPath()
   try {
@@ -364,7 +351,7 @@ async function startNextServer(): Promise<{ url: string }> {
   const port = await getFreePort()
 
   ensureDatabaseFolder()
-  const { created: dbWasCreated } = ensureUserDbFromTemplate(cwd)
+  ensureUserDbFromTemplate(cwd)
   const dbUrl = getDatabaseUrl()
   logLine(`[desktop] DATABASE_URL=${dbUrl}`)
 
@@ -376,9 +363,8 @@ async function startNextServer(): Promise<{ url: string }> {
   }
   writeStartupPathsFile({ cwd, dbUrl, documentsDir })
 
-  // In production, run migrations only on first launch or after update.
-  // Still idempotent: it only applies pending migrations.
-  if (!isDev && shouldRunMigrations({ dbWasCreated })) {
+  // Production: apply pending migrations on every launch (fast no-op when up to date).
+  if (!isDev) {
     await runPrismaMigrateDeploy(cwd, dbUrl)
     writeMigrationMarker()
   }

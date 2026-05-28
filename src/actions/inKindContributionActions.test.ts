@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createVolunteeringContribution, deleteInKindContribution } from '@/actions/inKindContributionActions'
 
@@ -20,9 +20,7 @@ describe('createVolunteeringContribution', () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
 
-    const prisma = new PrismaClient({
-      datasources: { db: { url: dbUrl } },
-    })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Test Association CVN' } })
@@ -90,7 +88,7 @@ describe('createVolunteeringContribution', () => {
 
   it('rejects invalid hours and missing CVN accounts when recorded', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'CVN guards' } })
@@ -141,9 +139,7 @@ describe('createVolunteeringContribution', () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
 
-    const prisma = new PrismaClient({
-      datasources: { db: { url: dbUrl } },
-    })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Test Association CVN 2' } })
@@ -186,9 +182,7 @@ describe('createVolunteeringContribution', () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
 
-    const prisma = new PrismaClient({
-      datasources: { db: { url: dbUrl } },
-    })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Test Association CVN delete' } })
