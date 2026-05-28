@@ -18,3 +18,7 @@ updates:
         patterns:
           - electron
           - electron-builder
+    # Electron 42+ breaks better-sqlite3 native rebuild (WiseLibs/better-sqlite3#1474).
+    ignore:
+      - dependency-name: electron
+        update-types: ["version-update:semver-major"]
