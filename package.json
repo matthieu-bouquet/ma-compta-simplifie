@@ -16,7 +16,7 @@
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "node scripts/test/run-unit-tests.mjs",
     "test:unit:coverage": "node scripts/test/run-unit-tests.mjs -- --coverage",
-    "test:e2e": "DATABASE_URL=file:./.tmp/e2e.db DOCUMENTS_DIR=./.tmp/documents playwright test",
+    "test:e2e": "NODE_OPTIONS='--import tsx' DATABASE_URL=file:./.tmp/e2e.db DOCUMENTS_DIR=./.tmp/documents playwright test",
     "desktop:dev": "concurrently -k \"tsc -p desktop/electron/tsconfig.json --watch\" \"next dev -p 3000\" \"wait-on http://localhost:3000 && wait-on desktop/dist-electron/main.js && ELECTRON_NEXT_URL=http://localhost:3000 electron desktop/dist-electron/main.js\"",
     "desktop:build": "node scripts/build-template-db.mjs && next build && node scripts/fix-standalone-symlinks.mjs && tsc -p desktop/electron/tsconfig.json",
     "desktop:dist": "npm run desktop:build && cross-env ELECTRON_BUILDER_CACHE=./.cache/electron-builder electron-builder --projectDir desktop --config electron-builder.json",
@@ -31,9 +31,11 @@
     "*.{ts,tsx,mjs,js}": "eslint --max-warnings 0 --no-warn-ignored"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
+    "@prisma/adapter-better-sqlite3": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "@types/react-datepicker": "^7.0.0",
     "archiver": "^7.0.1",
+    "better-sqlite3": "^12.10.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "jszip": "^3.10.1",
@@ -50,6 +52,7 @@
     "@playwright/test": "^1.59.1",
     "@resvg/resvg-js": "^2.6.2",
     "@types/archiver": "^7.0.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -64,7 +67,7 @@
     "eslint-config-next": "16.2.4",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.5",
-    "prisma": "^5.22.0",
+    "prisma": "^7.8.0",
     "to-ico": "^1.1.5",
     "ts-node": "^10.9.2",
     "tsx": "^4.22.3",
@@ -74,8 +77,5 @@
     "yaml": "^2.9.0"
   },
   "author": "Ma Compta Simplifié",
-  "license": "GPL-3.0-or-later",
-  "prisma": {
-    "seed": "node prisma/seed.mjs"
-  }
+  "license": "GPL-3.0-or-later"
 }

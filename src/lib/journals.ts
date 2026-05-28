@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import type { Prisma, PrismaClient } from '@prisma/client'
+import type { Prisma, PrismaClient } from '@/lib/db'
 
 export async function getOrCreateJournalByCode(
   db: PrismaClient | Prisma.TransactionClient,

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { describe, expect, it } from 'vitest'
 import { getBackupSelectionTree } from '@/actions/backupActions'
 
 describe('backupActions', () => {
   it('getBackupSelectionTree returns fiscal years and budgets', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Backup tree test' } })

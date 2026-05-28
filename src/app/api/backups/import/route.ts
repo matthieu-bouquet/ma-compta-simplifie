@@ -9,7 +9,7 @@ import crypto from 'node:crypto'
 import JSZip from 'jszip'
 import { toAbsolutePath } from '@/lib/documentsStorage'
 import { writeAuditEvent } from '@/lib/audit'
-import { Prisma } from '@prisma/client'
+import { Prisma } from '@/lib/db'
 import type {
   BackupAccountJson,
   BackupAssociationJson,

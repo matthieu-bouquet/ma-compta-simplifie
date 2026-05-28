@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const cookieSet = vi.fn()
@@ -48,7 +48,7 @@ describe('associationActions', () => {
 
   it('getAssociations maps legacy fields', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
     try {
       await prisma.association.create({ data: { name: 'Listed Assoc' } })
       const rows = await getAssociations()
@@ -63,7 +63,7 @@ describe('associationActions', () => {
 
   it('createAssociation sets cookie and rejects duplicate siret', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
     try {
       const fd1 = associationForm({ nom: 'SIRET A', siret: '12345678901234' })
       const created = await createAssociation(fd1)
@@ -82,7 +82,7 @@ describe('associationActions', () => {
 
   it('updateAssociation and cloturerAssociation', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
     try {
       const created = await createAssociation(associationForm({ nom: 'To update' }))
       const fd = associationForm({ nom: 'Updated name' })
@@ -110,7 +110,7 @@ describe('associationActions', () => {
 
   it('deleteAssociation rejects when fiscal years exist', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
     try {
       const created = await createAssociation(associationForm({ nom: 'Has FY' }))
       await prisma.fiscalYear.create({
@@ -129,7 +129,7 @@ describe('associationActions', () => {
 
   it('cloturerAssociation rejects association without fiscal year', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
     try {
       const created = await createAssociation(associationForm({ nom: 'No FY close' }))
       await expect(cloturerAssociation(created.id)).rejects.toThrow('aucun exercice')
@@ -140,7 +140,7 @@ describe('associationActions', () => {
 
   it('deleteAssociation removes association without fiscal years', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
     try {
       const created = await createAssociation(associationForm({ nom: 'No FY delete' }))
       await deleteAssociation(created.id)

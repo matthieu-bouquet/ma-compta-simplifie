@@ -1,16 +1,8 @@
 import { test, expect } from '@playwright/test'
-import path from 'node:path'
-import { PrismaClient } from '@prisma/client'
-
-function getTestDbUrl() {
-  const p = path.join(process.cwd(), '.tmp', 'e2e.db')
-  return `file:${p}`
-}
+import { createE2EPrisma } from './helpers/db'
 
 test('budget prévisionnel: pré-remplir, comparer, modifier, supprimer', async ({ page }) => {
-  const prisma = new PrismaClient({
-    datasources: { db: { url: getTestDbUrl() } },
-  })
+  const prisma = createE2EPrisma()
 
   const ASSOCIATION_TEMPLATE_ID = '00000000-0000-0000-0000-000000000001'
 

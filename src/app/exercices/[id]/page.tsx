@@ -12,7 +12,7 @@ import CompteRowExercice from '../CompteRowExercice'
 import forms from '@/components/forms/forms.module.css'
 import { NumberInput } from '@/components/forms/NumberInput'
 import layout from '../exerciceConfig.module.css'
-import type { Account } from '@prisma/client'
+import type { Account } from '@/lib/db'
 
 type EcritureLigneConfig = { date: Date; libelle: string }
 

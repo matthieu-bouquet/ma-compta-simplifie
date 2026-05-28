@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { describe, expect, it, vi } from 'vitest'
 import JSZip from 'jszip'
 
@@ -21,7 +21,7 @@ describe('backup export/import counterparties and settlement allocations', () =>
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
 
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({
@@ -235,7 +235,7 @@ describe('backup export/import recurring expense templates', () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
 
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({

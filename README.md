@@ -26,12 +26,15 @@ DATABASE_URL="file:./prisma/dev.db"
 
 Uploaded files use `DOCUMENTS_DIR` when set; otherwise the default directory is `./data` (see `src/lib/documentsStorage.ts`).
 
-Apply migrations, then optionally load seed data:
+Apply migrations, generate the client, then optionally load seed data:
 
 ```bash
+npx prisma generate
 npx prisma migrate deploy
 npx prisma db seed
 ```
+
+After `prisma migrate dev`, run `npx prisma db seed` explicitly if you need standard journals (seeding is no longer automatic in Prisma 7).
 
 ## Development
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import type { Prisma } from '@prisma/client'
+import type { Prisma } from '@/lib/db'
 
 const VAT_ACCOUNTS: { number: string; name: string }[] = [
   { number: '44566', name: 'TVA déductible sur autres biens et services' },
@@ -21,7 +21,7 @@ export function isVatAccountNumber(accountNumber: string): boolean {
  * Ensures PCG VAT sub-accounts exist on every OPEN fiscal year for the association.
  */
 export async function ensureVatAccountsForAssociation(
-  db: Prisma.TransactionClient | import('@prisma/client').PrismaClient,
+  db: Prisma.TransactionClient | import('@/lib/db').PrismaClient,
   associationId: string,
 ): Promise<void> {
   const openYears = await db.fiscalYear.findMany({

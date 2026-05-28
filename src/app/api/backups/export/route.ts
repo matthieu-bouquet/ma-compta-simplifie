@@ -7,7 +7,7 @@ import { nodeStreamToWeb, createReadStreamForRelativePath } from '@/lib/document
 import { writeAuditEvent } from '@/lib/audit'
 import archiver from 'archiver'
 import { PassThrough } from 'stream'
-import type { Prisma } from '@prisma/client'
+import type { Prisma } from '@/lib/db'
 
 export const runtime = 'nodejs'
 

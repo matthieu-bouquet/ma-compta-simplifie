@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next/cache', () => ({
@@ -28,7 +28,7 @@ describe('treasuryActions allocations', () => {
 
   it('rejects settlement when allocation sum differs from payment amount', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Treasury sum guard' } })
@@ -108,7 +108,7 @@ describe('treasuryActions allocations', () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
 
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Treasury supplier test' } })
@@ -213,7 +213,7 @@ describe('treasuryActions allocations', () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
 
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Treasury supplier guard test' } })
@@ -298,7 +298,7 @@ describe('treasuryActions allocations', () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
 
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Treasury customer test' } })

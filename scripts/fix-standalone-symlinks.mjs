@@ -60,17 +60,40 @@ function resolvePackageDir(root, packageName) {
   return path.join(root, "node_modules", packageName);
 }
 
+/** Non-scoped packages required at runtime for Prisma 7 + SQLite adapter (native `.node` binary). */
+const EXPLICIT_RUNTIME_PACKAGES = new Set(["better-sqlite3", "bindings", "file-uri-to-path"]);
+
+function copyPackageIntoStandalone(root, standaloneNm, packageName) {
+  const pkgDir = resolvePackageDir(root, packageName);
+  if (!pkgDir || !fs.existsSync(pkgDir)) return false;
+
+  let destPath;
+  if (packageName.startsWith("@")) {
+    const parts = packageName.split("/");
+    if (parts.length < 2) return false;
+    destPath = path.join(standaloneNm, parts[0], parts[1]);
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  } else {
+    destPath = path.join(standaloneNm, packageName);
+  }
+
+  rmIfExists(destPath);
+  copyDir(pkgDir, destPath);
+  return true;
+}
+
 function bundlePrismaDependencyClosure(root, standaloneNm) {
   /** @type {Set<string>} */
-  const copiedPrismaScopes = new Set();
+  const copiedPackages = new Set();
 
   /** @type {string[]} */
   const queue = [];
   /** @type {Set<string>} */
   const seen = new Set();
 
-  // Seed with the Prisma CLI package itself.
   queue.push("prisma");
+  queue.push("@prisma/adapter-better-sqlite3");
+  queue.push("better-sqlite3");
 
   while (queue.length > 0) {
     const name = queue.shift();
@@ -81,30 +104,18 @@ function bundlePrismaDependencyClosure(root, standaloneNm) {
     const pkgJson = readJsonIfExists(pkgJsonPath);
     if (!pkgJson) continue;
 
-    // Copy only what's needed for Prisma tooling/runtime used by Electron migrations.
-    // Strategy: traverse dependencies starting from `prisma`, then copy every scoped package (@*) reached.
-    // Non-scoped deps are expected to already be traced into Next standalone output (e.g. semver, fs-extra…).
     enqueueDeps(pkgJson, queue, seen);
 
-    // Copy scoped packages (@prisma/* and any other scopes Prisma pulls in).
-    if (name.startsWith("@")) {
-      const parts = name.split("/");
-      if (parts.length < 2) continue;
-      const scope = parts[0]; // "@prisma"
-      const pkg = parts[1];
+    const shouldCopy =
+      name.startsWith("@") || EXPLICIT_RUNTIME_PACKAGES.has(name) || name === "better-sqlite3";
+    if (!shouldCopy) continue;
 
-      const destScopeDir = path.join(standaloneNm, scope);
-      const destPkgDir = path.join(destScopeDir, pkg);
-
-      fs.mkdirSync(destScopeDir, { recursive: true });
-      rmIfExists(destPkgDir);
-      copyDir(path.join(pkgDir), destPkgDir);
-
-      copiedPrismaScopes.add(name);
+    if (copyPackageIntoStandalone(root, standaloneNm, name)) {
+      copiedPackages.add(name);
     }
   }
 
-  return copiedPrismaScopes;
+  return copiedPackages;
 }
 
 function bundlePrismaCliIntoStandalone(root) {
@@ -122,10 +133,26 @@ function bundlePrismaCliIntoStandalone(root) {
     console.log(`${LOG_PREFIX} bundled prisma project -> ${prismaProjectDest}`);
   }
 
-  const copiedScopes = bundlePrismaDependencyClosure(root, standaloneNm);
+  const copiedPackages = bundlePrismaDependencyClosure(root, standaloneNm);
   console.log(
-    `${LOG_PREFIX} bundled scoped prisma toolchain packages: ${Array.from(copiedScopes).sort().join(", ")}`
+    `${LOG_PREFIX} bundled Prisma/SQLite packages: ${Array.from(copiedPackages).sort().join(", ")}`
   );
+
+  const prismaConfigSrc = path.join(root, "prisma.config.ts");
+  const prismaConfigDest = path.join(root, ".next", "standalone", "prisma.config.ts");
+  if (fs.existsSync(prismaConfigSrc)) {
+    fs.mkdirSync(path.dirname(prismaConfigDest), { recursive: true });
+    fs.copyFileSync(prismaConfigSrc, prismaConfigDest);
+    console.log(`${LOG_PREFIX} bundled prisma.config.ts -> ${prismaConfigDest}`);
+  }
+
+  const generatedSrc = path.join(root, "src", "generated", "prisma");
+  const generatedDest = path.join(root, ".next", "standalone", "src", "generated", "prisma");
+  if (fs.existsSync(generatedSrc)) {
+    rmIfExists(generatedDest);
+    copyDir(generatedSrc, generatedDest);
+    console.log(`${LOG_PREFIX} bundled generated client -> ${generatedDest}`);
+  }
 
   const copies = [["prisma", path.join(root, "node_modules", "prisma")]];
 

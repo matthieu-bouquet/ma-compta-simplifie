@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { Prisma } from '@prisma/client'
+import { Prisma } from '@/lib/db'
 
 function formatReferenceNumber(journalCode: string, sequence: number) {
   return `${journalCode}-${String(sequence).padStart(6, '0')}`

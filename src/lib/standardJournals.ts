@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import type { PrismaClient } from '@prisma/client'
+import type { PrismaClient } from '@/lib/db'
 
 export const STANDARD_JOURNALS: { code: string; name: string }[] = [
   { code: 'AC', name: 'Achats' },

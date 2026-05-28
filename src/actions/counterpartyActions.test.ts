@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next/cache', () => ({
@@ -37,7 +37,7 @@ describe('counterpartyActions', () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()
 
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'CP actions test' } })
@@ -62,7 +62,7 @@ describe('counterpartyActions', () => {
 
   it('getSupplier401Preview returns balance for linked entries', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'CP preview test' } })
@@ -128,7 +128,7 @@ describe('counterpartyActions', () => {
 
   it('getCustomer411Preview and balance reflect receivable', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'CP customer preview' } })
@@ -192,7 +192,7 @@ describe('counterpartyActions', () => {
 
   it('rejects delete when entries are linked', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'CP delete guard' } })

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 let currentAssociationId: string | null = null
@@ -26,7 +26,7 @@ describe('GET /api/exercices/[id]/grand-livre.csv', () => {
 
   it('returns CSV for owned fiscal year with entries', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'GL export test' } })
@@ -94,7 +94,7 @@ describe('GET /api/exercices/[id]/grand-livre.csv', () => {
 
   it('returns 404 for fiscal year of another association', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const other = await prisma.association.create({ data: { name: 'Other assoc GL' } })

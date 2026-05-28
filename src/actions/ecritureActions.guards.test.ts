@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next/cache', () => ({
@@ -68,7 +68,7 @@ describe('createEntry business guards', () => {
 
   it('rejects counterparty from another association', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
     try {
       const other = await prisma.association.create({ data: { name: 'Other entity' } })
       const supplier = await prisma.counterparty.create({
@@ -96,7 +96,7 @@ describe('createEntry business guards', () => {
 
   it('appends counterparty name to description when missing', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
     try {
       const { assoc, fy, journal, debit, credit } = await seedOpenFiscalYear(prisma)
       const supplier = await prisma.counterparty.create({
@@ -127,7 +127,7 @@ describe('createEntry business guards', () => {
 
   it('rejects future date and date outside fiscal year', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
     try {
       const { fy, journal, debit, credit } = await seedOpenFiscalYear(prisma)
       const base = {
@@ -150,7 +150,7 @@ describe('createEntry business guards', () => {
 
   it('rejects account outside fiscal year', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
     try {
       const { fy, journal } = await seedOpenFiscalYear(prisma)
       const otherFy = await prisma.fiscalYear.create({
@@ -185,7 +185,7 @@ describe('createEntry business guards', () => {
 
   it('attaches entry-level and per-line documents', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
     try {
       const { fy, journal, debit, credit } = await seedOpenFiscalYear(prisma)
       const pdf = new File([Buffer.from('%PDF')], 'entry.pdf', { type: 'application/pdf' })
@@ -225,7 +225,7 @@ describe('deleteEntryByLineId idempotence', () => {
 
   it('returns success when line id is unknown', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
     try {
       const assoc = await prisma.association.create({ data: { name: 'Delete noop' } })
       currentAssociationId = assoc.id

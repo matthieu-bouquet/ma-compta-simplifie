@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Readable } from 'node:stream'
 
@@ -39,7 +39,7 @@ describe('GET /api/documents/[id]/download', () => {
 
   it('returns 404 when document belongs to another association', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const owner = await prisma.association.create({ data: { name: 'Doc owner' } })
@@ -76,7 +76,7 @@ describe('GET /api/documents/[id]/download', () => {
 
   it('streams document for current association', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const assoc = await prisma.association.create({ data: { name: 'Doc download' } })

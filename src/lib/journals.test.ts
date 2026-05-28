@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@/lib/createPrismaClient'
 import { describe, expect, it } from 'vitest'
 import { getOrCreateJournalByCode } from '@/lib/journals'
 
 describe('getOrCreateJournalByCode', () => {
   it('returns existing journal by code', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       const created = await prisma.journal.upsert({
@@ -27,7 +27,7 @@ describe('getOrCreateJournalByCode', () => {
 
   it('creates journal when missing', async () => {
     const dbUrl = process.env.DATABASE_URL
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
+    const prisma = createPrismaClient(dbUrl)
 
     try {
       await prisma.journal.deleteMany({ where: { code: 'ZY' } })

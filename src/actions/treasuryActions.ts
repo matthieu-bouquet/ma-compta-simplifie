@@ -10,7 +10,7 @@ import { getOrCreateJournalByCode } from '@/lib/journals'
 import { allocateEntryReferenceNumber } from '@/lib/journalNumbering'
 import { writeAuditEvent } from '@/lib/audit'
 import { eurosToCents } from '@/lib/money'
-import type { Prisma } from '@prisma/client'
+import type { Prisma } from '@/lib/db'
 
 type OpenItemRow = {
   payableLineId: string

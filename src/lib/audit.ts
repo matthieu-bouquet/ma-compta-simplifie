@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import { prisma } from '@/lib/prisma'
-import type { Prisma } from '@prisma/client'
+import type { Prisma } from '@/lib/db'
 
 export async function writeAuditEvent(evt: {
   associationId?: string | null
