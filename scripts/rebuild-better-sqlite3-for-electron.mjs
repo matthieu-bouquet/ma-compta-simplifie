@@ -18,20 +18,46 @@ if (!fs.existsSync(electronPkgPath)) {
   process.exit(1)
 }
 
+const rebuildCliPath = path.join(root, 'node_modules', '@electron', 'rebuild', 'lib', 'cli.js')
+if (!fs.existsSync(rebuildCliPath)) {
+  console.error(`${LOG_PREFIX} @electron/rebuild CLI not found at ${rebuildCliPath}`)
+  process.exit(1)
+}
+
 const electronVersion = JSON.parse(fs.readFileSync(electronPkgPath, 'utf8')).version
-const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 
 console.log(
   `${LOG_PREFIX} rebuilding better-sqlite3 for Electron ${electronVersion} (module-dir: ${standaloneDir})`
 )
 
 const res = spawnSync(
-  npx,
-  ['electron-rebuild', '-f', '-v', electronVersion, '-m', standaloneDir, '-w', 'better-sqlite3'],
-  { stdio: 'inherit', cwd: root, env: process.env }
+  process.execPath,
+  [
+    rebuildCliPath,
+    '-f',
+    '-v',
+    electronVersion,
+    '-m',
+    standaloneDir,
+    '-w',
+    'better-sqlite3',
+  ],
+  { stdio: 'inherit', cwd: root, env: process.env, windowsHide: true }
 )
 
+if (res.error) {
+  console.error(`${LOG_PREFIX} spawnSync error:`)
+  console.error(res.error)
+  process.exit(1)
+}
+
+if (res.signal) {
+  console.error(`${LOG_PREFIX} terminated by signal: ${res.signal}`)
+  process.exit(1)
+}
+
 if (res.status !== 0) {
+  console.error(`${LOG_PREFIX} exit status: ${res.status}`)
   process.exit(res.status ?? 1)
 }
 
