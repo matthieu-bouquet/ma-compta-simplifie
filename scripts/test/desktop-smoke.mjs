@@ -16,11 +16,14 @@ const electronPath = require('electron')
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
+const templateDbPath = path.join(root, 'prisma/template.db')
+
 const requiredPaths = [
   'desktop/dist-electron/main.js',
   'desktop/dist-electron/preload.js',
   '.next/standalone/server.js',
   '.next/standalone/package.json',
+  'prisma/template.db',
 ]
 
 const missing = requiredPaths.filter((rel) => !fs.existsSync(path.join(root, rel)))
@@ -71,7 +74,8 @@ const child = spawn(electronPath, ['server.js'], {
     ELECTRON_RUN_AS_NODE: '1',
     PORT: String(port),
     HOSTNAME: host,
-    DATABASE_URL: process.env.DATABASE_URL || `file:${path.join(root, 'prisma/dev.db')}`,
+    // desktop:build runs build-template-db.mjs; dev.db is gitignored and absent on CI.
+    DATABASE_URL: process.env.DATABASE_URL || `file:${templateDbPath}`,
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 })
