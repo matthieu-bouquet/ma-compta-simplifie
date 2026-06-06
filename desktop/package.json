@@ -1,6 +1,6 @@
 {
   "name": "ma-compta-simplifie-desktop",
-  "version": "0.3.1-alpha",
+  "version": "0.4.0-alpha",
   "private": true,
   "description": "Ma Compta Simplifié — application desktop (Electron)",
   "homepage": "https://github.com/matthieu-bouquet/ma-compta-simplifie",
