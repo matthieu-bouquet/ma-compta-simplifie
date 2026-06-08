@@ -7,7 +7,10 @@ import ParametreLayout from '@/components/ParametreLayout'
 import parametreLayoutStyles from '@/components/ParametreLayout.module.css'
 import AssociationSwitcher from '@/components/AssociationSwitcher'
 import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
-import { listRecurringExpenseTemplates } from '@/actions/recurringExpenseTemplateActions'
+import {
+  listEntryTemplatePackSummaries,
+  listRecurringExpenseTemplates,
+} from '@/actions/recurringExpenseTemplateActions'
 import RecurringTemplatesClient from './RecurringTemplatesClient'
 
 function toSelectOptions(accounts: { id: string; number: string; name: string }[]) {
@@ -24,7 +27,7 @@ export default async function DepensesRecurrentesPage() {
   if (!associationId) {
     return (
       <ParametreLayout
-        title="Dépenses récurrentes"
+        title="Modèles de saisie"
         description="Sélectionnez une entité pour gérer les modèles de saisie."
         headerActions={
           <AssociationSwitcher
@@ -39,12 +42,13 @@ export default async function DepensesRecurrentesPage() {
     )
   }
 
-  const [association, templates, counterparties, referenceFy] = await Promise.all([
+  const [association, templates, packSummaries, counterparties, referenceFy] = await Promise.all([
     prisma.association.findUnique({
       where: { id: associationId },
       select: { name: true },
     }),
     listRecurringExpenseTemplates(associationId),
+    listEntryTemplatePackSummaries(associationId),
     prisma.counterparty.findMany({
       where: { associationId },
       orderBy: [{ kind: 'asc' }, { name: 'asc' }],
@@ -90,8 +94,8 @@ export default async function DepensesRecurrentesPage() {
 
   return (
     <ParametreLayout
-      title="Dépenses récurrentes"
-      description={`Modèles de saisie pour « ${entityLabel} ». Utilisables depuis l’onglet Opérations de la saisie comptable.`}
+      title="Modèles de saisie"
+      description={`Modèles pour « ${entityLabel} ». Utilisables depuis l’onglet Opérations de la saisie comptable.`}
       headerActions={
         <AssociationSwitcher
           currentAssociationId={associationId}
@@ -107,7 +111,13 @@ export default async function DepensesRecurrentesPage() {
         </p>
       ) : null}
       <RecurringTemplatesClient
+        key={`${templates.map((t) => t.id).sort().join(',')}|${packSummaries
+          .filter((p) => p.imported)
+          .map((p) => p.code)
+          .sort()
+          .join(',')}`}
         initialRows={templates}
+        initialPackSummaries={packSummaries}
         supplierOptions={supplierOptions}
         customerOptions={customerOptions}
         chargeOptions={chargeOptions}

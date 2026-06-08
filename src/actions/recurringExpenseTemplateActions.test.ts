@@ -32,6 +32,28 @@ describe('recurringExpenseTemplateActions', () => {
     writeAuditEvent.mockClear()
   })
 
+  it('creates template with null amount', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = createPrismaClient(dbUrl)
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'RET null amount' } })
+      currentAssociationId = assoc.id
+
+      const created = await createRecurringExpenseTemplate({
+        title: 'Frais bancaires',
+        operationType: 'DEPENSE',
+        amountCents: null,
+        counterpartyId: null,
+        operationAccountNumber: '627',
+        treasuryAccountNumber: '512',
+      })
+      expect(created.amountCents).toBeNull()
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
   it('creates, lists, updates and deletes a template', async () => {
     const dbUrl = process.env.DATABASE_URL
     expect(dbUrl).toBeTruthy()

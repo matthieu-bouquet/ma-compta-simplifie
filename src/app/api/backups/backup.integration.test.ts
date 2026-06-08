@@ -267,6 +267,20 @@ describe('backup export/import recurring expense templates', () => {
           counterpartyId: supplier.id,
           operationAccountNumber: '601',
           treasuryAccountNumber: '512',
+          packCode: null,
+        },
+      })
+
+      const templatePack = await prisma.recurringExpenseTemplate.create({
+        data: {
+          associationId: assoc.id,
+          title: 'Buvette',
+          operationType: 'RECETTE',
+          amountCents: null,
+          counterpartyId: null,
+          operationAccountNumber: '707',
+          treasuryAccountNumber: '530',
+          packCode: 'EVENT_MANIFESTATION',
         },
       })
 
@@ -287,14 +301,19 @@ describe('backup export/import recurring expense templates', () => {
         id: string
         title: string
         operationType: string
-        amountCents: number
+        amountCents: number | null
         counterpartyId: string | null
         operationAccountNumber: string
         treasuryAccountNumber: string | null
+        packCode: string | null
       }[]
-      expect(templatesJson).toHaveLength(1)
-      expect(templatesJson[0]!.title).toBe('Loyer backup')
-      expect(templatesJson[0]!.counterpartyId).toBe(supplier.id)
+      expect(templatesJson).toHaveLength(2)
+      const loyerJson = templatesJson.find((t) => t.id === template.id)
+      expect(loyerJson?.title).toBe('Loyer backup')
+      expect(loyerJson?.counterpartyId).toBe(supplier.id)
+      const packTemplateJson = templatesJson.find((t) => t.id === templatePack.id)
+      expect(packTemplateJson?.amountCents).toBeNull()
+      expect(packTemplateJson?.packCode).toBe('EVENT_MANIFESTATION')
 
       await prisma.association.deleteMany({ where: { id: assoc.id } })
 
@@ -310,7 +329,7 @@ describe('backup export/import recurring expense templates', () => {
         token: string
         summary: { recurringExpenseTemplates: number }
       }
-      expect(previewBody.summary.recurringExpenseTemplates).toBe(1)
+      expect(previewBody.summary.recurringExpenseTemplates).toBe(2)
 
       const applyForm = new FormData()
       applyForm.append('phase', 'apply')
@@ -336,6 +355,14 @@ describe('backup export/import recurring expense templates', () => {
       expect(restored?.operationAccountNumber).toBe('601')
       expect(restored?.treasuryAccountNumber).toBe('512')
       expect(restored?.counterpartyId).toBe(supplier.id)
+      expect(restored?.packCode).toBeNull()
+
+      const restoredPack = await prisma.recurringExpenseTemplate.findUnique({
+        where: { id: templatePack.id },
+      })
+      expect(restoredPack?.title).toBe('Buvette')
+      expect(restoredPack?.amountCents).toBeNull()
+      expect(restoredPack?.packCode).toBe('EVENT_MANIFESTATION')
     } finally {
       await prisma.$disconnect()
     }

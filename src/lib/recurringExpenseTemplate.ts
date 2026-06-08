@@ -11,10 +11,11 @@ export type RecurringExpenseTemplateRecord = {
   associationId: string
   title: string
   operationType: string
-  amountCents: number
+  amountCents: number | null
   counterpartyId: string | null
   operationAccountNumber: string
   treasuryAccountNumber: string | null
+  packCode: string | null
 }
 
 export type SaisieStateForTemplate = {
@@ -31,10 +32,11 @@ export type SaisieStateForTemplate = {
 export type TemplatePayloadFromSaisie = {
   title: string
   operationType: TypeOperation
-  amountCents: number
+  amountCents: number | null
   counterpartyId: string | null
   operationAccountNumber: string
   treasuryAccountNumber: string | null
+  packCode?: string | null
 }
 
 export type AppliedSaisieState = {
@@ -85,7 +87,9 @@ export function validateTemplatePayload(data: TemplatePayloadFromSaisie): string
   if (!isQuickOperationType(data.operationType)) {
     return "Type d'opération invalide."
   }
-  if (data.amountCents <= 0) return 'Le montant doit être strictement supérieur à 0.'
+  if (data.amountCents !== null && data.amountCents <= 0) {
+    return 'Le montant doit être strictement supérieur à 0.'
+  }
   if (!data.operationAccountNumber.trim()) {
     return data.operationType === 'TRANSFERT'
       ? 'Le compte destination est requis.'
@@ -142,13 +146,18 @@ export function buildTemplateFromSaisieState(
         ? state.customerId
         : null
 
+  const normalizedMontant = state.montant
+  const amountCents =
+    normalizedMontant > 0 ? eurosToCents(normalizedMontant) : null
+
   const payload: TemplatePayloadFromSaisie = {
     title: state.libelle.trim(),
     operationType: state.typeOperation,
-    amountCents: eurosToCents(state.montant),
+    amountCents,
     counterpartyId,
     operationAccountNumber,
     treasuryAccountNumber,
+    packCode: null,
   }
 
   const validationError = validateTemplatePayload(payload)
@@ -203,11 +212,14 @@ export function applyTemplateToSaisieState(
   if (typeOperation === 'DEPENSE') supplierId = template.counterpartyId
   if (typeOperation === 'RECETTE') customerId = template.counterpartyId
 
+  const montant =
+    template.amountCents === null ? 0 : centsToEuros(template.amountCents)
+
   return {
     state: {
       typeOperation,
       libelle: template.title,
-      montant: centsToEuros(template.amountCents),
+      montant,
       supplierId,
       customerId,
       compteOperationId,
@@ -223,4 +235,73 @@ export function canBuildTemplateFromSaisie(
   comptes: CompteLite[],
 ): boolean {
   return buildTemplateFromSaisieState(state, comptes).ok
+}
+
+const OPERATION_TYPE_LABELS: Record<TypeOperation, string> = {
+  DEPENSE: 'Dépense',
+  RECETTE: 'Recette',
+  TRANSFERT: 'Virement',
+  REGLEMENT_FOURNISSEUR: 'Règlement fournisseur',
+  ENCAISSEMENT_CLIENT: 'Encaissement client',
+}
+
+function templateSelectLabel(title: string, operationType: string): string {
+  const opLabel =
+    OPERATION_TYPE_LABELS[operationType as TypeOperation] ?? operationType
+  return `${title} (${opLabel})`
+}
+
+export type TemplateSelectGroup = {
+  label: string
+  options: { value: string; label: string }[]
+}
+
+export function buildGroupedTemplateSelectOptions(
+  templates: Pick<RecurringExpenseTemplateRecord, 'id' | 'title' | 'operationType' | 'packCode'>[],
+  resolvePackName: (packCode: string) => string | null,
+  presetPackOrder: string[],
+): TemplateSelectGroup[] {
+  const byPack = new Map<string | null, typeof templates>()
+  for (const template of templates) {
+    const key = template.packCode
+    const list = byPack.get(key) ?? []
+    list.push(template)
+    byPack.set(key, list)
+  }
+
+  const groups: TemplateSelectGroup[] = []
+
+  for (const packCode of presetPackOrder) {
+    const items = byPack.get(packCode)
+    if (!items?.length) continue
+    groups.push({
+      label: resolvePackName(packCode) ?? packCode,
+      options: items
+        .slice()
+        .sort((a, b) => a.title.localeCompare(b.title))
+        .map((t) => ({
+          value: t.id,
+          label: templateSelectLabel(t.title, t.operationType),
+        })),
+    })
+    byPack.delete(packCode)
+  }
+
+  for (const [packCode, items] of byPack.entries()) {
+    if (!items.length) continue
+    const label =
+      packCode === null ? 'Mes modèles' : (resolvePackName(packCode) ?? packCode)
+    groups.push({
+      label,
+      options: items
+        .slice()
+        .sort((a, b) => a.title.localeCompare(b.title))
+        .map((t) => ({
+          value: t.id,
+          label: templateSelectLabel(t.title, t.operationType),
+        })),
+    })
+  }
+
+  return groups
 }

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { buildOperationsSubmitPayload } from '@/app/saisie/saisieFormSubmit'
 import {
   applyTemplateToSaisieState,
+  buildGroupedTemplateSelectOptions,
   buildTemplateFromSaisieState,
   resolveAccountIdByNumber,
   validateTemplatePayload,
@@ -112,6 +113,7 @@ describe('recurringExpenseTemplate', () => {
       counterpartyId: 'sup-1',
       operationAccountNumber: '601',
       treasuryAccountNumber: '512',
+      packCode: null,
     }
     const applied = applyTemplateToSaisieState(template, comptes)
     expect('state' in applied).toBe(true)
@@ -133,6 +135,7 @@ describe('recurringExpenseTemplate', () => {
       counterpartyId: null,
       operationAccountNumber: '999',
       treasuryAccountNumber: '888',
+      packCode: null,
     }
     const applied = applyTemplateToSaisieState(template, comptes)
     expect('state' in applied).toBe(true)
@@ -152,6 +155,7 @@ describe('recurringExpenseTemplate', () => {
       counterpartyId: null,
       operationAccountNumber: '601',
       treasuryAccountNumber: '512',
+      packCode: null,
     }
     const applied = applyTemplateToSaisieState(template, comptes)
     expect('state' in applied).toBe(true)
@@ -175,6 +179,67 @@ describe('recurringExpenseTemplate', () => {
     expect(built.ok).toBe(true)
   })
 
+  it('buildTemplateFromSaisieState without amount stores null amountCents', () => {
+    const built = buildTemplateFromSaisieState(
+      {
+        libelle: 'Frais bancaires',
+        typeOperation: 'DEPENSE',
+        montant: 0,
+        supplierId: null,
+        customerId: null,
+        compteOperationId: 'c601',
+        comptePaiementId: 'c512',
+        dejaRegle: true,
+      },
+      comptes,
+    )
+    expect(built.ok).toBe(true)
+    if (!built.ok) return
+    expect(built.data.amountCents).toBeNull()
+  })
+
+  it('applyTemplateToSaisieState with null amount leaves montant at 0', () => {
+    const template: RecurringExpenseTemplateRecord = {
+      id: 't3',
+      associationId: 'a1',
+      title: 'Frais bancaires',
+      operationType: 'DEPENSE',
+      amountCents: null,
+      counterpartyId: null,
+      operationAccountNumber: '601',
+      treasuryAccountNumber: '512',
+      packCode: 'CORE_ASSOCIATION',
+    }
+    const applied = applyTemplateToSaisieState(template, comptes)
+    expect('state' in applied).toBe(true)
+    if (!('state' in applied)) return
+    expect(applied.state.montant).toBe(0)
+  })
+
+  it('buildGroupedTemplateSelectOptions groups by pack then custom', () => {
+    const groups = buildGroupedTemplateSelectOptions(
+      [
+        {
+          id: '1',
+          title: 'Don manuel',
+          operationType: 'RECETTE',
+          packCode: 'CORE_ASSOCIATION',
+        },
+        {
+          id: '2',
+          title: 'Custom',
+          operationType: 'DEPENSE',
+          packCode: null,
+        },
+      ],
+      (code) => (code === 'CORE_ASSOCIATION' ? 'Modèles courants' : null),
+      ['CORE_ASSOCIATION'],
+    )
+    expect(groups).toHaveLength(2)
+    expect(groups[0].label).toBe('Modèles courants')
+    expect(groups[1].label).toBe('Mes modèles')
+  })
+
   it('validateTemplatePayload rejects invalid data', () => {
     expect(
       validateTemplatePayload({
@@ -196,5 +261,15 @@ describe('recurringExpenseTemplate', () => {
         treasuryAccountNumber: null,
       }),
     ).toBeTruthy()
+    expect(
+      validateTemplatePayload({
+        title: 'Sans montant',
+        operationType: 'DEPENSE',
+        amountCents: null,
+        counterpartyId: null,
+        operationAccountNumber: '601',
+        treasuryAccountNumber: '512',
+      }),
+    ).toBeNull()
   })
 })

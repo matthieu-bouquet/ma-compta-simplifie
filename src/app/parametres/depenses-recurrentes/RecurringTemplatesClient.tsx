@@ -4,6 +4,7 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import AppSearchableSelect from '@/components/forms/AppSearchableSelect'
@@ -12,10 +13,13 @@ import { NumberInput } from '@/components/forms/NumberInput'
 import {
   createRecurringExpenseTemplate,
   deleteRecurringExpenseTemplate,
+  importEntryTemplatePackAction,
   updateRecurringExpenseTemplate,
+  type EntryTemplatePackSummaryDto,
   type RecurringExpenseTemplateDto,
 } from '@/actions/recurringExpenseTemplateActions'
 import { appToast } from '@/lib/appToast'
+import { getPackDisplayName } from '@/lib/entryTemplatePresets'
 import { formatEurosFromCents, normalizeEurosAmount } from '@/lib/money'
 import type { TypeOperation } from '@/app/saisie/saisieFormTypes'
 import styles from './depensesRecurrentes.module.css'
@@ -33,7 +37,7 @@ const OPERATION_LABELS: Record<TypeOperation, string> = {
 type FormState = {
   title: string
   operationType: TypeOperation
-  amountEuros: number
+  amountEuros: number | null
   counterpartyId: string | null
   operationAccountId: string | null
   treasuryAccountId: string | null
@@ -42,7 +46,7 @@ type FormState = {
 const emptyForm = (): FormState => ({
   title: '',
   operationType: 'DEPENSE',
-  amountEuros: 0,
+  amountEuros: null,
   counterpartyId: null,
   operationAccountId: null,
   treasuryAccountId: null,
@@ -50,6 +54,7 @@ const emptyForm = (): FormState => ({
 
 export default function RecurringTemplatesClient({
   initialRows,
+  initialPackSummaries,
   supplierOptions,
   customerOptions,
   chargeOptions,
@@ -58,6 +63,7 @@ export default function RecurringTemplatesClient({
   accountIdByNumber,
 }: {
   initialRows: RecurringExpenseTemplateDto[]
+  initialPackSummaries: EntryTemplatePackSummaryDto[]
   supplierOptions: SelectOption[]
   customerOptions: SelectOption[]
   chargeOptions: SelectOption[]
@@ -66,10 +72,13 @@ export default function RecurringTemplatesClient({
   accountIdByNumber: Record<string, string>
 }) {
   const [rows, setRows] = useState(initialRows)
+  const [packSummaries, setPackSummaries] = useState(initialPackSummaries)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [importingPackCode, setImportingPackCode] = useState<string | null>(null)
+  const router = useRouter()
 
   const operationAccountOptions = useMemo(() => {
     if (form.operationType === 'RECETTE') return productOptions
@@ -92,7 +101,7 @@ export default function RecurringTemplatesClient({
     setForm({
       title: row.title,
       operationType: op,
-      amountEuros: row.amountCents / 100,
+      amountEuros: row.amountCents === null ? null : row.amountCents / 100,
       counterpartyId: row.counterpartyId,
       operationAccountId: accountIdByNumber[row.operationAccountNumber] ?? null,
       treasuryAccountId: row.treasuryAccountNumber
@@ -131,10 +140,15 @@ export default function RecurringTemplatesClient({
         return
       }
 
+      const amountCents =
+        form.amountEuros === null || form.amountEuros <= 0
+          ? null
+          : Math.round(normalizeEurosAmount(form.amountEuros) * 100)
+
       const payload = {
         title: form.title.trim(),
         operationType: form.operationType,
-        amountCents: Math.round(normalizeEurosAmount(form.amountEuros) * 100),
+        amountCents,
         counterpartyId: form.operationType === 'TRANSFERT' ? null : form.counterpartyId,
         operationAccountNumber,
         treasuryAccountNumber:
@@ -148,12 +162,19 @@ export default function RecurringTemplatesClient({
         setRows((prev) =>
           prev
             .map((r) => (r.id === updated.id ? updated : r))
-            .sort((a, b) => a.title.localeCompare(b.title)),
+            .sort((a, b) =>
+              (a.packCode ?? '').localeCompare(b.packCode ?? '') || a.title.localeCompare(b.title),
+            ),
         )
         appToast.success('Modèle mis à jour.')
       } else {
         const created = await createRecurringExpenseTemplate(payload)
-        setRows((prev) => [...prev, created].sort((a, b) => a.title.localeCompare(b.title)))
+        setRows((prev) =>
+          [...prev, created].sort(
+            (a, b) =>
+              (a.packCode ?? '').localeCompare(b.packCode ?? '') || a.title.localeCompare(b.title),
+          ),
+        )
         appToast.success('Modèle créé.')
       }
       cancelForm()
@@ -175,8 +196,68 @@ export default function RecurringTemplatesClient({
     }
   }
 
+  const handleImportPack = async (packCode: string) => {
+    setImportingPackCode(packCode)
+    try {
+      const result = await importEntryTemplatePackAction(packCode)
+      const packName = packSummaries.find((p) => p.code === packCode)?.name ?? packCode
+      if (result.imported === 0 && result.skipped > 0) {
+        appToast.warning(`Le pack « ${packName} » est déjà entièrement importé.`)
+      } else {
+        appToast.success(
+          `Pack « ${packName} » : ${result.imported} modèle(s) importé(s)${result.skipped > 0 ? `, ${result.skipped} déjà présent(s)` : ''}.`,
+        )
+      }
+      setPackSummaries((prev) =>
+        prev.map((p) => (p.code === packCode ? { ...p, imported: true } : p)),
+      )
+      router.refresh()
+    } catch (e: unknown) {
+      appToast.error(e instanceof Error ? e.message : 'Erreur')
+    } finally {
+      setImportingPackCode(null)
+    }
+  }
+
+  const manualImportPacks = packSummaries.filter((p) => !p.imported)
+
   return (
     <div>
+      {packSummaries.length > 0 ? (
+        <div className={`card ${styles.panel}`}>
+          <h2 className="card-title">Importer un pack</h2>
+          <p className={styles.packIntro}>
+            Ajoutez des modèles prédéfinis (comptes préremplis, montant à saisir à l’usage).
+          </p>
+          <ul className={styles.packList}>
+            {packSummaries.map((pack) => (
+              <li key={pack.code} className={styles.packItem}>
+                <div className={styles.packItemBody}>
+                  <div className={styles.packItemTitle}>{pack.name}</div>
+                  <p className={styles.packItemDescription}>{pack.description}</p>
+                </div>
+                {pack.imported ? (
+                  <span className={styles.packImportedBadge}>Importé</span>
+                ) : (
+                  <button
+                    type="button"
+                    className={`btn btn-secondary ${forms.btnWithLeadingIcon}`}
+                    disabled={importingPackCode !== null}
+                    onClick={() => void handleImportPack(pack.code)}
+                  >
+                    <Plus size={16} aria-hidden="true" />
+                    Importer
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+          {manualImportPacks.length === 0 && packSummaries.every((p) => p.imported) ? (
+            <p className={styles.packAllImported}>Tous les packs disponibles sont importés.</p>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className={styles.toolbar}>
         <button
           type="button"
@@ -238,14 +319,18 @@ export default function RecurringTemplatesClient({
                 className={forms.input}
                 min="0.01"
                 step="0.01"
-                value={form.amountEuros || ''}
-                onChange={(e) =>
+                value={form.amountEuros ?? ''}
+                onChange={(e) => {
+                  const raw = e.target.value.trim()
                   setForm((f) => ({
                     ...f,
-                    amountEuros: normalizeEurosAmount(parseFloat(e.target.value) || 0),
+                    amountEuros: raw === '' ? null : normalizeEurosAmount(parseFloat(raw) || 0),
                   }))
-                }
+                }}
               />
+              <p className={styles.fieldHint}>
+                Laisser vide si le montant est saisi à chaque utilisation.
+              </p>
             </div>
 
             {form.operationType !== 'TRANSFERT' ? (
@@ -323,6 +408,7 @@ export default function RecurringTemplatesClient({
               <th className={styles.th}>Titre</th>
               <th className={styles.th}>Type</th>
               <th className={styles.th}>Montant</th>
+              <th className={styles.th}>Pack</th>
               <th className={styles.th}>Tiers</th>
               <th className={styles.th}>Comptes</th>
               <th className={`${styles.th} ${styles.thActions}`}>Actions</th>
@@ -331,7 +417,7 @@ export default function RecurringTemplatesClient({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className={styles.tdEmpty}>
+                <td colSpan={7} className={styles.tdEmpty}>
                   Aucun modèle pour cette entité.
                 </td>
               </tr>
@@ -342,7 +428,14 @@ export default function RecurringTemplatesClient({
                   <td className={styles.td}>
                     {OPERATION_LABELS[row.operationType as TypeOperation] ?? row.operationType}
                   </td>
-                  <td className={styles.td}>{formatEurosFromCents(row.amountCents)}</td>
+                  <td className={styles.td}>
+                    {row.amountCents === null
+                      ? 'À saisir'
+                      : formatEurosFromCents(row.amountCents)}
+                  </td>
+                  <td className={styles.td}>
+                    {row.packCode ? (getPackDisplayName(row.packCode) ?? row.packCode) : 'Personnalisé'}
+                  </td>
                   <td className={styles.td}>{row.counterpartyName ?? '—'}</td>
                   <td className={`${styles.td} ${styles.tdAccounts}`}>
                     {row.operationAccountNumber}

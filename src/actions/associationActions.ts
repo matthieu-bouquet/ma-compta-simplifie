@@ -10,6 +10,7 @@ import { validateLegalForm } from '@/lib/legalForms'
 import { setCurrentAssociationId } from '@/actions/contextActions'
 import { syncTemplateWithDefault } from '@/actions/planComptableActions'
 import { ensureVatAccountsForAssociation } from '@/lib/vatAccounts'
+import { importAutoSeedEntryTemplatePacks } from '@/lib/entryTemplateImport'
 
 function inferTemplateCodeFromLegalForm(legalFormCode: string | null): 'ASSOCIATION' | 'TPE' {
   if (!legalFormCode) return 'ASSOCIATION'
@@ -127,6 +128,8 @@ export async function createAssociation(formData: FormData) {
     await syncTemplateWithDefault(templateCode)
     await ensureVatAccountsForAssociation(prisma, association.id)
   }
+
+  await importAutoSeedEntryTemplatePacks(prisma, association.id)
 
   // Default-select the newly created entity for the user.
   await setCurrentAssociationId(association.id)

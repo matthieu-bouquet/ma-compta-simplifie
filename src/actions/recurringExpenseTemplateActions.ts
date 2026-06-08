@@ -12,17 +12,34 @@ import {
   validateTemplatePayload,
   type TemplatePayloadFromSaisie,
 } from '@/lib/recurringExpenseTemplate'
+import {
+  getEntryTemplatePresetPack,
+  listPresetPacksForEntityKind,
+} from '@/lib/entryTemplatePresets'
+import {
+  entityKindForAssociation,
+  importEntryTemplatePack,
+  listImportedPackCodes,
+} from '@/lib/entryTemplateImport'
 
 export type RecurringExpenseTemplateDto = {
   id: string
   associationId: string
   title: string
   operationType: string
-  amountCents: number
+  amountCents: number | null
   counterpartyId: string | null
   operationAccountNumber: string
   treasuryAccountNumber: string | null
+  packCode: string | null
   counterpartyName?: string | null
+}
+
+export type EntryTemplatePackSummaryDto = {
+  code: string
+  name: string
+  description: string
+  imported: boolean
 }
 
 async function resolveAssociationId(explicitId?: string | null): Promise<string> {
@@ -47,10 +64,11 @@ function mapRow(row: {
   associationId: string
   title: string
   operationType: string
-  amountCents: number
+  amountCents: number | null
   counterpartyId: string | null
   operationAccountNumber: string
   treasuryAccountNumber: string | null
+  packCode: string | null
   counterparty?: { name: string } | null
 }): RecurringExpenseTemplateDto {
   return {
@@ -62,6 +80,7 @@ function mapRow(row: {
     counterpartyId: row.counterpartyId,
     operationAccountNumber: row.operationAccountNumber,
     treasuryAccountNumber: row.treasuryAccountNumber,
+    packCode: row.packCode,
     counterpartyName: row.counterparty?.name ?? null,
   }
 }
@@ -73,9 +92,71 @@ export async function listRecurringExpenseTemplates(
   const rows = await prisma.recurringExpenseTemplate.findMany({
     where: { associationId: assocId },
     include: { counterparty: { select: { name: true } } },
-    orderBy: [{ title: 'asc' }],
+    orderBy: [{ packCode: 'asc' }, { title: 'asc' }],
   })
   return rows.map(mapRow)
+}
+
+export async function listEntryTemplatePackSummaries(
+  associationId?: string | null,
+): Promise<EntryTemplatePackSummaryDto[]> {
+  const assocId = await resolveAssociationId(associationId)
+  const association = await prisma.association.findUnique({
+    where: { id: assocId },
+    select: { legalFormCode: true },
+  })
+  if (!association) throw new Error('Entité introuvable.')
+
+  const entityKind = entityKindForAssociation(association.legalFormCode)
+  const importedCodes = new Set(await listImportedPackCodes(prisma, assocId))
+
+  return listPresetPacksForEntityKind(entityKind).map((pack) => ({
+    code: pack.code,
+    name: pack.name,
+    description: pack.description,
+    imported: importedCodes.has(pack.code),
+  }))
+}
+
+export async function importEntryTemplatePackAction(
+  packCode: string,
+  associationId?: string | null,
+) {
+  const assocId = await resolveAssociationId(associationId)
+  const pack = getEntryTemplatePresetPack(packCode)
+  if (!pack) throw new Error('Pack de modèles introuvable.')
+
+  const association = await prisma.association.findUnique({
+    where: { id: assocId },
+    select: { legalFormCode: true },
+  })
+  if (!association) throw new Error('Entité introuvable.')
+
+  const entityKind = entityKindForAssociation(association.legalFormCode)
+  if (!pack.entityKinds.includes(entityKind)) {
+    throw new Error('Ce pack ne s’applique pas à ce type d’entité.')
+  }
+
+  const result = await importEntryTemplatePack(prisma, assocId, packCode)
+
+  if (result.imported > 0) {
+    await writeAuditEvent({
+      associationId: assocId,
+      fiscalYearId: null,
+      actor: assocId,
+      action: 'ENTRY_TEMPLATE_PACK_IMPORT',
+      entityType: 'RecurringExpenseTemplate',
+      entityId: packCode,
+      data: {
+        packCode,
+        imported: result.imported,
+        skipped: result.skipped,
+      },
+    })
+  }
+
+  revalidatePaths()
+  return result
 }
 
 export async function createRecurringExpenseTemplate(
@@ -99,6 +180,7 @@ export async function createRecurringExpenseTemplate(
       counterpartyId: payload.counterpartyId,
       operationAccountNumber: payload.operationAccountNumber,
       treasuryAccountNumber: payload.treasuryAccountNumber,
+      packCode: payload.packCode ?? null,
     },
     include: { counterparty: { select: { name: true } } },
   })
@@ -149,6 +231,7 @@ export async function updateRecurringExpenseTemplate(data: {
       counterpartyId: payload.counterpartyId,
       operationAccountNumber: payload.operationAccountNumber,
       treasuryAccountNumber: payload.treasuryAccountNumber,
+      packCode: existing.packCode,
     },
     include: { counterparty: { select: { name: true } } },
   })
@@ -198,6 +281,7 @@ function normalizePayload(data: TemplatePayloadFromSaisie): TemplatePayloadFromS
     title: data.title.trim(),
     operationAccountNumber: data.operationAccountNumber.trim(),
     treasuryAccountNumber: data.treasuryAccountNumber?.trim() || null,
+    packCode: data.packCode ?? null,
   }
 }
 

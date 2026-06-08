@@ -3,10 +3,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
+import { useMemo } from 'react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import AppSearchableSelect from '@/components/forms/AppSearchableSelect'
 import forms from '@/components/forms/forms.module.css'
+import { ENTRY_TEMPLATE_PRESET_PACKS, getPackDisplayName } from '@/lib/entryTemplatePresets'
+import { buildGroupedTemplateSelectOptions } from '@/lib/recurringExpenseTemplate'
 import styles from './saisieForm.module.css'
 import { DateInput } from './saisieFormTypes'
 import { useSaisieFormContext } from './saisieFormContext'
@@ -27,22 +30,37 @@ export default function SaisieFormCommonHeader() {
     applyRecurringTemplate,
   } = useSaisieFormContext()
 
-  const templateOptions = recurringTemplates.map((t) => ({
-    value: t.id,
-    label: `${t.title} (${t.operationType === 'DEPENSE' ? 'Dépense' : t.operationType === 'RECETTE' ? 'Recette' : 'Virement'})`,
-  }))
+  const presetPackOrder = useMemo(
+    () => ENTRY_TEMPLATE_PRESET_PACKS.map((p) => p.code),
+    [],
+  )
+
+  const templateGroups = useMemo(
+    () =>
+      buildGroupedTemplateSelectOptions(
+        recurringTemplates,
+        (packCode) => getPackDisplayName(packCode) ?? packCode,
+        presetPackOrder,
+      ),
+    [recurringTemplates, presetPackOrder],
+  )
+
+  const flatTemplateOptions = useMemo(
+    () => templateGroups.flatMap((g) => g.options),
+    [templateGroups],
+  )
 
   return (
         <>
           {mode === 'OPERATIONS' && recurringTemplates.length > 0 ? (
             <div className={`${forms.field} ${styles.recurringTemplateRow}`}>
               <label className={forms.label} htmlFor="saisie-recurring-template">
-                Dépense courante
+                Modèle de saisie
               </label>
               <AppSearchableSelect
                 inputId="saisie-recurring-template"
-                options={templateOptions}
-                value={templateOptions.find((o) => o.value === selectedTemplateId) ?? null}
+                groupedOptions={templateGroups}
+                value={flatTemplateOptions.find((o) => o.value === selectedTemplateId) ?? null}
                 onChange={(v) => {
                   if (v) applyRecurringTemplate(v)
                   else setSelectedTemplateId(null)

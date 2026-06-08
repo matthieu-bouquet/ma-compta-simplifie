@@ -46,6 +46,23 @@ describe('associationActions', () => {
     cookieDelete.mockClear()
   })
 
+  it('createAssociation auto-seeds CORE_ASSOCIATION entry templates', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = createPrismaClient(dbUrl)
+    try {
+      const created = await createAssociation(associationForm({ nom: 'Auto templates' }))
+      const templates = await prisma.recurringExpenseTemplate.findMany({
+        where: { associationId: created.id, packCode: 'CORE_ASSOCIATION' },
+      })
+      expect(templates.length).toBeGreaterThanOrEqual(3)
+      expect(templates.some((t) => t.title === 'Frais bancaires' && t.amountCents === null)).toBe(
+        true,
+      )
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
   it('getAssociations maps legacy fields', async () => {
     const dbUrl = process.env.DATABASE_URL
     const prisma = createPrismaClient(dbUrl)
