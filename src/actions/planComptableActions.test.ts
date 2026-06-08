@@ -45,6 +45,14 @@ describe('planComptableActions', () => {
     const accounts = await getTemplateAccountsForFiscalYearCreation('ASSOCIATION')
     expect(accounts.length).toBeGreaterThan(0)
     expect(accounts.some((a) => a.number.startsWith('512'))).toBe(true)
+    expect(accounts.some((a) => a.number === '6718')).toBe(true)
+    expect(accounts.some((a) => a.number === '6788')).toBe(true)
+  })
+
+  it('seeds exceptional charge accounts for TPE template', async () => {
+    const accounts = await getTemplateAccountsForFiscalYearCreation('TPE')
+    expect(accounts.some((a) => a.number === '6718')).toBe(true)
+    expect(accounts.some((a) => a.number === '6788')).toBe(true)
   })
 
   it('syncTemplateWithDefault adds missing default accounts', async () => {
