@@ -88,3 +88,65 @@
 .panel {
   margin-bottom: 1.75rem;
 }
+
+.packIntro {
+  margin: 0 0 1rem;
+  color: var(--text-secondary);
+}
+
+.packList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.packItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.packItem:last-child {
+  border-bottom: none;
+}
+
+.packItemBody {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.packItemTitle {
+  font-weight: 600;
+}
+
+.packItemDescription {
+  margin: 0.25rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.packImportedBadge {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.45rem;
+}
+
+.packAllImported {
+  margin: 0.75rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.fieldHint {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}

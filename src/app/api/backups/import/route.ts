@@ -481,13 +481,18 @@ export async function POST(req: Request) {
               associationId: String(t.associationId),
               title: String(t.title),
               operationType: String(t.operationType),
-              amountCents: Number(t.amountCents),
+              amountCents:
+                t.amountCents === null || t.amountCents === undefined
+                  ? null
+                  : Number(t.amountCents),
               counterpartyId,
               operationAccountNumber: String(t.operationAccountNumber),
               treasuryAccountNumber:
                 t.treasuryAccountNumber === null || t.treasuryAccountNumber === undefined
                   ? null
                   : String(t.treasuryAccountNumber),
+              packCode:
+                t.packCode === null || t.packCode === undefined ? null : String(t.packCode),
               createdAt: t.createdAt ? new Date(String(t.createdAt)) : undefined,
               updatedAt: t.updatedAt ? new Date(String(t.updatedAt)) : undefined,
             },

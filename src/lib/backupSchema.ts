@@ -35,16 +35,17 @@ export type BackupCounterpartyJson = {
   updatedAt?: string | Date
 }
 
-/** Quick-entry templates (dépenses courantes), scoped to an association. */
+/** Quick-entry templates (modèles de saisie), scoped to an association. */
 export type BackupRecurringExpenseTemplateJson = {
   id: string
   associationId: string
   title: string
   operationType: string
-  amountCents: number
+  amountCents?: number | null
   counterpartyId?: string | null
   operationAccountNumber: string
   treasuryAccountNumber?: string | null
+  packCode?: string | null
   createdAt?: string | Date
   updatedAt?: string | Date
 }

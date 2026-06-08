@@ -61,11 +61,11 @@ export default function ParametresPage() {
         >
           <div className={styles.cardHeader}>
             <Bookmark className={`w-8 h-8 ${styles.iconPrimary}`} />
-            <h2 className={styles.cardTitle}>Dépenses récurrentes</h2>
+            <h2 className={styles.cardTitle}>Modèles de saisie</h2>
           </div>
           <p className={styles.cardText}>
-            Modèles de saisie (dépenses, recettes, virements) par entité. Création depuis la saisie
-            ou administration ici.
+            Modèles de saisie (dépenses, recettes, virements) par entité, avec packs prédéfinis
+            importables. Création depuis la saisie ou administration ici.
           </p>
           <div className={styles.cardCtaPrimary}>Gérer les modèles →</div>
         </Link>

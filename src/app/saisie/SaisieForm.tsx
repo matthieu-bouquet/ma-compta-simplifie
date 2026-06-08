@@ -365,6 +365,12 @@ export default function SaisieForm({
     setComptePaiementId(state.comptePaiementId)
     setDejaRegle(state.dejaRegle)
     setSelectedTemplateId(templateId)
+    if (template.amountCents === null) {
+      requestAnimationFrame(() => {
+        const el = document.getElementById('saisie-montant') as HTMLInputElement | null
+        el?.focus()
+      })
+    }
     if (missingAccountNumbers.length > 0) {
       appToast.warning(
         `Compte(s) absent(s) sur cet exercice : ${missingAccountNumbers.join(', ')}. Complétez la saisie.`,

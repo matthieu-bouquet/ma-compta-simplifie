@@ -58,13 +58,16 @@ model RecurringExpenseTemplate {
 
   title         String
   operationType String // DEPENSE | RECETTE | TRANSFERT
-  amountCents   Int
+  /// Null = amount entered at each use (quick-entry scaffold).
+  amountCents   Int?
 
   counterpartyId String?
   counterparty   Counterparty? @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
 
   operationAccountNumber String
   treasuryAccountNumber  String?
+  /// Preset pack code (e.g. CORE_ASSOCIATION); null = user-created template.
+  packCode               String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

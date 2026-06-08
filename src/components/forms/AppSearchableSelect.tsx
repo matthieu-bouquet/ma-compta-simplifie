@@ -3,17 +3,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
+import type { GroupBase } from 'react-select'
 import Select, { type SingleValue } from 'react-select'
 import { getAppSearchableSelectStyles } from './appSearchableSelectStyles'
 import forms from './forms.module.css'
 
 export type AppSearchableOption = { value: string; label: string }
 
+export type AppSearchableOptionGroup = GroupBase<AppSearchableOption>
+
 type AppSearchableSelectProps = {
   id?: string
   inputId?: string
   'aria-label'?: string
-  options: AppSearchableOption[]
+  options?: AppSearchableOption[]
+  groupedOptions?: AppSearchableOptionGroup[]
   value: AppSearchableOption | null
   onChange: (nextValue: string | null) => void
   placeholder?: string
@@ -30,7 +34,8 @@ export default function AppSearchableSelect({
   id,
   inputId,
   'aria-label': ariaLabel,
-  options,
+  options = [],
+  groupedOptions,
   value,
   onChange,
   placeholder,
@@ -49,14 +54,16 @@ export default function AppSearchableSelect({
     .filter(Boolean)
     .join(' ')
 
+  const selectOptions = groupedOptions ?? options
+
   return (
     <div className={wrapClass}>
-      <Select<AppSearchableOption, false>
+      <Select<AppSearchableOption, false, AppSearchableOptionGroup>
         instanceId={id ?? inputId}
         inputId={inputId ?? id}
         aria-label={ariaLabel}
-        options={options}
-        styles={getAppSearchableSelectStyles<AppSearchableOption, false>()}
+        options={selectOptions}
+        styles={getAppSearchableSelectStyles<AppSearchableOption, false, AppSearchableOptionGroup>()}
         value={value}
         onChange={(v: SingleValue<AppSearchableOption>) => onChange(v?.value ?? null)}
         placeholder={placeholder}
