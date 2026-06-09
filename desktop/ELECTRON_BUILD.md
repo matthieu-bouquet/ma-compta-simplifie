@@ -56,7 +56,7 @@ Donc la stratégie la plus robuste est : **un job de build par OS** (GitHub Acti
 - Résoudre les symlinks et **copier le répertoire réel** pour les paquets concernés (dont `@prisma/client`, `@prisma/adapter-better-sqlite3`, `better-sqlite3`).
 - **Bundler la fermeture de dépendances du CLI `prisma`** (BFS sur `dependencies`, y compris paquets non-scopés comme `effect` requis par `@prisma/config` en Prisma 7) + adaptateur SQLite.
 - Copier le **projet Prisma** (schéma, migrations) et le **CLI** (`prisma`, `.bin/prisma`) dans l’arborescence standalone utilisée pour le package.
-- **`scripts/rebuild-better-sqlite3-for-electron.mjs`** (après ce script) : recompile `better-sqlite3` pour l’ABI **Electron** (sinon `ERR_DLOPEN_FAILED` / `NODE_MODULE_VERSION` mismatch au runtime Next).
+- **`scripts/rebuild-better-sqlite3-for-electron.mjs`** (après ce script) : recompile `better-sqlite3` pour l’ABI **Electron** (sinon `ERR_DLOPEN_FAILED` / `NODE_MODULE_VERSION` mismatch au runtime Next). Next charge aussi une copie hashée sous `.next/node_modules/better-sqlite3-*` : le script **resynchronise** cette copie depuis `node_modules/better-sqlite3` après rebuild.
 
 Référence : taille dominée surtout par les **engines** Prisma, pas par le nombre de paquets JS.
 

@@ -35,6 +35,35 @@ if (missing.length > 0) {
 }
 
 const standaloneDir = path.join(root, '.next/standalone')
+
+function assertBetterSqlite3HashedCopiesSynced() {
+  const canonicalNode = path.join(standaloneDir, 'node_modules/better-sqlite3/build/Release/better_sqlite3.node')
+  const nextModulesDir = path.join(standaloneDir, '.next/node_modules')
+  if (!fs.existsSync(canonicalNode) || !fs.existsSync(nextModulesDir)) return
+
+  const canonicalBytes = fs.readFileSync(canonicalNode)
+  for (const name of fs.readdirSync(nextModulesDir)) {
+    if (!name.startsWith('better-sqlite3')) continue
+    const hashedNode = path.join(nextModulesDir, name, 'build/Release/better_sqlite3.node')
+    if (!fs.existsSync(hashedNode)) {
+      throw new Error(`Missing hashed better-sqlite3 binary at ${hashedNode}`)
+    }
+    const hashedBytes = fs.readFileSync(hashedNode)
+    if (!hashedBytes.equals(canonicalBytes)) {
+      throw new Error(
+        `Hashed better-sqlite3 copy out of sync with node_modules/better-sqlite3: ${hashedNode}`
+      )
+    }
+  }
+}
+
+try {
+  assertBetterSqlite3HashedCopiesSynced()
+} catch (e) {
+  console.error('[desktop-smoke]', e instanceof Error ? e.message : e)
+  process.exit(1)
+}
+
 const port = 3199 + Math.floor(Math.random() * 100)
 const host = '127.0.0.1'
 
