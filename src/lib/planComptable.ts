@@ -131,9 +131,11 @@ export const PLAN_COMPTABLE_ASSOCIATION = [
   { numero: '6571', libelle: 'Aides financières octroyées' },
   { numero: '6572', libelle: 'Quotes-parts de générosité reversée' },
   { numero: '658', libelle: 'Charges diverses de gestion courante' },
+  { numero: '6718', libelle: 'Autres charges exceptionnelles sur opérations de gestion' },
   { numero: '673', libelle: 'Apports ou affectations en numéraire' },
   { numero: '675', libelle: 'Valeurs comptables des éléments d’actifs cédés' },
   { numero: '6754', libelle: 'Immobilisations reçues par legs ou donations' },
+  { numero: '6788', libelle: 'Charges exceptionnelles diverses' },
   { numero: '681', libelle: 'Dotations aux amortissements, aux dépréciations et aux provisions' },
   { numero: '6816', libelle: 'Dotations pour dépréciations des immobilisations incorporelles et corporelles' },
   { numero: '68164', libelle: 'Dotations pour dépréciation d’actifs reçus par legs ou donations destinés à être cédés' },
@@ -277,6 +279,8 @@ export const PLAN_COMPTABLE_TPE = [
   { numero: '648', libelle: 'Autres charges de personnel' },
   { numero: '6511', libelle: 'Redevances pour concessions, brevets, licences, marques, procédés, logiciels' },
   { numero: '658', libelle: 'Charges diverses de gestion courante' },
+  { numero: '6718', libelle: 'Autres charges exceptionnelles sur opérations de gestion' },
+  { numero: '6788', libelle: 'Charges exceptionnelles diverses' },
   { numero: '681', libelle: 'Dotations aux amortissements, aux dépréciations et aux provisions' },
 
   // Classe 7 — produits (PCG)

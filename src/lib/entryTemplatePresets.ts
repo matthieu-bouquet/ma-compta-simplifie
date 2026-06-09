@@ -149,6 +149,27 @@ export const ENTRY_TEMPLATE_PRESET_PACKS: EntryTemplatePresetPack[] = [
       },
     ],
   },
+  {
+    code: 'FEDERATION',
+    name: 'Fédération',
+    description: 'Licence fédérale (redevance) et cotisation annuelle d’affiliation.',
+    entityKinds: ['ASSOCIATION'],
+    autoSeedOnCreate: false,
+    templates: [
+      {
+        title: 'Licence fédérale (redevance)',
+        operationType: 'DEPENSE',
+        operationAccountNumber: '6511',
+        treasuryAccountNumber: '512',
+      },
+      {
+        title: 'Affiliation / cotisation fédérale',
+        operationType: 'DEPENSE',
+        operationAccountNumber: '6281',
+        treasuryAccountNumber: '512',
+      },
+    ],
+  },
 ]
 
 export function getEntryTemplatePresetPack(code: string): EntryTemplatePresetPack | undefined {

@@ -66,6 +66,28 @@ describe('entryTemplateImport', () => {
     }
   })
 
+  it('imports FEDERATION pack with licence and affiliation templates', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = createPrismaClient(dbUrl)
+
+    try {
+      const assoc = await prisma.association.create({
+        data: { name: 'Federation pack test', legalFormCode: 'ASSOCIATION' },
+      })
+
+      const result = await importEntryTemplatePack(prisma, assoc.id, 'FEDERATION')
+      expect(result.imported).toBe(2)
+
+      const templates = await prisma.recurringExpenseTemplate.findMany({
+        where: { associationId: assoc.id, packCode: 'FEDERATION' },
+      })
+      expect(templates.some((t) => t.operationAccountNumber === '6511')).toBe(true)
+      expect(templates.some((t) => t.operationAccountNumber === '6281')).toBe(true)
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
   it('imports VIE_ASSOCIATIVE pack with transfer and activity templates', async () => {
     const dbUrl = process.env.DATABASE_URL
     const prisma = createPrismaClient(dbUrl)
