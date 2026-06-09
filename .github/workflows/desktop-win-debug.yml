@@ -45,6 +45,9 @@ jobs:
       - name: Fix standalone symlinks (Prisma toolchain)
         run: node scripts/fix-standalone-symlinks.mjs
 
+      - name: Rebuild better-sqlite3 for Electron
+        run: node scripts/rebuild-better-sqlite3-for-electron.mjs
+
       - name: Build Electron main (tsc)
         run: npx tsc -p desktop/electron/tsconfig.json --pretty false
 
