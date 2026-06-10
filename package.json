@@ -1,6 +1,6 @@
 {
   "name": "accouting-app",
-  "version": "0.4.2-alpha",
+  "version": "0.4.3-alpha",
   "private": true,
   "engines": {
     "node": ">=22.12.0"
