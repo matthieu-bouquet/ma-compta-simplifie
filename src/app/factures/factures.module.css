@@ -136,8 +136,15 @@
 }
 
 .actionsCell {
-  width: 4rem;
+  width: 5.5rem;
   text-align: right;
+}
+
+.rowActions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
 }
 
 .iconBtn {

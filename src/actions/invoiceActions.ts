@@ -9,13 +9,9 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentAssociationId } from '@/lib/associationContext'
 import { assertFiscalYearWritable } from '@/lib/accountingGuards'
 import { writeAuditEvent } from '@/lib/audit'
-import { assertEntryDateNotAfterToday, assertEntryDateWithinFiscalYear } from '@/lib/entryDateValidation'
+import { assertEntryDateNotAfterToday, assertEntryDateWithinFiscalYear, calendarDateInTimeZone, ENTRY_DATE_TIMEZONE } from '@/lib/entryDateValidation'
 import { allocateInvoiceNumber } from '@/lib/invoiceNumbering'
-import {
-  buildCustomerReceivableEntryLines,
-  findReceivable411Account,
-} from '@/lib/customerReceivableEntryLines'
-import { allocateEntryReferenceNumber } from '@/lib/journalNumbering'
+import { prepareInvoiceAccountingPost, createInvoiceReceivableEntryInTransaction } from '@/lib/invoiceAccountingPost'
 import { getOrCreateJournalByCode } from '@/lib/journals'
 import {
   buildInvoicePdfBuffer,
@@ -88,6 +84,7 @@ export async function listInvoices(fiscalYearId: string) {
       recipientName: true,
       totalCents: true,
       entryId: true,
+      counterpartyId: true,
     },
   })
 
@@ -186,22 +183,20 @@ export async function createInvoice(input: CreateInvoiceInput) {
     })
   }
 
-  let receivable411: { id: string; number: string; name: string } | null = null
-  let entryLinesPayload: Awaited<ReturnType<typeof buildCustomerReceivableEntryLines>> | null = null
+  let preparedAccounting: Awaited<ReturnType<typeof prepareInvoiceAccountingPost>> | null = null
 
   if (input.postToAccounting) {
-    receivable411 = await findReceivable411Account(prisma, input.fiscalYearId)
-    if (!receivable411) throw new Error('Le compte 411 (Clients) est absent du plan de cet exercice.')
-    entryLinesPayload = await buildCustomerReceivableEntryLines(prisma, {
+    preparedAccounting = await prepareInvoiceAccountingPost(prisma, {
+      associationId,
+      entryId: null,
+      counterpartyId,
       fiscalYearId: input.fiscalYearId,
-      receivableAccountId: receivable411.id,
-      receivableAccountNumber: receivable411.number,
-      receivableAccountName: receivable411.name,
-      productLines: lineCreates.map((l) => ({
+      totalCents,
+      lines: lineCreates.map((l) => ({
+        amountCents: l.amountCents,
         accountId: l.accountId,
         accountNumber: l.accountNumber,
         accountName: l.accountName,
-        amountCents: l.amountCents,
       })),
     })
   }
@@ -304,59 +299,26 @@ export async function createInvoice(input: CreateInvoiceInput) {
       data: { pdfDocumentId: pdfDoc.id },
     })
 
-    let entryId: string | null = null
-
-    if (input.postToAccounting && entryLinesPayload && receivable411 && counterpartyId) {
-      let descriptionFinal = `Facture ${number}`
-      const cp = await tx.counterparty.findUnique({
-        where: { id: counterpartyId },
-        select: { name: true },
-      })
-      if (cp && !descriptionFinal.includes(cp.name)) {
-        descriptionFinal = `${descriptionFinal} — ${cp.name}`
-      }
-
-      const { referenceNumber, referenceSequence } = await allocateEntryReferenceNumber(tx, {
+    if (input.postToAccounting && preparedAccounting && counterpartyId) {
+      const entryId = await createInvoiceReceivableEntryInTransaction(tx, {
         fiscalYearId: input.fiscalYearId,
+        issueDate,
+        invoiceNumber: number,
+        counterpartyId,
         journalId: veJournal.id,
+        pdfDocumentId: pdfDoc.id,
+        entryLinesPayload: preparedAccounting.entryLinesPayload,
       })
 
-      const entry = await tx.entry.create({
-        data: {
-          date: issueDate,
-          description: descriptionFinal,
-          journalId: veJournal.id,
-          fiscalYearId: input.fiscalYearId,
-          counterpartyId,
-          referenceNumber,
-          referenceSequence,
-          lines: {
-            create: entryLinesPayload.lines.map((l) => ({
-              accountId: l.accountId,
-              accountNumber: l.accountNumber,
-              accountName: l.accountName,
-              debitCents: l.debitCents,
-              creditCents: l.creditCents,
-            })),
-          },
-        },
-        select: { id: true, lines: { select: { id: true } } },
-      })
-
-      if (entry.lines.length > 0) {
-        await tx.documentEntryLine.createMany({
-          data: entry.lines.map((l) => ({ documentId: pdfDoc.id, entryLineId: l.id })),
-        })
-      }
-
-      entryId = entry.id
       await tx.invoice.update({
         where: { id: invoice.id },
         data: { entryId },
       })
+
+      return { invoiceId: invoice.id, number, entryId, pdfDocumentId: pdfDoc.id }
     }
 
-    return { invoiceId: invoice.id, number, entryId, pdfDocumentId: pdfDoc.id }
+    return { invoiceId: invoice.id, number, entryId: null as string | null, pdfDocumentId: pdfDoc.id }
   })
 
   await writeAuditEvent({
@@ -391,4 +353,97 @@ export async function createInvoice(input: CreateInvoiceInput) {
   revalidatePath('/documents')
 
   return { id: created.invoiceId, number: created.number }
+}
+
+export async function postInvoiceToAccounting(invoiceId: string) {
+  const associationId = await getCurrentAssociationId()
+  if (!associationId) throw new Error('Association non sélectionnée.')
+
+  const invoice = await prisma.invoice.findUnique({
+    where: { id: invoiceId },
+    include: { lines: { orderBy: { sortOrder: 'asc' } } },
+  })
+  if (!invoice || invoice.associationId !== associationId) {
+    throw new Error('Facture introuvable.')
+  }
+
+  await assertFiscalYearWritable({ fiscalYearId: invoice.fiscalYearId, associationId })
+
+  const fiscalYear = await prisma.fiscalYear.findUnique({
+    where: { id: invoice.fiscalYearId },
+  })
+  if (!fiscalYear || fiscalYear.associationId !== associationId) {
+    throw new Error('Exercice introuvable.')
+  }
+
+  const issueDateStr = calendarDateInTimeZone(invoice.issueDate, ENTRY_DATE_TIMEZONE)
+  assertEntryDateNotAfterToday(issueDateStr)
+  assertEntryDateWithinFiscalYear(issueDateStr, fiscalYear.startDate, fiscalYear.endDate)
+
+  const prepared = await prepareInvoiceAccountingPost(prisma, {
+    associationId,
+    entryId: invoice.entryId,
+    counterpartyId: invoice.counterpartyId,
+    fiscalYearId: invoice.fiscalYearId,
+    totalCents: invoice.totalCents,
+    lines: invoice.lines.map((l) => ({
+      amountCents: l.amountCents,
+      accountId: l.accountId,
+      accountNumber: l.accountNumber,
+      accountName: l.accountName,
+    })),
+  })
+
+  const veJournal = await getOrCreateJournalByCode(prisma, { code: 'VE', name: 'Ventes' })
+
+  const posted = await prisma.$transaction(async (tx) => {
+    const current = await tx.invoice.findUnique({
+      where: { id: invoiceId },
+      select: { entryId: true },
+    })
+    if (current?.entryId) throw new Error('Cette facture est déjà en compta.')
+
+    const entryId = await createInvoiceReceivableEntryInTransaction(tx, {
+      fiscalYearId: invoice.fiscalYearId,
+      issueDate: invoice.issueDate,
+      invoiceNumber: invoice.number,
+      counterpartyId: prepared.counterpartyId,
+      journalId: veJournal.id,
+      pdfDocumentId: invoice.pdfDocumentId,
+      entryLinesPayload: prepared.entryLinesPayload,
+    })
+
+    await tx.invoice.update({
+      where: { id: invoiceId },
+      data: { entryId },
+    })
+
+    return { entryId }
+  })
+
+  await writeAuditEvent({
+    associationId,
+    fiscalYearId: invoice.fiscalYearId,
+    actor: associationId,
+    action: 'INVOICE_POST_TO_ACCOUNTING',
+    entityType: 'Invoice',
+    entityId: invoiceId,
+    data: { number: invoice.number, entryId: posted.entryId },
+  })
+
+  await writeAuditEvent({
+    associationId,
+    fiscalYearId: invoice.fiscalYearId,
+    actor: associationId,
+    action: 'ENTRY_CREATE',
+    entityType: 'Entry',
+    entityId: posted.entryId,
+    data: { description: `Facture ${invoice.number}`, invoiceId },
+  })
+
+  revalidatePath('/factures')
+  revalidatePath('/saisie')
+  revalidatePath('/documents')
+
+  return { entryId: posted.entryId }
 }

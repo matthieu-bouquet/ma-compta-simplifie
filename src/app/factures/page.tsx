@@ -91,7 +91,8 @@ export default async function FacturesPage({
       <div className="card">
         <p className={styles.lead}>
           Émettez des factures pour vos stages, démos ou prestations. Les informations de l’émetteur proviennent de
-          l’entité (Paramètres → Entités). Vous pouvez optionnellement enregistrer une créance client (411) en compta.
+          l’entité (Paramètres → Entités). Vous pouvez enregistrer une créance client (411) en compta à l’émission ou
+          ensuite via l’icône sur la liste (client obligatoire).
         </p>
         <p className={styles.lead}>
           Une facture émise est <strong>définitive</strong> (numérotation légale) : elle n’est ni modifiable ni
@@ -99,7 +100,7 @@ export default async function FacturesPage({
         </p>
       </div>
 
-      <InvoicesTableClient rows={invoices} />
+      <InvoicesTableClient rows={invoices} canPostToAccounting={canCreate} />
     </div>
   )
 }
