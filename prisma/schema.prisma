@@ -23,6 +23,9 @@ model Association {
   /// Subject to French VAT (assujetti à la TVA).
   vatLiable  Boolean  @default(false)
   isClosed   Boolean  @default(false)
+  logoRelativePath String?
+  logoMimeType     String?
+  logoSizeBytes    Int?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -30,6 +33,7 @@ model Association {
   budgets       Budget[]
   counterparties Counterparty[]
   recurringExpenseTemplates RecurringExpenseTemplate[]
+  invoices Invoice[]
 }
 
 // Third parties (suppliers / customers) scoped to the association (UI: Paramètres → Fournisseurs et clients).
@@ -43,6 +47,7 @@ model Counterparty {
 
   entries Entry[]
   recurringExpenseTemplates RecurringExpenseTemplate[]
+  invoices Invoice[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -149,6 +154,8 @@ model FiscalYear {
   entries    Entry[]
   documents  Document[]
   inKindContributions InKindContribution[]
+  invoices Invoice[]
+  invoiceSequences InvoiceSequence[]
 
   @@unique([associationId, startDate, endDate])
 }
@@ -343,4 +350,73 @@ model InKindContribution {
   @@index([fiscalYearId, date])
   @@index([entryId])
   @@index([documentId])
+}
+
+model InvoiceSequence {
+  id           String     @id @default(uuid())
+  fiscalYearId String     @unique
+  fiscalYear   FiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+  nextNumber   Int        @default(1)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Invoice {
+  id            String      @id @default(uuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  fiscalYearId  String
+  fiscalYear    FiscalYear  @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+
+  sequence Int
+  number   String
+
+  issueDate DateTime
+  dueDate   DateTime
+
+  recipientName       String
+  recipientAddress    String?
+  recipientPostalCode String?
+  recipientCity       String?
+  recipientEmail      String?
+  recipientSiret      String?
+
+  counterpartyId String?
+  counterparty   Counterparty? @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+
+  totalCents Int
+
+  entryId String? @unique
+  pdfDocumentId String?
+
+  lines InvoiceLine[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fiscalYearId, sequence])
+  @@index([associationId, issueDate])
+  @@index([fiscalYearId, issueDate])
+}
+
+model InvoiceLine {
+  id        String  @id @default(uuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  sortOrder Int
+  description String
+
+  quantityMilliUnits Int?
+  unitPriceCents     Int?
+  amountCents        Int
+
+  accountId     String?
+  accountNumber String
+  accountName   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([invoiceId, sortOrder])
 }

@@ -16,6 +16,12 @@ const ALLOWED_MIME_TO_EXT: Record<string, string> = {
   'image/webp': 'webp',
 }
 
+const LOGO_MIME_TO_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
+
 export type StoredDocumentInfo = {
   storedName: string
   relativePath: string
@@ -68,6 +74,10 @@ export function buildRelativePath(opts: {
   storedName: string
 }) {
   return path.posix.join('uploads', opts.associationId, opts.exerciceId, opts.storedName)
+}
+
+export function buildAssociationLogoRelativePath(opts: { associationId: string; ext: string }) {
+  return path.posix.join('uploads', opts.associationId, 'branding', `logo.${opts.ext}`)
 }
 
 export function toAbsolutePath(relativePath: string) {
@@ -126,6 +136,76 @@ export async function saveUploadedFile(opts: {
     sizeBytes: buf.byteLength,
     sha256,
   }
+}
+
+export async function saveBufferToUpload(opts: {
+  buffer: Buffer
+  mimeType: string
+  originalBaseName: string
+  associationId: string
+  exerciceId: string
+  maxBytes?: number
+}): Promise<StoredDocumentInfo> {
+  const ext = getExtensionForMime(opts.mimeType)
+  if (!ext) {
+    throw new Error('Type de fichier non autorisé (PDF/images uniquement).')
+  }
+
+  const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES
+  if (opts.buffer.byteLength > maxBytes) {
+    throw new Error(`Fichier trop volumineux (max ${(maxBytes / (1024 * 1024)).toFixed(0)} Mo).`)
+  }
+
+  const timestamp = formatTimestampUtc(new Date())
+  const slug = normalizeOriginalNameSlug(opts.originalBaseName)
+  const shortId = crypto.randomBytes(3).toString('hex')
+  const storedName = `${timestamp}_${slug}__${shortId}.${ext}`
+
+  const relativePath = buildRelativePath({
+    associationId: opts.associationId,
+    exerciceId: opts.exerciceId,
+    storedName,
+  })
+  const absolutePath = toAbsolutePath(relativePath)
+  await fsp.mkdir(path.dirname(absolutePath), { recursive: true })
+
+  const sha256 = crypto.createHash('sha256').update(opts.buffer).digest('hex')
+  await fsp.writeFile(absolutePath, opts.buffer)
+
+  return {
+    storedName,
+    relativePath,
+    mimeType: opts.mimeType,
+    sizeBytes: opts.buffer.byteLength,
+    sha256,
+  }
+}
+
+export async function saveAssociationLogoFile(opts: {
+  file: File
+  associationId: string
+  maxBytes?: number
+}): Promise<{ relativePath: string; mimeType: string; sizeBytes: number }> {
+  const mimeType = opts.file.type
+  const ext = LOGO_MIME_TO_EXT[mimeType]
+  if (!ext) {
+    throw new Error('Logo : formats acceptés PNG, JPG ou WEBP.')
+  }
+
+  const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES
+  if (opts.file.size > maxBytes) {
+    throw new Error(`Fichier trop volumineux (max ${(maxBytes / (1024 * 1024)).toFixed(0)} Mo).`)
+  }
+
+  const relativePath = buildAssociationLogoRelativePath({ associationId: opts.associationId, ext })
+  const absolutePath = toAbsolutePath(relativePath)
+  await fsp.mkdir(path.dirname(absolutePath), { recursive: true })
+
+  const ab = await opts.file.arrayBuffer()
+  const buf = Buffer.from(ab)
+  await fsp.writeFile(absolutePath, buf)
+
+  return { relativePath, mimeType, sizeBytes: buf.byteLength }
 }
 
 export function createReadStreamForRelativePath(relativePath: string) {

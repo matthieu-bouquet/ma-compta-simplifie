@@ -60,6 +60,9 @@ export async function POST(req: Request) {
     vatLiable: true,
     chartTemplateId: true,
     isClosed: true,
+    logoRelativePath: true,
+    logoMimeType: true,
+    logoSizeBytes: true,
     createdAt: true,
     updatedAt: true,
   } satisfies Prisma.AssociationSelect
@@ -147,6 +150,9 @@ export async function POST(req: Request) {
   let counterpartySettlementAllocations: Awaited<
     ReturnType<typeof prisma.counterpartySettlementAllocation.findMany>
   > = []
+  let invoices: Awaited<ReturnType<typeof prisma.invoice.findMany>> = []
+  let invoiceLines: Awaited<ReturnType<typeof prisma.invoiceLine.findMany>> = []
+  let invoiceSequences: Awaited<ReturnType<typeof prisma.invoiceSequence.findMany>> = []
 
   if (fiscalYearIds.length > 0) {
     ;[
@@ -158,6 +164,9 @@ export async function POST(req: Request) {
       documentEntryLines,
       inKindContributions,
       counterpartySettlementAllocations,
+      invoices,
+      invoiceLines,
+      invoiceSequences,
     ] = await Promise.all([
       prisma.account.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
       prisma.journalSequence.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
@@ -178,6 +187,9 @@ export async function POST(req: Request) {
           ],
         },
       }),
+      prisma.invoice.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
+      prisma.invoiceLine.findMany({ where: { invoice: { fiscalYearId: { in: fiscalYearIds } } } }),
+      prisma.invoiceSequence.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
     ])
   }
 
@@ -225,6 +237,9 @@ export async function POST(req: Request) {
     jsonFile('data/counterparties.json', counterparties),
     jsonFile('data/counterpartySettlementAllocations.json', counterpartySettlementAllocations),
     jsonFile('data/recurringExpenseTemplates.json', recurringExpenseTemplates),
+    jsonFile('data/invoices.json', invoices),
+    jsonFile('data/invoiceLines.json', invoiceLines),
+    jsonFile('data/invoiceSequences.json', invoiceSequences),
   ]
 
   await writeAuditEvent({
@@ -260,6 +275,16 @@ export async function POST(req: Request) {
     if (!associationId) continue
     const zipPath = `files/${associationId}/${d.fiscalYearId}/${d.storedName}`
     archive.append(createReadStreamForRelativePath(d.relativePath), { name: zipPath })
+  }
+
+  for (const a of associations) {
+    if (!a.logoRelativePath) continue
+    const zipPath = `files/${a.id}/branding/${a.logoRelativePath.split('/').pop()}`
+    try {
+      archive.append(createReadStreamForRelativePath(a.logoRelativePath), { name: zipPath })
+    } catch {
+      // Logo file missing on disk — skip
+    }
   }
 
   void archive.finalize()

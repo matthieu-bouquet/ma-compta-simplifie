@@ -13,12 +13,14 @@ import styles from '../../entites.module.css'
 import { getAssociation, updateAssociation, type AssociationDetail } from '@/actions/associationActions'
 import { legalFormSelectOptions } from '@/lib/legalForms'
 import { appToast } from '@/lib/appToast'
+import EntityLogoSection from './EntityLogoSection'
 
 export default function EditEntityPageClient({ vatFeatureEnabled }: { vatFeatureEnabled: boolean }) {
   const params = useParams<{ id: string }>()
   const id = params?.id
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [hasLogo, setHasLogo] = useState(false)
   const [formData, setFormData] = useState({
     nom: '',
     siret: '',
@@ -52,6 +54,7 @@ export default function EditEntityPageClient({ vatFeatureEnabled }: { vatFeature
         telephone: a.telephone || '',
         vatLiable: Boolean(a.vatLiable),
       })
+      setHasLogo(Boolean(a.logoRelativePath))
     } catch (err: unknown) {
       appToast.error(err instanceof Error ? err.message : 'Erreur lors du chargement')
     } finally {
@@ -296,6 +299,8 @@ export default function EditEntityPageClient({ vatFeatureEnabled }: { vatFeature
           </div>
         </form>
       </div>
+
+      {id ? <EntityLogoSection associationId={id} initialHasLogo={hasLogo} /> : null}
     </ParametreLayout>
   )
 }
