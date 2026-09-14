@@ -59,5 +59,5 @@ test('emit invoice with accounting posts receivable', async ({ page }) => {
 
   await expect(page.getByText('2026-0001')).toBeVisible()
   await expect(page.getByText(customerName)).toBeVisible()
-  await expect(page.getByText('En compta')).toBeVisible()
+  await expect(page.locator('tbody').getByText('En compta', { exact: true })).toBeVisible()
 })
