@@ -4,7 +4,6 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import { cookies } from 'next/headers'
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 
 const COOKIE_NAME = 'currentAssociationId'
@@ -52,8 +51,6 @@ export async function setCurrentAssociationId(associationId: string | null) {
       store.delete(EXERCICE_COOKIE)
     }
   }
-
-  revalidatePath('/')
 }
 
 export async function setCurrentExerciceId(exerciceId: string | null) {
@@ -66,6 +63,5 @@ export async function setCurrentExerciceId(exerciceId: string | null) {
       sameSite: 'lax',
     })
   }
-  revalidatePath('/')
 }
 
