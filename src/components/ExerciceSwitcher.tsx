@@ -3,13 +3,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { useMemo, useTransition } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { setCurrentExerciceId } from '@/actions/contextActions'
 import { CalendarDays } from 'lucide-react'
 import AppSearchableSelect from '@/components/forms/AppSearchableSelect'
 import styles from './topBarSwitchers.module.css'
 import { sortFiscalYearsOpenFirstNewestFirst } from '@/lib/fiscalYearSelection'
+import { applyContextChangeAndReload } from '@/lib/reloadAfterContextChange'
+import { appToast } from '@/lib/appToast'
 
 export default function ExerciceSwitcher({
   currentExerciceId,
@@ -18,9 +20,8 @@ export default function ExerciceSwitcher({
   currentExerciceId: string | null
   exercices: { id: string; dateDebut: string; dateFin: string; statut: string }[]
 }) {
-  const router = useRouter()
   const pathname = usePathname()
-  const [pending, startTransition] = useTransition()
+  const [pending, setPending] = useState(false)
   const value = currentExerciceId ?? ''
 
   const hideOnExercices = pathname.startsWith('/exercices')
@@ -28,11 +29,10 @@ export default function ExerciceSwitcher({
 
   const options = useMemo(
     () =>
-      sortFiscalYearsOpenFirstNewestFirst(exercices ?? [])
-        .map((ex) => ({
-          value: ex.id,
-          label: `${new Date(ex.dateDebut).toLocaleDateString('fr-FR')} → ${new Date(ex.dateFin).toLocaleDateString('fr-FR')} (${ex.statut})`,
-        })),
+      sortFiscalYearsOpenFirstNewestFirst(exercices ?? []).map((ex) => ({
+        value: ex.id,
+        label: `${new Date(ex.dateDebut).toLocaleDateString('fr-FR')} → ${new Date(ex.dateFin).toLocaleDateString('fr-FR')} (${ex.statut})`,
+      })),
     [exercices],
   )
   const shouldHide = hideOnParametres || hideOnExercices || options.length === 0
@@ -64,10 +64,15 @@ export default function ExerciceSwitcher({
           options={options}
           value={selectedValue}
           onChange={(next) => {
-            startTransition(async () => {
-              await setCurrentExerciceId(next)
-              router.refresh()
-            })
+            if (!next || next === value || pending) return
+            setPending(true)
+            void applyContextChangeAndReload(
+              () => setCurrentExerciceId(next),
+              () => {
+                setPending(false)
+                appToast.error("Impossible de changer d'exercice.")
+              },
+            )
           }}
           placeholder="Choisir…"
           isClearable={false}
@@ -78,4 +83,3 @@ export default function ExerciceSwitcher({
     </div>
   )
 }
-

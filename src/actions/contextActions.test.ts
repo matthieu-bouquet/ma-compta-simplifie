@@ -14,10 +14,6 @@ vi.mock('next/headers', () => ({
   }),
 }))
 
-vi.mock('next/cache', () => ({
-  revalidatePath: vi.fn(),
-}))
-
 import { setCurrentAssociationId, setCurrentExerciceId } from '@/actions/contextActions'
 
 describe('contextActions', () => {
