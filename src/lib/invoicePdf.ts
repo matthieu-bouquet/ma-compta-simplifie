@@ -6,6 +6,10 @@ import autoTable from 'jspdf-autotable'
 import { formatEurosFromCents } from '@/lib/money'
 import { entityNameForFilename } from '@/lib/compteResultatPdf'
 import { PRODUCT_DISPLAY_NAME } from '@/lib/productDisplayName'
+import {
+  formatEmitterSiretOrRnaLine,
+  invoiceLegalFooterLines,
+} from '@/lib/invoicePdfLegal'
 
 export type InvoicePdfEmitter = {
   name: string
@@ -37,6 +41,7 @@ export type InvoicePdfLine = {
 export type InvoicePdfPayload = {
   number: string
   issueDate: Date
+  dueDate: Date
   emitter: InvoicePdfEmitter
   recipient: InvoicePdfRecipient
   lines: InvoicePdfLine[]
@@ -53,9 +58,9 @@ function emitterBlockLines(emitter: InvoicePdfEmitter): string[] {
   if (emitter.address) lines.push(emitter.address)
   const cityLine = [emitter.postalCode, emitter.city].filter(Boolean).join(' ')
   if (cityLine) lines.push(cityLine)
-  if (emitter.siret) lines.push(`SIRET : ${emitter.siret}`)
+  lines.push(formatEmitterSiretOrRnaLine(emitter.siret))
   if (emitter.email) lines.push(emitter.email)
-  if (emitter.phone) lines.push(emitter.phone)
+  if (emitter.phone) lines.push(`Tél. : ${emitter.phone}`)
   return lines
 }
 
@@ -79,6 +84,7 @@ export function buildInvoicePdfArrayBuffer(payload: InvoicePdfPayload): ArrayBuf
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const margin = 14
   const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
   let y = margin
 
   if (payload.logoImage) {
@@ -95,9 +101,14 @@ export function buildInvoicePdfArrayBuffer(payload: InvoicePdfPayload): ArrayBuf
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   doc.text(`N° ${payload.number}`, pageWidth - margin, y + 12, { align: 'right' })
-  doc.text(`Date : ${formatDateFr(payload.issueDate)}`, pageWidth - margin, y + 17, { align: 'right' })
+  doc.text(`Date de facture : ${formatDateFr(payload.issueDate)}`, pageWidth - margin, y + 17, {
+    align: 'right',
+  })
+  doc.text(`Date d’échéance : ${formatDateFr(payload.dueDate)}`, pageWidth - margin, y + 22, {
+    align: 'right',
+  })
 
-  y += 28
+  y += 32
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(10)
@@ -144,10 +155,28 @@ export function buildInvoicePdfArrayBuffer(payload: InvoicePdfPayload): ArrayBuf
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)
   let legalY = finalY + 18
-  if (!payload.emitter.vatLiable) {
-    doc.text('TVA non applicable, article 293 B du CGI.', margin, legalY)
-    legalY += 4
+  const footerLines = invoiceLegalFooterLines(payload.emitter.vatLiable)
+  const maxWidth = pageWidth - margin * 2
+
+  for (const paragraph of footerLines) {
+    const wrapped = doc.splitTextToSize(paragraph, maxWidth) as string[]
+    for (const line of wrapped) {
+      if (legalY > pageHeight - margin) {
+        doc.addPage()
+        legalY = margin
+      }
+      doc.text(line, margin, legalY)
+      legalY += 3.5
+    }
+    legalY += 1
   }
+
+  legalY += 2
+  if (legalY > pageHeight - margin) {
+    doc.addPage()
+    legalY = margin
+  }
+  doc.setTextColor(150, 150, 150)
   doc.text(`${PRODUCT_DISPLAY_NAME} — document généré le ${formatDateFr(new Date())}`, margin, legalY)
 
   return doc.output('arraybuffer')

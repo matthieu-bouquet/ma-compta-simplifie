@@ -22,6 +22,7 @@ import {
   defaultInvoicePdfFileName,
   type InvoicePdfPayload,
 } from '@/lib/invoicePdf'
+import { assertAssociationReadyForInvoice } from '@/lib/invoicePdfLegal'
 import { saveBufferToUpload, toAbsolutePath } from '@/lib/documentsStorage'
 import { COUNTERPARTY_KIND_CUSTOMER } from '@/lib/counterparty'
 import { formatEurosFromCents } from '@/lib/money'
@@ -37,6 +38,7 @@ export type InvoiceLineInput = {
 export type CreateInvoiceInput = {
   fiscalYearId: string
   issueDate: string
+  dueDate: string
   recipientName: string
   recipientAddress?: string | null
   recipientPostalCode?: string | null
@@ -114,7 +116,17 @@ export async function createInvoice(input: CreateInvoiceInput) {
   assertEntryDateNotAfterToday(input.issueDate)
   assertEntryDateWithinFiscalYear(input.issueDate, fiscalYear.startDate, fiscalYear.endDate)
 
+  assertAssociationReadyForInvoice(fiscalYear.association)
+
   const issueDate = new Date(input.issueDate)
+  const dueDate = new Date(input.dueDate)
+  if (Number.isNaN(dueDate.getTime())) {
+    throw new Error('Date d’échéance invalide.')
+  }
+  if (dueDate < issueDate) {
+    throw new Error('La date d’échéance ne peut pas être antérieure à la date de facture.')
+  }
+  assertEntryDateWithinFiscalYear(input.dueDate, fiscalYear.startDate, fiscalYear.endDate)
 
   const counterpartyId: string | null = input.counterpartyId?.trim() || null
   if (input.postToAccounting) {
@@ -203,6 +215,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
   const pdfPayload: InvoicePdfPayload = {
     number: 'PROFORMA',
     issueDate,
+    dueDate,
     emitter: {
       name: association.name,
       address: association.address,
@@ -258,6 +271,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
         sequence,
         number,
         issueDate,
+        dueDate,
         recipientName,
         recipientAddress: input.recipientAddress?.trim() || null,
         recipientPostalCode: input.recipientPostalCode?.trim() || null,

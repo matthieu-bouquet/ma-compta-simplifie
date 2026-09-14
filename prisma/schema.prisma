@@ -372,6 +372,7 @@ model Invoice {
   number   String
 
   issueDate DateTime
+  dueDate   DateTime
 
   recipientName       String
   recipientAddress    String?

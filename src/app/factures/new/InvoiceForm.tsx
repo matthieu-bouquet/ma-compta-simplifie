@@ -91,6 +91,11 @@ export default function InvoiceForm({
   const [recipientEmail, setRecipientEmail] = useState('')
   const [recipientSiret, setRecipientSiret] = useState('')
   const [issueDate, setIssueDate] = useState<Date | null>(() => new Date())
+  const [dueDate, setDueDate] = useState<Date | null>(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 30)
+    return d
+  })
   const [postToAccounting, setPostToAccounting] = useState(true)
   const [lines, setLines] = useState<LineDraft[]>(() => [newLineDraft()])
   const [pending, setPending] = useState(false)
@@ -122,7 +127,9 @@ export default function InvoiceForm({
     setPending(true)
     try {
       if (!issueDate) throw new Error('Date de facture requise.')
+      if (!dueDate) throw new Error('Date d’échéance requise.')
       const issueDateStr = calendarDateInTimeZone(issueDate, ENTRY_DATE_TIMEZONE)
+      const dueDateStr = calendarDateInTimeZone(dueDate, ENTRY_DATE_TIMEZONE)
       if (isEntryDateAfterToday(issueDateStr)) {
         throw new Error('La date ne peut pas être dans le futur.')
       }
@@ -148,6 +155,7 @@ export default function InvoiceForm({
       await createInvoice({
         fiscalYearId,
         issueDate: issueDateStr,
+        dueDate: dueDateStr,
         recipientName,
         recipientAddress: recipientAddress || null,
         recipientPostalCode: recipientPostalCode || null,
@@ -174,8 +182,8 @@ export default function InvoiceForm({
         <PageBackLink href="/factures" aria-label="Retour à la liste des factures" />
         <h1 className="page-title no-topbar-pad">Nouvelle facture</h1>
         <p className={styles.lead}>
-          Renseignez le destinataire et les lignes (montants TTC). L’émetteur et le logo proviennent des paramètres
-          entité.
+          Renseignez le destinataire et les lignes (montants TTC). L’émetteur (adresse, SIRET ou RNA, logo) doit être
+          complet dans Paramètres → Entités. La facture émise est définitive et non modifiable.
         </p>
       </header>
 
@@ -276,18 +284,33 @@ export default function InvoiceForm({
             </div>
           </FormSection>
 
-          <FormSection icon={FileText} title="Facture" description="Date et lignes (montants TTC).">
-            <div className={forms.field}>
-              <label className={forms.label} htmlFor="invoice-issue-date">
-                Date de facture *
-              </label>
-              <DatePicker
-                selected={issueDate}
-                onChange={(d: Date | null) => setIssueDate(d)}
-                dateFormat="dd/MM/yyyy"
-                customInput={<DateInput id="invoice-issue-date" required />}
-                popperContainer={PopperToBody}
-              />
+          <FormSection icon={FileText} title="Facture" description="Dates et lignes (montants TTC).">
+            <div className={forms.sectionGrid}>
+              <div className={forms.field}>
+                <label className={forms.label} htmlFor="invoice-issue-date">
+                  Date de facture *
+                </label>
+                <DatePicker
+                  selected={issueDate}
+                  onChange={(d: Date | null) => setIssueDate(d)}
+                  dateFormat="dd/MM/yyyy"
+                  customInput={<DateInput id="invoice-issue-date" required />}
+                  popperContainer={PopperToBody}
+                />
+              </div>
+              <div className={forms.field}>
+                <label className={forms.label} htmlFor="invoice-due-date">
+                  Date d’échéance *
+                </label>
+                <DatePicker
+                  selected={dueDate}
+                  onChange={(d: Date | null) => setDueDate(d)}
+                  dateFormat="dd/MM/yyyy"
+                  customInput={<DateInput id="invoice-due-date" required />}
+                  popperContainer={PopperToBody}
+                />
+                <p className={forms.fieldHint}>Affichée sur le PDF (conditions de règlement).</p>
+              </div>
             </div>
 
             {lines.map((line, index) => (

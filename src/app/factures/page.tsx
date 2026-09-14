@@ -93,6 +93,10 @@ export default async function FacturesPage({
           Émettez des factures pour vos stages, démos ou prestations. Les informations de l’émetteur proviennent de
           l’entité (Paramètres → Entités). Vous pouvez optionnellement enregistrer une créance client (411) en compta.
         </p>
+        <p className={styles.lead}>
+          Une facture émise est <strong>définitive</strong> (numérotation légale) : elle n’est ni modifiable ni
+          supprimable dans l’application. En cas d’erreur, il faudra émettre un avoir (fonctionnalité à venir).
+        </p>
       </div>
 
       <InvoicesTableClient rows={invoices} />

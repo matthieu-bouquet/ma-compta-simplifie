@@ -31,7 +31,15 @@ describe('createInvoice', () => {
     const prisma = createPrismaClient(dbUrl!)
 
     try {
-      const assoc = await prisma.association.create({ data: { name: 'Invoice test assoc' } })
+      const assoc = await prisma.association.create({
+        data: {
+          name: 'Invoice test assoc',
+          address: '10 rue de la Paix',
+          postalCode: '75002',
+          city: 'Paris',
+          siret: '12345678900012',
+        },
+      })
       currentAssociationId = assoc.id
 
       const fy = await prisma.fiscalYear.create({
@@ -63,6 +71,7 @@ describe('createInvoice', () => {
       const result = await createInvoice({
         fiscalYearId: fy.id,
         issueDate: '2026-02-10',
+        dueDate: '2026-03-12',
         recipientName: 'Client stage',
         counterpartyId: customer.id,
         postToAccounting: true,

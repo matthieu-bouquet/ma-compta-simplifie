@@ -11,6 +11,10 @@ test('emit invoice with accounting posts receivable', async ({ page }) => {
     const assoc = await prisma.association.create({
       data: {
         name: 'Association Factures E2E',
+        address: '1 place de la République',
+        postalCode: '75001',
+        city: 'Paris',
+        siret: '98765432109876',
         chartTemplateId: '00000000-0000-0000-0000-000000000001',
       },
     })
