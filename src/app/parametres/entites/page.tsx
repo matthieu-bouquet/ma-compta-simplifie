@@ -2,9 +2,15 @@
 // Copyright (C) 2026 Ma Compta Simplifié
 
 import { getAssociations } from '@/actions/associationActions'
+import { isVatLiableFeatureEnabled } from '@/lib/featureFlags'
 import EntitiesPageClient from './EntitiesPageClient'
 
 export default async function EntitiesPage() {
   const entities = await getAssociations()
-  return <EntitiesPageClient initialEntities={entities} />
+  return (
+    <EntitiesPageClient
+      initialEntities={entities}
+      vatFeatureEnabled={isVatLiableFeatureEnabled()}
+    />
+  )
 }
