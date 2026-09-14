@@ -402,9 +402,9 @@ export default function InvoiceForm({
               </p>
             </div>
           </FormSection>
-        </div>
+            </div>
 
-        <div className={styles.formFooter}>
+            <div className={styles.formFooter}>
           <p className={styles.totalLine}>
             Total TTC : <strong>{(totalCents / 100).toFixed(2)} €</strong>
           </p>
@@ -420,7 +420,7 @@ export default function InvoiceForm({
               {pending ? 'Émission…' : 'Émettre la facture'}
             </button>
           </div>
-        </div>
+            </div>
           </form>
         </div>
       </div>
