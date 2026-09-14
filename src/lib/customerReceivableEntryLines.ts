@@ -20,6 +20,25 @@ export type CustomerReceivableEntryLinesResult = {
   }[]
 }
 
+/** Sums invoice line amounts per product account for a single accounting entry. */
+export function mergeProductLinesByAccount(
+  productLines: CustomerReceivableLineInput[],
+): CustomerReceivableLineInput[] {
+  const byAccount = new Map<string, CustomerReceivableLineInput>()
+  for (const line of productLines) {
+    const existing = byAccount.get(line.accountId)
+    if (existing) {
+      byAccount.set(line.accountId, {
+        ...existing,
+        amountCents: existing.amountCents + line.amountCents,
+      })
+    } else {
+      byAccount.set(line.accountId, { ...line })
+    }
+  }
+  return Array.from(byAccount.values()).sort((a, b) => a.accountNumber.localeCompare(b.accountNumber))
+}
+
 /**
  * Builds balanced entry lines for an unpaid customer invoice (411 debit, product credits).
  */
@@ -38,6 +57,11 @@ export async function buildCustomerReceivableEntryLines(
 
   for (const line of opts.productLines) {
     if (line.amountCents <= 0) throw new Error('Chaque ligne doit avoir un montant strictement positif.')
+  }
+
+  const mergedProductLines = mergeProductLinesByAccount(opts.productLines)
+
+  for (const line of mergedProductLines) {
     const account = await db.account.findFirst({
       where: { id: line.accountId, fiscalYearId: opts.fiscalYearId },
     })
@@ -57,7 +81,7 @@ export async function buildCustomerReceivableEntryLines(
       debitCents: totalCents,
       creditCents: 0,
     },
-    ...opts.productLines.map((l) => ({
+    ...mergedProductLines.map((l) => ({
       accountId: l.accountId,
       accountNumber: l.accountNumber,
       accountName: l.accountName,

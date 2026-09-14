@@ -105,6 +105,74 @@ describe('createInvoice', () => {
       expect(line411?.debitCents).toBe(15000)
       const line706 = entry!.lines.find((l) => l.accountNumber === '706')
       expect(line706?.creditCents).toBe(15000)
+      expect(entry!.lines).toHaveLength(2)
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
+  it('merges product credits on the same account into one entry line', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    expect(dbUrl).toBeTruthy()
+    const prisma = createPrismaClient(dbUrl!)
+
+    try {
+      const assoc = await prisma.association.create({
+        data: {
+          name: 'Invoice merge test',
+          address: '10 rue de la Paix',
+          postalCode: '75002',
+          city: 'Paris',
+          siret: '12345678900013',
+        },
+      })
+      currentAssociationId = assoc.id
+
+      const fy = await prisma.fiscalYear.create({
+        data: {
+          associationId: assoc.id,
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2026-12-31'),
+          status: 'OPEN',
+        },
+      })
+
+      const account706 = (
+        await prisma.$transaction([
+          prisma.account.create({ data: { fiscalYearId: fy.id, number: '411', name: 'Clients' } }),
+          prisma.account.create({ data: { fiscalYearId: fy.id, number: '706', name: 'Prestations' } }),
+        ])
+      )[1]!
+
+      const customer = await prisma.counterparty.create({
+        data: { associationId: assoc.id, kind: 'CUSTOMER', name: 'Client merge' },
+      })
+
+      const result = await createInvoice({
+        fiscalYearId: fy.id,
+        issueDate: '2026-02-11',
+        dueDate: '2026-03-11',
+        recipientName: 'Client merge',
+        counterpartyId: customer.id,
+        postToAccounting: true,
+        lines: [
+          { description: 'Atelier A', amountCents: 5000, accountId: account706.id },
+          { description: 'Atelier B', amountCents: 7000, accountId: account706.id },
+        ],
+      })
+
+      const invoice = await prisma.invoice.findUnique({
+        where: { id: result.id },
+        select: { entryId: true },
+      })
+      const entry = await prisma.entry.findUnique({
+        where: { id: invoice!.entryId! },
+        include: { lines: true },
+      })
+      expect(entry!.lines).toHaveLength(2)
+      const credits706 = entry!.lines.filter((l) => l.accountNumber === '706')
+      expect(credits706).toHaveLength(1)
+      expect(credits706[0]!.creditCents).toBe(12000)
     } finally {
       await prisma.$disconnect()
     }
