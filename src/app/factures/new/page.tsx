@@ -26,8 +26,8 @@ export default async function NewFacturePage() {
 
   if (!associationId) {
     return (
-      <div className={styles.page}>
-        <h1 className="page-title">Nouvelle facture</h1>
+      <div className={styles.formPage}>
+        <h1 className="page-title no-topbar-pad">Nouvelle facture</h1>
         <EntityRequiredEmptyState purpose="default" />
       </div>
     )
@@ -40,8 +40,8 @@ export default async function NewFacturePage() {
 
   if (fiscalYears.length === 0) {
     return (
-      <div className={styles.page}>
-        <h1 className="page-title">Nouvelle facture</h1>
+      <div className={styles.formPage}>
+        <h1 className="page-title no-topbar-pad">Nouvelle facture</h1>
         <FiscalYearRequiredEmptyState purpose="default" />
       </div>
     )
@@ -55,8 +55,8 @@ export default async function NewFacturePage() {
 
   if (!fiscalYear) {
     return (
-      <div className={styles.page}>
-        <h1 className="page-title">Nouvelle facture</h1>
+      <div className={styles.formPage}>
+        <h1 className="page-title no-topbar-pad">Nouvelle facture</h1>
         <div className="card">
           <p className="text-warning">Impossible de charger l’exercice sélectionné.</p>
         </div>
@@ -68,8 +68,8 @@ export default async function NewFacturePage() {
     await assertFiscalYearWritable({ fiscalYearId: fiscalYear.id, associationId })
   } catch (err: unknown) {
     return (
-      <div className={styles.page}>
-        <h1 className="page-title">Nouvelle facture</h1>
+      <div className={styles.formPage}>
+        <h1 className="page-title no-topbar-pad">Nouvelle facture</h1>
         <div className="card">
           <p className="text-warning">
             {err instanceof Error ? err.message : 'Cet exercice ne permet pas d’émettre une facture.'}
@@ -92,8 +92,8 @@ export default async function NewFacturePage() {
 
   if (productOptions.length === 0) {
     return (
-      <div className={styles.page}>
-        <h1 className="page-title">Nouvelle facture</h1>
+      <div className={styles.formPage}>
+        <h1 className="page-title no-topbar-pad">Nouvelle facture</h1>
         <div className="card">
           <p className="text-warning">
             Aucun compte de produits (classe 7) sur cet exercice. Complétez le plan comptable avant d’émettre une

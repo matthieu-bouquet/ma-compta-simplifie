@@ -27,7 +27,7 @@ export default async function FacturesPage({
   if (!associationId) {
     return (
       <div className={styles.page}>
-        <h1 className="page-title">Factures</h1>
+        <h1 className="page-title no-topbar-pad">Factures</h1>
         <EntityRequiredEmptyState purpose="default" />
       </div>
     )
@@ -41,7 +41,7 @@ export default async function FacturesPage({
   if (fiscalYears.length === 0) {
     return (
       <div className={styles.page}>
-        <h1 className="page-title">Factures</h1>
+        <h1 className="page-title no-topbar-pad">Factures</h1>
         <FiscalYearRequiredEmptyState purpose="default" />
       </div>
     )
@@ -57,7 +57,7 @@ export default async function FacturesPage({
   if (!fiscalYear) {
     return (
       <div className={styles.page}>
-        <h1 className="page-title">Factures</h1>
+        <h1 className="page-title no-topbar-pad">Factures</h1>
         <div className="card">
           <p className="text-warning">Impossible de charger l’exercice sélectionné.</p>
         </div>
@@ -89,7 +89,7 @@ export default async function FacturesPage({
       </div>
 
       <div className="card">
-        <p>
+        <p className={styles.lead}>
           Émettez des factures pour vos stages, démos ou prestations. Les informations de l’émetteur proviennent de
           l’entité (Paramètres → Entités). Vous pouvez optionnellement enregistrer une créance client (411) en compta.
         </p>

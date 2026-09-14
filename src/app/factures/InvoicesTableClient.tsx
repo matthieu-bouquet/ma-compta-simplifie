@@ -61,7 +61,7 @@ export default function InvoicesTableClient({ rows }: { rows: InvoiceListRow[] }
                 <td className={`${styles.td} ${styles.actionsCell}`}>
                   <Link
                     href={`/api/factures/${row.id}/pdf`}
-                    className="btn btn-secondary btn-icon"
+                    className={`btn ${styles.iconBtn}`}
                     title="Télécharger le PDF"
                     aria-label={`Télécharger la facture ${row.number}`}
                   >

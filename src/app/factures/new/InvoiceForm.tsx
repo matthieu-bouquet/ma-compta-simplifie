@@ -169,12 +169,20 @@ export default function InvoiceForm({
   }
 
   return (
-    <div className={styles.page}>
-      <PageBackLink href="/factures">Retour aux factures</PageBackLink>
-      <h1 className="page-title">Nouvelle facture</h1>
+    <div className={styles.formPage}>
+      <header className={styles.formHeader}>
+        <PageBackLink href="/factures" aria-label="Retour à la liste des factures" />
+        <h1 className="page-title no-topbar-pad">Nouvelle facture</h1>
+        <p className={styles.lead}>
+          Renseignez le destinataire et les lignes (montants TTC). L’émetteur et le logo proviennent des paramètres
+          entité.
+        </p>
+      </header>
 
-      <form onSubmit={handleSubmit} className="card">
-        <div className={forms.sections}>
+      <div className={`card ${styles.formCard} ${styles.detailCardStatic}`}>
+        <div className={styles.formCardInner}>
+          <form onSubmit={handleSubmit} className={forms.formStack}>
+            <div className={forms.sections}>
           <FormSection icon={User} title="Destinataire" description="Client et coordonnées affichées sur le PDF.">
             <div className={forms.sectionGrid}>
               <div className={forms.field}>
@@ -190,7 +198,7 @@ export default function InvoiceForm({
                 />
                 <button
                   type="button"
-                  className={`btn btn-secondary ${forms.btnWithLeadingIcon}`}
+                  className={`btn ${styles.formSecondaryBtn} ${forms.btnWithLeadingIcon} ${styles.customerActions}`}
                   onClick={() => setShowCustomerCreate(true)}
                 >
                   <Plus size={16} aria-hidden="true" />
@@ -351,7 +359,7 @@ export default function InvoiceForm({
                 </div>
                 <button
                   type="button"
-                  className="btn btn-secondary btn-icon"
+                  className={`btn ${styles.iconBtn}`}
                   title="Supprimer la ligne"
                   aria-label={`Supprimer la ligne ${index + 1}`}
                   onClick={() => removeLine(line.key)}
@@ -362,7 +370,11 @@ export default function InvoiceForm({
               </div>
             ))}
 
-            <button type="button" className={`btn btn-secondary ${forms.btnWithLeadingIcon}`} onClick={addLine}>
+            <button
+              type="button"
+              className={`btn ${styles.formSecondaryBtn} ${forms.btnWithLeadingIcon}`}
+              onClick={addLine}
+            >
               <Plus size={16} aria-hidden="true" />
               Ajouter une ligne
             </button>
@@ -392,12 +404,16 @@ export default function InvoiceForm({
           </FormSection>
         </div>
 
-        <div className={forms.formActionsBar}>
-          <p>
+        <div className={styles.formFooter}>
+          <p className={styles.totalLine}>
             Total TTC : <strong>{(totalCents / 100).toFixed(2)} €</strong>
           </p>
-          <div className={forms.formActions}>
-            <button type="button" className={`btn ${forms.btnSecondary}`} onClick={() => router.push('/factures')}>
+          <div className={styles.formFooterActions}>
+            <button
+              type="button"
+              className={`btn ${styles.formSecondaryBtn}`}
+              onClick={() => router.push('/factures')}
+            >
               Annuler
             </button>
             <button type="submit" className="btn btn-primary" disabled={pending}>
@@ -405,7 +421,9 @@ export default function InvoiceForm({
             </button>
           </div>
         </div>
-      </form>
+          </form>
+        </div>
+      </div>
 
       <CounterpartyCreateDialog
         kind={COUNTERPARTY_KIND_CUSTOMER}
