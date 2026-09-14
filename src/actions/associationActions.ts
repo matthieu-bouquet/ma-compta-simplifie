@@ -6,7 +6,8 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { writeAuditEvent } from '@/lib/audit'
-import { validateLegalForm } from '@/lib/legalForms'
+import { assertLegalFormAllowedWithoutVatFeature, validateLegalForm } from '@/lib/legalForms'
+import { isVatLiableFeatureEnabled } from '@/lib/featureFlags'
 import { setCurrentAssociationId } from '@/actions/contextActions'
 import { syncTemplateWithDefault } from '@/actions/planComptableActions'
 import { ensureVatAccountsForAssociation } from '@/lib/vatAccounts'
@@ -100,6 +101,9 @@ export async function createAssociation(formData: FormData) {
     legalFormCode: legalFormCode || null,
     legalFormOther: legalFormOther || null,
   })
+  if (!isVatLiableFeatureEnabled()) {
+    assertLegalFormAllowedWithoutVatFeature(validatedLegalForm.legalFormCode)
+  }
 
   const templateCode = inferTemplateCodeFromLegalForm(validatedLegalForm.legalFormCode)
   const template = await prisma.chartTemplate.upsert({
@@ -172,6 +176,9 @@ export async function updateAssociation(id: string, formData: FormData) {
     legalFormCode: legalFormCode || null,
     legalFormOther: legalFormOther || null,
   })
+  if (!isVatLiableFeatureEnabled()) {
+    assertLegalFormAllowedWithoutVatFeature(validatedLegalForm.legalFormCode)
+  }
 
   const templateCode = inferTemplateCodeFromLegalForm(validatedLegalForm.legalFormCode)
   const template = await prisma.chartTemplate.upsert({

@@ -10,7 +10,7 @@ import { Association } from '@/lib/db'
 import ParametreLayout from '@/components/ParametreLayout'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { cloturerAssociation, createAssociation, deleteAssociation, getAssociations } from '@/actions/associationActions'
-import { LEGAL_FORM_OPTIONS } from '@/lib/legalForms'
+import { legalFormSelectOptions } from '@/lib/legalForms'
 import FormSection from '@/components/forms/FormSection'
 import forms from '@/components/forms/forms.module.css'
 import styles from './entites.module.css'
@@ -29,8 +29,10 @@ type EntityRow = Association & {
 
 export default function EntitiesPageClient({
   initialEntities,
+  vatFeatureEnabled,
 }: {
   initialEntities: EntityRow[]
+  vatFeatureEnabled: boolean
 }) {
   const searchParams = useSearchParams()
   const shouldOpenForm = searchParams.get('create') === '1'
@@ -74,7 +76,9 @@ export default function EntitiesPageClient({
         if (key === 'vatLiable') continue
         form.append(key, value as string)
       }
-      form.append('vatLiable', formData.vatLiable ? 'on' : '')
+      if (vatFeatureEnabled) {
+        form.append('vatLiable', formData.vatLiable ? 'on' : '')
+      }
 
       await createAssociation(form)
       appToast.success('Entité créée avec succès')
@@ -174,7 +178,7 @@ export default function EntitiesPageClient({
                       className={forms.select}
                     >
                       <option value="">—</option>
-                      {LEGAL_FORM_OPTIONS.map((o) => (
+                      {legalFormSelectOptions(vatFeatureEnabled, formData.legalFormCode).map((o) => (
                         <option key={o.code} value={o.code}>
                           {o.label}
                         </option>
@@ -199,25 +203,27 @@ export default function EntitiesPageClient({
                     </div>
                   ) : null}
 
-                  <div className={forms.field}>
-                    <div className={styles.checkboxRow}>
-                      <input
-                        id="entity-vat-liable"
-                        type="checkbox"
-                        checked={formData.vatLiable}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, vatLiable: e.target.checked }))
-                        }
-                      />
-                      <label htmlFor="entity-vat-liable">
-                        Assujetti à la TVA
-                        <span className={forms.fieldHint}>
-                          {' '}
-                          (hors franchise en base de TVA). Permet la ventilation TVA à la saisie.
-                        </span>
-                      </label>
+                  {vatFeatureEnabled ? (
+                    <div className={forms.field}>
+                      <div className={styles.checkboxRow}>
+                        <input
+                          id="entity-vat-liable"
+                          type="checkbox"
+                          checked={formData.vatLiable}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, vatLiable: e.target.checked }))
+                          }
+                        />
+                        <label htmlFor="entity-vat-liable">
+                          Assujetti à la TVA
+                          <span className={forms.fieldHint}>
+                            {' '}
+                            (hors franchise en base de TVA). Permet la ventilation TVA à la saisie.
+                          </span>
+                        </label>
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
                 </div>
               </FormSection>
 
@@ -325,7 +331,7 @@ export default function EntitiesPageClient({
                 <th className={styles.th}>Nom</th>
                 <th className={styles.th}>Forme</th>
                 <th className={styles.th}>SIRET</th>
-                <th className={styles.th}>TVA</th>
+                {vatFeatureEnabled ? <th className={styles.th}>TVA</th> : null}
                 <th className={styles.th}>Contact</th>
                 <th className={styles.th}>Exercices</th>
                 <th className={`${styles.th} ${styles.thRight}`}>Actions</th>
@@ -343,25 +349,31 @@ export default function EntitiesPageClient({
 
                   <td className={`${styles.td} ${styles.tdMuted}`}>{entity.legalFormCode || '-'}</td>
                   <td className={`${styles.td} ${styles.tdMuted}`}>{entity.siret || '-'}</td>
-                  <td className={`${styles.td} ${styles.tdMuted}`}>
-                    <span
-                      role="status"
-                      className={`${styles.vatBadge} ${entity.vatLiable ? styles.vatBadgeOn : styles.vatBadgeOff}`}
-                      title={entity.vatLiable ? 'TVA activée pour cette entité' : 'TVA non activée pour cette entité'}
-                    >
-                      {entity.vatLiable ? (
-                        <>
-                          <BadgeCheck size={13} className={styles.vatBadgeIcon} aria-hidden />
-                          Activée
-                        </>
-                      ) : (
-                        <>
-                          <CircleOff size={13} className={styles.vatBadgeIcon} aria-hidden />
-                          Non activée
-                        </>
-                      )}
-                    </span>
-                  </td>
+                  {vatFeatureEnabled ? (
+                    <td className={`${styles.td} ${styles.tdMuted}`}>
+                      <span
+                        role="status"
+                        className={`${styles.vatBadge} ${entity.vatLiable ? styles.vatBadgeOn : styles.vatBadgeOff}`}
+                        title={
+                          entity.vatLiable
+                            ? 'TVA activée pour cette entité'
+                            : 'TVA non activée pour cette entité'
+                        }
+                      >
+                        {entity.vatLiable ? (
+                          <>
+                            <BadgeCheck size={13} className={styles.vatBadgeIcon} aria-hidden />
+                            Activée
+                          </>
+                        ) : (
+                          <>
+                            <CircleOff size={13} className={styles.vatBadgeIcon} aria-hidden />
+                            Non activée
+                          </>
+                        )}
+                      </span>
+                    </td>
+                  ) : null}
                   <td className={`${styles.td} ${styles.tdMuted}`}>
                     <div>
                       {entity.email && <div>{entity.email}</div>}
