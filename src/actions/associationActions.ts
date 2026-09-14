@@ -12,6 +12,11 @@ import { setCurrentAssociationId } from '@/actions/contextActions'
 import { syncTemplateWithDefault } from '@/actions/planComptableActions'
 import { ensureVatAccountsForAssociation } from '@/lib/vatAccounts'
 import { importAutoSeedEntryTemplatePacks } from '@/lib/entryTemplateImport'
+import {
+  deleteStoredFile,
+  saveAssociationLogoFile,
+} from '@/lib/documentsStorage'
+import { getCurrentAssociationId } from '@/lib/associationContext'
 
 function inferTemplateCodeFromLegalForm(legalFormCode: string | null): 'ASSOCIATION' | 'TPE' {
   if (!legalFormCode) return 'ASSOCIATION'
@@ -266,4 +271,88 @@ export async function cloturerAssociation(id: string) {
     entityType: 'Association',
     entityId: id,
   })
+}
+
+export async function uploadAssociationLogo(associationId: string, formData: FormData) {
+  const currentId = await getCurrentAssociationId()
+  if (!currentId || currentId !== associationId) {
+    throw new Error('Entité non autorisée.')
+  }
+
+  const file = formData.get('logo')
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error('Choisissez une image (PNG, JPG ou WEBP).')
+  }
+
+  const existing = await prisma.association.findUnique({
+    where: { id: associationId },
+    select: { logoRelativePath: true },
+  })
+  if (!existing) throw new Error('Entité introuvable.')
+
+  if (existing.logoRelativePath) {
+    await deleteStoredFile(existing.logoRelativePath).catch(() => undefined)
+  }
+
+  const stored = await saveAssociationLogoFile({ file, associationId })
+
+  await prisma.association.update({
+    where: { id: associationId },
+    data: {
+      logoRelativePath: stored.relativePath,
+      logoMimeType: stored.mimeType,
+      logoSizeBytes: stored.sizeBytes,
+    },
+  })
+
+  await writeAuditEvent({
+    associationId,
+    fiscalYearId: null,
+    actor: associationId,
+    action: 'ASSOCIATION_LOGO_UPDATE',
+    entityType: 'Association',
+    entityId: associationId,
+    data: { mimeType: stored.mimeType, sizeBytes: stored.sizeBytes },
+  })
+
+  revalidatePath(`/parametres/entites/${associationId}/edit`)
+  revalidatePath('/factures')
+}
+
+export async function removeAssociationLogo(associationId: string) {
+  const currentId = await getCurrentAssociationId()
+  if (!currentId || currentId !== associationId) {
+    throw new Error('Entité non autorisée.')
+  }
+
+  const existing = await prisma.association.findUnique({
+    where: { id: associationId },
+    select: { logoRelativePath: true },
+  })
+  if (!existing) throw new Error('Entité introuvable.')
+
+  if (existing.logoRelativePath) {
+    await deleteStoredFile(existing.logoRelativePath).catch(() => undefined)
+  }
+
+  await prisma.association.update({
+    where: { id: associationId },
+    data: {
+      logoRelativePath: null,
+      logoMimeType: null,
+      logoSizeBytes: null,
+    },
+  })
+
+  await writeAuditEvent({
+    associationId,
+    fiscalYearId: null,
+    actor: associationId,
+    action: 'ASSOCIATION_LOGO_REMOVE',
+    entityType: 'Association',
+    entityId: associationId,
+  })
+
+  revalidatePath(`/parametres/entites/${associationId}/edit`)
+  revalidatePath('/factures')
 }

@@ -21,6 +21,9 @@ export type BackupAssociationJson = {
   vatLiable?: boolean
   chartTemplateId?: string | null
   isClosed?: boolean
+  logoRelativePath?: string | null
+  logoMimeType?: string | null
+  logoSizeBytes?: number | null
   createdAt?: string | Date
   updatedAt?: string | Date
 }

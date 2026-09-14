@@ -15,6 +15,7 @@ import {
   FolderOpen,
   HandHeart,
   LineChart,
+  Receipt,
 } from 'lucide-react'
 
 function isNavActive(pathname: string, href: string): boolean {
@@ -70,6 +71,17 @@ export default function SidebarNav({ canAccessVolunteering }: SidebarNavProps) {
         >
           <FolderOpen size={18} aria-hidden="true" />
           <span className="sr-only">Documents</span>
+        </Link>
+        <Link
+          href="/factures"
+          className={navItemClass(pathname, '/factures')}
+          aria-label="Factures"
+          title="Factures"
+          data-tooltip="Factures"
+          aria-current={isNavActive(pathname, '/factures') ? 'page' : undefined}
+        >
+          <Receipt size={18} aria-hidden="true" />
+          <span className="sr-only">Factures</span>
         </Link>
         {canAccessVolunteering ? (
           <Link
