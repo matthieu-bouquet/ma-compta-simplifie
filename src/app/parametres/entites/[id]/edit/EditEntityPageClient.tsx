@@ -11,7 +11,7 @@ import FormSection from '@/components/forms/FormSection'
 import forms from '@/components/forms/forms.module.css'
 import styles from '../../entites.module.css'
 import { getAssociation, updateAssociation, type AssociationDetail } from '@/actions/associationActions'
-import { LEGAL_FORM_OPTIONS } from '@/lib/legalForms'
+import { legalFormSelectOptions } from '@/lib/legalForms'
 import { appToast } from '@/lib/appToast'
 
 export default function EditEntityPageClient({ vatFeatureEnabled }: { vatFeatureEnabled: boolean }) {
@@ -158,7 +158,7 @@ export default function EditEntityPageClient({ vatFeatureEnabled }: { vatFeature
                     className={forms.select}
                   >
                     <option value="">—</option>
-                    {LEGAL_FORM_OPTIONS.map((o) => (
+                    {legalFormSelectOptions(vatFeatureEnabled, formData.legalFormCode).map((o) => (
                       <option key={o.code} value={o.code}>
                         {o.label}
                       </option>

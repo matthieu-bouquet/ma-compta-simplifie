@@ -10,7 +10,7 @@ import { Association } from '@/lib/db'
 import ParametreLayout from '@/components/ParametreLayout'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { cloturerAssociation, createAssociation, deleteAssociation, getAssociations } from '@/actions/associationActions'
-import { LEGAL_FORM_OPTIONS } from '@/lib/legalForms'
+import { legalFormSelectOptions } from '@/lib/legalForms'
 import FormSection from '@/components/forms/FormSection'
 import forms from '@/components/forms/forms.module.css'
 import styles from './entites.module.css'
@@ -178,7 +178,7 @@ export default function EntitiesPageClient({
                       className={forms.select}
                     >
                       <option value="">—</option>
-                      {LEGAL_FORM_OPTIONS.map((o) => (
+                      {legalFormSelectOptions(vatFeatureEnabled, formData.legalFormCode).map((o) => (
                         <option key={o.code} value={o.code}>
                           {o.label}
                         </option>

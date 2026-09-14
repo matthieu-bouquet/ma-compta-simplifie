@@ -26,6 +26,45 @@ export const LEGAL_FORM_OPTIONS: LegalFormOption[] = [
   { code: 'OTHER', label: 'Autre (préciser)' },
 ]
 
+/** Forms offered when FEATURE_VAT_LIABLE is off (associations / structures non assujetties au périmètre TVA). */
+const NON_VAT_LIABLE_PRODUCT_LEGAL_FORM_CODES: LegalFormCode[] = ['ASSOCIATION', 'OTHER']
+
+export function isLegalFormAllowedWithoutVatFeature(code: LegalFormCode | null): boolean {
+  if (!code) return true
+  return NON_VAT_LIABLE_PRODUCT_LEGAL_FORM_CODES.includes(code)
+}
+
+export function assertLegalFormAllowedWithoutVatFeature(legalFormCode: LegalFormCode | null): void {
+  if (!isLegalFormAllowedWithoutVatFeature(legalFormCode)) {
+    throw new Error(
+      'Cette forme juridique n’est pas disponible (périmètre associations non assujetties à la TVA).',
+    )
+  }
+}
+
+/** Options for entity create/edit select; includes current value when editing a legacy row. */
+export function legalFormSelectOptions(
+  vatFeatureEnabled: boolean,
+  currentCode?: string | null,
+): LegalFormOption[] {
+  if (vatFeatureEnabled) return LEGAL_FORM_OPTIONS
+
+  const allowed = LEGAL_FORM_OPTIONS.filter((o) =>
+    NON_VAT_LIABLE_PRODUCT_LEGAL_FORM_CODES.includes(o.code),
+  )
+
+  if (
+    currentCode &&
+    isLegalFormCode(currentCode) &&
+    !NON_VAT_LIABLE_PRODUCT_LEGAL_FORM_CODES.includes(currentCode)
+  ) {
+    const legacy = LEGAL_FORM_OPTIONS.find((o) => o.code === currentCode)
+    if (legacy) return [...allowed, legacy]
+  }
+
+  return allowed
+}
+
 export function isLegalFormCode(value: string | null | undefined): value is LegalFormCode {
   if (!value) return false
   return LEGAL_FORM_OPTIONS.some((o) => o.code === value)

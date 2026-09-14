@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   isLegalFormCode,
+  legalFormSelectOptions,
   showClass8CvnForLegalForm,
   validateLegalForm,
 } from '@/lib/legalForms'
@@ -26,6 +27,23 @@ describe('isLegalFormCode', () => {
     expect(isLegalFormCode('SARL')).toBe(true)
     expect(isLegalFormCode('')).toBe(false)
     expect(isLegalFormCode('UNKNOWN')).toBe(false)
+  })
+})
+
+describe('legalFormSelectOptions', () => {
+  it('returns all forms when VAT feature is enabled', () => {
+    expect(legalFormSelectOptions(true)).toHaveLength(9)
+    expect(legalFormSelectOptions(true).some((o) => o.code === 'SAS')).toBe(true)
+  })
+
+  it('returns association and other only when VAT feature is disabled', () => {
+    const options = legalFormSelectOptions(false)
+    expect(options.map((o) => o.code)).toEqual(['ASSOCIATION', 'OTHER'])
+  })
+
+  it('keeps legacy commercial form on edit when VAT feature is disabled', () => {
+    const options = legalFormSelectOptions(false, 'SAS')
+    expect(options.map((o) => o.code)).toEqual(['ASSOCIATION', 'OTHER', 'SAS'])
   })
 })
 
