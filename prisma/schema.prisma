@@ -26,6 +26,13 @@ model Association {
   logoRelativePath String?
   logoMimeType     String?
   logoSizeBytes    Int?
+  /// RNA (WALDEC), distinct from SIRET.
+  rna String?
+  socialObject String?
+  receiptSignatoryName String?
+  receiptSignatoryRole String?
+  /// Association attests intérêt général (art. 200 / 238 bis CGI); software does not certify it.
+  taxReceiptEligibilityAttested Boolean @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -34,6 +41,12 @@ model Association {
   counterparties Counterparty[]
   recurringExpenseTemplates RecurringExpenseTemplate[]
   invoices Invoice[]
+  membershipCategories MembershipCategory[]
+  membershipSeasons MembershipSeason[]
+  members Member[]
+  donations Donation[]
+  taxReceiptSequences TaxReceiptSequence[]
+  taxReceipts TaxReceipt[]
 }
 
 // Third parties (suppliers / customers) scoped to the association (UI: Paramètres → Fournisseurs et clients).
@@ -48,6 +61,7 @@ model Counterparty {
   entries Entry[]
   recurringExpenseTemplates RecurringExpenseTemplate[]
   invoices Invoice[]
+  members Member[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -156,6 +170,7 @@ model FiscalYear {
   inKindContributions InKindContribution[]
   invoices Invoice[]
   invoiceSequences InvoiceSequence[]
+  donations Donation[]
 
   @@unique([associationId, startDate, endDate])
 }
@@ -419,4 +434,204 @@ model InvoiceLine {
   updatedAt DateTime @updatedAt
 
   @@index([invoiceId, sortOrder])
+}
+
+model MembershipCategory {
+  id             String      @id @default(uuid())
+  associationId  String
+  association    Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  name           String
+  /// Default template used when copying tariffs onto a new season.
+  amountCents    Int
+  /// 7561 without counterpart, 7562 with counterpart (ANC 2018-06).
+  duesAccountNumber String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members Member[]
+  seasonTariffs MembershipSeasonTariff[]
+  fees    MembershipFee[]
+
+  @@unique([associationId, name])
+  @@index([associationId])
+}
+
+/// Sporting season (independent from the accounting fiscal year).
+model MembershipSeason {
+  id            String      @id @default(uuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  name          String
+  startDate     DateTime
+  endDate       DateTime
+  /// OPEN | CLOSED — clôture = lecture seule (adhésions, tarifs, encaissements liés).
+  status        String      @default("OPEN")
+  closedAt      DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  tariffs MembershipSeasonTariff[]
+  fees    MembershipFee[]
+
+  @@unique([associationId, name])
+  @@index([associationId, startDate])
+}
+
+/// Category tariff for one season (amount and 756 account frozen on the season).
+model MembershipSeasonTariff {
+  id                String             @id @default(uuid())
+  seasonId          String
+  season            MembershipSeason   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  categoryId        String
+  category          MembershipCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  amountCents       Int
+  duesAccountNumber String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  fees MembershipFee[]
+
+  @@unique([seasonId, categoryId])
+  @@index([categoryId])
+}
+
+model Member {
+  id             String      @id @default(uuid())
+  associationId  String
+  association    Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String?
+  address        String?
+  postalCode     String?
+  city           String?
+  licenseNumber  String?
+  birthDate      DateTime?
+  notes          String?
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+  categoryId     String?
+  category       MembershipCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  counterpartyId String?
+  counterparty   Counterparty? @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fees MembershipFee[]
+
+  @@index([associationId, lastName])
+  @@index([categoryId])
+  @@index([counterpartyId])
+}
+
+/// Season membership (adhésion): identity snapshot, options, and dues for one season tariff.
+model MembershipFee {
+  id            String     @id @default(uuid())
+  associationId String
+  memberId      String
+  member        Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  seasonId      String
+  season        MembershipSeason @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  tariffId      String
+  tariff        MembershipSeasonTariff @relation(fields: [tariffId], references: [id], onDelete: Restrict)
+
+  /// Denormalized from tariff (Member.categoryId remains the habitual category).
+  categoryId String?
+  category   MembershipCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  snapshotFirstName     String
+  snapshotLastName      String
+  snapshotEmail         String?
+  snapshotPhone         String?
+  snapshotAddress       String?
+  snapshotPostalCode    String?
+  snapshotCity          String?
+  snapshotLicenseNumber String?
+
+  imageRightsConsent           Boolean @default(false)
+  internalRulesAccepted        Boolean @default(false)
+  emailCommunicationsConsent   Boolean @default(false)
+
+  amountCents          Int
+  duesAccountNumber    String
+  /// DUE | PAID
+  status               String
+  paidAt               DateTime?
+  treasuryAccountNumber String?
+  entryId              String?   @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([memberId, seasonId])
+  @@index([associationId, seasonId, status])
+  @@index([seasonId])
+  @@index([tariffId])
+  @@index([categoryId])
+}
+
+model Donation {
+  id            String     @id @default(uuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  fiscalYearId  String
+  fiscalYear    FiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+
+  donorName       String
+  donorAddress    String?
+  donorPostalCode String?
+  donorCity       String?
+  donorEmail      String?
+
+  amountCents           Int
+  date                  DateTime
+  /// ESPECES | CHEQUE | VIREMENT | CB | AUTRE
+  paymentMethod         String
+  treasuryAccountNumber String
+  eligibilityAttested   Boolean @default(false)
+
+  entryId String? @unique
+  taxReceipt TaxReceipt?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([associationId, date])
+  @@index([fiscalYearId, date])
+}
+
+model TaxReceiptSequence {
+  id            String      @id @default(uuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  calendarYear  Int
+  nextNumber    Int         @default(1)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([associationId, calendarYear])
+}
+
+model TaxReceipt {
+  id            String      @id @default(uuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  donationId    String      @unique
+  donation      Donation    @relation(fields: [donationId], references: [id], onDelete: Restrict)
+
+  calendarYear Int
+  sequence     Int
+  number       String
+
+  issuedAt     DateTime @default(now())
+  cancelledAt  DateTime?
+  pdfDocumentId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([associationId, calendarYear, sequence])
+  @@index([associationId, issuedAt])
 }

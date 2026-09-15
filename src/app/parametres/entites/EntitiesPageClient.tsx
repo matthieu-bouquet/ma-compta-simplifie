@@ -42,7 +42,7 @@ export default function EntitiesPageClient({
   const [formData, setFormData] = useState({
     nom: '',
     siret: '',
-    legalFormCode: '',
+    legalFormCode: 'ASSOCIATION',
     legalFormOther: '',
     adresse: '',
     codePostal: '',
@@ -62,7 +62,7 @@ export default function EntitiesPageClient({
       const data = await getAssociations()
       setEntities(data)
     } catch {
-      appToast.error('Erreur lors du chargement des entités')
+      appToast.error('Erreur lors du chargement des associations')
     } finally {
       setLoading(false)
     }
@@ -81,11 +81,11 @@ export default function EntitiesPageClient({
       }
 
       await createAssociation(form)
-      appToast.success('Entité créée avec succès')
+      appToast.success('Association créée avec succès')
       setFormData({
         nom: '',
         siret: '',
-        legalFormCode: '',
+        legalFormCode: 'ASSOCIATION',
         legalFormOther: '',
         adresse: '',
         codePostal: '',
@@ -115,18 +115,18 @@ export default function EntitiesPageClient({
   if (loading) return <div>Chargement...</div>
 
   return (
-    <ParametreLayout title="Entités" description="Gérer les entités pour lesquelles vous faites la comptabilité">
+    <ParametreLayout title="Associations" description="Gérer les associations pour lesquelles vous tenez la comptabilité">
       <div className={styles.headerActions}>
         <button type="button" onClick={() => setShowForm(!showForm)} className={`btn btn-primary ${forms.btnWithLeadingIcon}`}>
           <Plus size={18} aria-hidden="true" />
-          Nouvelle entité
+          Nouvelle association
         </button>
       </div>
 
       {showForm && (
         <div className={`card ${forms.cardForm}`}>
           <div className={forms.formTitleRow}>
-            <div className="card-title">Créer une entité</div>
+            <div className="card-title">Créer une association</div>
           </div>
           <div className={forms.formSubtitle}>Renseignez l’identité, la forme juridique et les coordonnées de contact.</div>
           <form onSubmit={handleSubmit}>

@@ -24,6 +24,11 @@ export type BackupAssociationJson = {
   logoRelativePath?: string | null
   logoMimeType?: string | null
   logoSizeBytes?: number | null
+  rna?: string | null
+  socialObject?: string | null
+  receiptSignatoryName?: string | null
+  receiptSignatoryRole?: string | null
+  taxReceiptEligibilityAttested?: boolean
   createdAt?: string | Date
   updatedAt?: string | Date
 }

@@ -17,13 +17,13 @@ export default function ParametresPage() {
         >
           <div className={styles.cardHeader}>
             <Building className={`w-8 h-8 ${styles.iconPrimary}`} />
-            <h2 className={styles.cardTitle}>Entités</h2>
+            <h2 className={styles.cardTitle}>Associations</h2>
           </div>
           <p className={styles.cardText}>
-            Gérer les entités pour lesquelles vous faites la comptabilité.
-            Créez, modifiez et gérez leurs informations (dont la forme juridique).
+            Gérer les associations pour lesquelles vous tenez la comptabilité.
+            Créez, modifiez et gérez leurs informations (RNA, signataire des reçus fiscaux, etc.).
           </p>
-          <div className={styles.cardCtaPrimary}>Gérer les entités →</div>
+          <div className={styles.cardCtaPrimary}>Gérer les associations →</div>
         </Link>
 
         <Link

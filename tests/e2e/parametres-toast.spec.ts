@@ -15,11 +15,11 @@ test('plan comptable: add account shows success toast', async ({ page }) => {
 test('edit entity: save shows success toast before redirect', async ({ page }) => {
   await page.goto('/parametres/entites')
 
-  await page.getByRole('button', { name: 'Nouvelle entité' }).click()
+  await page.getByRole('button', { name: 'Nouvelle association' }).click()
   const name = `Toast edit ${Date.now()}`
   await page.getByLabel('Nom *').fill(name)
   await page.getByRole('button', { name: 'Créer' }).click()
-  await expectToastVisible(page, 'Entité créée avec succès')
+  await expectToastVisible(page, 'Association créée avec succès')
 
   const row = page.locator('tr', { hasText: name })
   await row.getByLabel('Modifier').click()

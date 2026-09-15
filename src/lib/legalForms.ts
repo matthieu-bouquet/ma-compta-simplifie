@@ -42,27 +42,26 @@ export function assertLegalFormAllowedWithoutVatFeature(legalFormCode: LegalForm
   }
 }
 
-/** Options for entity create/edit select; includes current value when editing a legacy row. */
+/** Product is association-only: create UI offers Association; legacy TPE rows stay selectable on edit. */
 export function legalFormSelectOptions(
-  vatFeatureEnabled: boolean,
+  _vatFeatureEnabled: boolean,
   currentCode?: string | null,
 ): LegalFormOption[] {
-  if (vatFeatureEnabled) return LEGAL_FORM_OPTIONS
+  const allowed = LEGAL_FORM_OPTIONS.filter((o) => o.code === 'ASSOCIATION')
 
-  const allowed = LEGAL_FORM_OPTIONS.filter((o) =>
-    NON_VAT_LIABLE_PRODUCT_LEGAL_FORM_CODES.includes(o.code),
-  )
-
-  if (
-    currentCode &&
-    isLegalFormCode(currentCode) &&
-    !NON_VAT_LIABLE_PRODUCT_LEGAL_FORM_CODES.includes(currentCode)
-  ) {
+  if (currentCode && isLegalFormCode(currentCode) && currentCode !== 'ASSOCIATION') {
     const legacy = LEGAL_FORM_OPTIONS.find((o) => o.code === currentCode)
     if (legacy) return [...allowed, legacy]
   }
 
   return allowed
+}
+
+export function assertCreateAssociationLegalForm(
+  legalFormCode: LegalFormCode | null,
+): 'ASSOCIATION' {
+  if (!legalFormCode || legalFormCode === 'ASSOCIATION') return 'ASSOCIATION'
+  throw new Error('Seules les associations sont prises en charge.')
 }
 
 export function isLegalFormCode(value: string | null | undefined): value is LegalFormCode {
