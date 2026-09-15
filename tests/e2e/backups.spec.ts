@@ -62,10 +62,7 @@ test('export zip from settings backup page', async ({ page }) => {
 
   await page.goto('/parametres/sauvegarde')
 
-  // Expand the entity, select the fiscal year and the prévisionnel, then export.
-  await page.getByLabel('Déplier').first().click()
-  await page.getByLabel(/Sélectionner l’exercice/i).first().check()
-  await page.getByLabel(/Sélectionner le prévisionnel « Budget BACKUP E2E »/i).check()
+  await page.getByLabel('Sélectionner l’entité Association BACKUP E2E').check()
 
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Télécharger la sauvegarde' }).click()

@@ -42,6 +42,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Tests (bugfix / TDD)**: every bugfix must start by adding a **failing test that reproduces the bug**, then fix the bug until the test passes.
 - **Tests (E2E / Playwright)**: run E2E tests **outside sandbox** (non-sandboxed), otherwise Playwright browsers may not be available (you’ll get “Executable doesn’t exist… run `npx playwright install`”).
 - **Tests (workflow)**: after **each code change**, run the relevant test suite(s). If in doubt, run `npm run test:e2e` (outside sandbox) before considering the change “done”.
+- **Prisma (schema / migrations)**: `npm run test:unit` recrée **`.tmp/unit.db`** et applique toutes les migrations — ce n’est **pas** la base du serveur Next (`DATABASE_URL`, en général `file:./prisma/dev.db`). Après toute modification de `prisma/schema.prisma` ou ajout d’un dossier sous `prisma/migrations/` :
+  1. `npx prisma generate` (client à jour),
+  2. `npx prisma migrate deploy` sur la base de dev (même URL que `.env` / `.env.example`),
+  3. puis `npm run test:unit` (ou les tests pertinents).
+  Sans étape 2, le dev local peut lever `The column … does not exist in the current database` alors que les tests passent.
 - **Forms (accessibility & E2E)**: every `<label>` must be wired to a real control via `htmlFor` + `id` (or `aria-label`). E2E tests rely on `getByLabel(...)`.
 - **Forms (dates)**: use `react-datepicker` (as in `src/app/saisie/SaisieForm.tsx`) for date fields; keep a stable labeled input (via `customInput`) to support `getByLabel(...)` and consistent UX.
 - **Popovers (date pickers, tooltips, dropdowns)**: verify overlays are **not clipped** and appear **above cards**. Avoid `overflow: hidden` on ancestors; if needed, render overlays in a **portal to `document.body`** and set an explicit high `z-index` (ex: `.react-datepicker-popper`, tooltips).
