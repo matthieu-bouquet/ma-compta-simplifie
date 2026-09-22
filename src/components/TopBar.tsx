@@ -3,10 +3,12 @@
 
 import { prisma } from '@/lib/prisma'
 import { getCurrentExerciceId } from '@/lib/exerciceContext'
+import { getCurrentSeasonId } from '@/lib/seasonContext'
 import TopBarClient from '@/components/TopBarClient'
 
 export default async function TopBar({ currentAssociationId }: { currentAssociationId: string | null }) {
   const currentExerciceId = await getCurrentExerciceId()
+  const currentSeasonId = await getCurrentSeasonId()
 
   const exercices =
     currentAssociationId
@@ -16,16 +18,31 @@ export default async function TopBar({ currentAssociationId }: { currentAssociat
           select: { id: true, startDate: true, endDate: true, status: true },
         })
       : []
+  const seasons =
+    currentAssociationId
+      ? await prisma.membershipSeason.findMany({
+          where: { associationId: currentAssociationId },
+          orderBy: { startDate: 'desc' },
+          select: { id: true, name: true, startDate: true, endDate: true },
+        })
+      : []
 
   return (
     <TopBarClient
       currentAssociationId={currentAssociationId}
       currentExerciceId={currentExerciceId}
+      currentSeasonId={currentSeasonId}
       exercices={exercices.map((e) => ({
         id: e.id,
         dateDebut: e.startDate.toISOString(),
         dateFin: e.endDate.toISOString(),
         statut: e.status === 'OPEN' ? 'OUVERT' : 'CLOTURE',
+      }))}
+      seasons={seasons.map((s) => ({
+        id: s.id,
+        name: s.name,
+        startDate: s.startDate.toISOString(),
+        endDate: s.endDate.toISOString(),
       }))}
     />
   )

@@ -30,7 +30,9 @@ export default function PlanComptablePageClient({
   initialTemplateId: string | null
   initialPlan: LegacyPlanComptableAccount[]
 }) {
-  const [templateCode, setTemplateCode] = useState<ChartTemplateCode>(initialTemplateCode)
+  const [templateCode, setTemplateCode] = useState<ChartTemplateCode>(
+    initialTemplateCode === 'TPE' ? 'ASSOCIATION' : initialTemplateCode,
+  )
   const [templateId, setTemplateId] = useState<string | null>(initialTemplateId)
   const [planComptable, setPlanComptable] = useState<LegacyPlanComptableAccount[]>(initialPlan)
   const [loading, setLoading] = useState(false)
@@ -175,7 +177,6 @@ export default function PlanComptablePageClient({
               onChange={(e) => setTemplateCode(e.target.value as ChartTemplateCode)}
             >
               <option value="ASSOCIATION">Association</option>
-              <option value="TPE">Entreprise / TPE</option>
             </select>
           </div>
         </div>

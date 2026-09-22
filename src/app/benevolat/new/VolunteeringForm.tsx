@@ -12,9 +12,9 @@ import {
   isEntryDateAfterToday,
 } from '@/lib/entryDateValidation'
 import { Calculator, ClipboardList, ListChecks, ScrollText } from 'lucide-react'
+import FormSection from '@/components/forms/FormSection'
 import forms from '@/components/forms/forms.module.css'
 import { NumberInput } from '@/components/forms/NumberInput'
-import styles from './volunteeringForm.module.css'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { forwardRef } from 'react'
@@ -23,9 +23,9 @@ import { appToast } from '@/lib/appToast'
 
 const DateInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function DateInput(
   props,
-  ref
+  ref,
 ) {
-  return <input ref={ref} {...props} />
+  return <input ref={ref} {...props} className={`${forms.input} ${props.className ?? ''}`} />
 })
 
 function PopperToBody({ children }: { children?: React.ReactNode }) {
@@ -41,7 +41,7 @@ export default function VolunteeringForm({ fiscalYearId }: { fiscalYearId: strin
   const [contributorName, setContributorName] = useState('')
 
   const [hours, setHours] = useState<number>(0)
-  const [hourlyRate, setHourlyRate] = useState<string>('') // required
+  const [hourlyRate, setHourlyRate] = useState<string>('')
   const [valuationMethod, setValuationMethod] = useState('')
 
   const [meetsEssential, setMeetsEssential] = useState(false)
@@ -62,7 +62,7 @@ export default function VolunteeringForm({ fiscalYearId }: { fiscalYearId: strin
       if (!date) throw new Error('Date requise.')
       const dateStr = calendarDateInTimeZone(date, ENTRY_DATE_TIMEZONE)
       if (isEntryDateAfterToday(dateStr)) {
-        throw new Error("La date ne peut pas être dans le futur.")
+        throw new Error('La date ne peut pas être dans le futur.')
       }
       await createVolunteeringContribution({
         fiscalYearId,
@@ -89,231 +89,200 @@ export default function VolunteeringForm({ fiscalYearId }: { fiscalYearId: strin
   }
 
   return (
-    <form onSubmit={handleSubmit} className={styles.form}>
-      <div className={`card ${styles.sectionCard} ${styles.detailCardStatic}`}>
-        <div className={styles.detailSectionIntro}>
-          <div className={styles.sectionIcon} aria-hidden="true">
-            <ScrollText size={18} />
-          </div>
-          <div>
-            <h2 className={styles.detailSectionHeading}>Conformité (ANC 2018-06, art. 211-2)</h2>
-            <p className={styles.sectionDescription}>Critères d’information obligatoires pour la contribution volontaire en nature.</p>
-          </div>
-        </div>
-        <p className={styles.bodyText}>
-          La comptabilisation des contributions volontaires en nature est applicable si (1) leur nature/importance est essentielle à la
-          compréhension de l’activité et (2) l’association est en mesure de les recenser et de les valoriser. L’annexe doit décrire la
-          quantification et la méthode de valorisation.
-        </p>
-      </div>
-
-      <div className={`card ${styles.sectionCard} ${styles.detailCardStatic}`}>
-        <div className={styles.detailSectionIntro}>
-          <div className={styles.sectionIcon} aria-hidden="true">
-            <ClipboardList size={18} />
-          </div>
-          <div>
-            <h2 className={styles.detailSectionHeading}>Prestation</h2>
-            <p className={styles.sectionDescription}>Date, bénévole et description de l’activité réalisée.</p>
-          </div>
-        </div>
-        <div className={styles.grid}>
-          <div className={forms.field}>
-            <label className={forms.label} htmlFor="vol-date">
-              Date *
-            </label>
-            <DatePicker
-              id="vol-date"
-              selected={date}
-              onChange={(d: Date | null) => setDate(d)}
-              dateFormat="dd/MM/yyyy"
-              maxDate={new Date()}
-              customInput={<DateInput className={forms.input} />}
-              wrapperClassName={styles.datePickerWrapper}
-              popperContainer={PopperToBody}
-              required
-            />
-          </div>
-
-          <div className={forms.field}>
-            <label className={forms.label} htmlFor="vol-contributor">
-              Bénévole (optionnel)
-            </label>
-            <input
-              id="vol-contributor"
-              type="text"
-              className={forms.input}
-              value={contributorName}
-              onChange={(e) => setContributorName(e.target.value)}
-              placeholder="Nom / identifiant"
-            />
-          </div>
-        </div>
-
-        <div className={`${forms.field} ${styles.mt1}`}>
-          <label className={forms.label} htmlFor="vol-description">
-            Description *
-          </label>
-          <textarea
-            id="vol-description"
-            className={forms.textarea}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ex: Encadrement entraînement, tenue de la buvette, etc."
-            required
-          />
-        </div>
-      </div>
-
-      <div className={`card ${styles.sectionCard} ${styles.detailCardStatic}`}>
-        <div className={styles.detailSectionIntro}>
-          <div className={styles.sectionIcon} aria-hidden="true">
-            <Calculator size={18} />
-          </div>
-          <div>
-            <h2 className={styles.detailSectionHeading}>Quantification et valorisation</h2>
-            <p className={styles.sectionDescription}>
-              Heures, montants, méthode ; joignez un justificatif si vous en disposez.
+    <div className="card">
+      <form onSubmit={handleSubmit} className={forms.formStack}>
+        <div className={forms.sections}>
+          <FormSection
+            icon={ScrollText}
+            title="Conformité (ANC 2018-06, art. 211-2)"
+            description="Critères d’information obligatoires pour la contribution volontaire en nature."
+          >
+            <p className={forms.fieldHint}>
+              La comptabilisation des contributions volontaires en nature est applicable si (1) leur nature/importance
+              est essentielle à la compréhension de l’activité et (2) l’association est en mesure de les recenser et de
+              les valoriser. L’annexe doit décrire la quantification et la méthode de valorisation.
             </p>
-          </div>
-        </div>
-        <div className={styles.grid}>
-          <div className={forms.field}>
-            <label className={forms.label} htmlFor="vol-hours">
-              Heures *
-            </label>
-            <NumberInput
-              id="vol-hours"
-              min="0.01"
-              step="0.01"
-              className={forms.input}
-              value={hours || ''}
-              onChange={(e) => setHours(Number(e.target.value) || 0)}
-              required
-            />
-          </div>
+          </FormSection>
 
-          <div className={forms.field}>
-            <label className={forms.label} htmlFor="vol-hourlyRate">
-              Taux (€/h) *
-            </label>
-            <NumberInput
-              id="vol-hourlyRate"
-              min="0.01"
-              step="0.01"
-              className={forms.input}
-              value={hourlyRate}
-              onChange={(e) => setHourlyRate(e.target.value)}
-              placeholder="Ex: 20"
-              required
-            />
-          </div>
+          <FormSection
+            icon={ClipboardList}
+            title="Prestation"
+            description="Date, bénévole et description de l’activité réalisée."
+          >
+            <div className={forms.sectionGrid}>
+              <div className={forms.field}>
+                <label className={forms.label} htmlFor="vol-date">
+                  Date *
+                </label>
+                <DatePicker
+                  selected={date}
+                  onChange={(d: Date | null) => setDate(d)}
+                  dateFormat="dd/MM/yyyy"
+                  maxDate={new Date()}
+                  customInput={<DateInput id="vol-date" required />}
+                  popperContainer={PopperToBody}
+                />
+              </div>
+              <div className={forms.field}>
+                <label className={forms.label} htmlFor="vol-contributor">
+                  Bénévole (optionnel)
+                </label>
+                <input
+                  id="vol-contributor"
+                  type="text"
+                  className={forms.input}
+                  value={contributorName}
+                  onChange={(e) => setContributorName(e.target.value)}
+                  placeholder="Nom / identifiant"
+                />
+              </div>
+              <div className={`${forms.field} ${forms.fieldFullWidth}`}>
+                <label className={forms.label} htmlFor="vol-description">
+                  Description *
+                </label>
+                <textarea
+                  id="vol-description"
+                  className={forms.textarea}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Ex. : encadrement entraînement, tenue de la buvette…"
+                  required
+                />
+              </div>
+            </div>
+          </FormSection>
 
-          <div className={forms.field}>
-            <label className={forms.label} htmlFor="vol-total">
-              Total (€)
-            </label>
-            <input
-              id="vol-total"
-              type="text"
-              className={forms.input}
-              value={
-                hours > 0 && hourlyRate.trim() !== '' && Number.isFinite(Number(hourlyRate))
-                  ? (hours * Number(hourlyRate)).toFixed(2)
-                  : ''
-              }
-              readOnly
-              aria-readonly="true"
-              tabIndex={-1}
-            />
-            <p className={styles.hint}>Calculé automatiquement: heures × taux.</p>
-          </div>
-        </div>
+          <FormSection
+            icon={Calculator}
+            title="Quantification et valorisation"
+            description="Heures, montants, méthode ; joignez un justificatif si vous en disposez."
+          >
+            <div className={forms.sectionGrid}>
+              <div className={forms.field}>
+                <label className={forms.label} htmlFor="vol-hours">
+                  Heures *
+                </label>
+                <NumberInput
+                  id="vol-hours"
+                  min="0.01"
+                  step="0.01"
+                  className={forms.input}
+                  value={hours || ''}
+                  onChange={(e) => setHours(Number(e.target.value) || 0)}
+                  required
+                />
+              </div>
+              <div className={forms.field}>
+                <label className={forms.label} htmlFor="vol-hourlyRate">
+                  Taux (€/h) *
+                </label>
+                <NumberInput
+                  id="vol-hourlyRate"
+                  min="0.01"
+                  step="0.01"
+                  className={forms.input}
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(e.target.value)}
+                  placeholder="Ex. : 20"
+                  required
+                />
+              </div>
+              <div className={forms.field}>
+                <label className={forms.label} htmlFor="vol-total">
+                  Total (€)
+                </label>
+                <input
+                  id="vol-total"
+                  type="text"
+                  className={forms.input}
+                  value={
+                    hours > 0 && hourlyRate.trim() !== '' && Number.isFinite(Number(hourlyRate))
+                      ? (hours * Number(hourlyRate)).toFixed(2)
+                      : ''
+                  }
+                  readOnly
+                  aria-readonly="true"
+                  tabIndex={-1}
+                />
+                <p className={forms.fieldHint}>Calculé automatiquement : heures × taux.</p>
+              </div>
+              <div className={`${forms.field} ${forms.fieldFullWidth}`}>
+                <label className={forms.label} htmlFor="vol-method">
+                  Méthode de valorisation *
+                </label>
+                <textarea
+                  id="vol-method"
+                  className={forms.textarea}
+                  value={valuationMethod}
+                  onChange={(e) => setValuationMethod(e.target.value)}
+                  placeholder="Grille salariale, convention collective, coût de remplacement…"
+                  required
+                />
+              </div>
+              <div className={`${forms.field} ${forms.fieldFullWidth}`}>
+                <label className={forms.label} htmlFor="vol-document">
+                  Justificatif (optionnel)
+                </label>
+                <input
+                  id="vol-document"
+                  type="file"
+                  className={forms.fileInput}
+                  accept="application/pdf,image/jpeg,image/png,image/webp"
+                  onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
+                />
+                <p className={forms.fieldHint}>Ex. : feuille de temps, tableau récapitulatif…</p>
+              </div>
+            </div>
+          </FormSection>
 
-        <div className={`${forms.field} ${styles.mt1}`}>
-          <label className={forms.label} htmlFor="vol-method">
-            Méthode de valorisation *
-          </label>
-          <textarea
-            id="vol-method"
-            className={forms.textarea}
-            value={valuationMethod}
-            onChange={(e) => setValuationMethod(e.target.value)}
-            placeholder="Décrivez la méthode (ex: grille salariale, convention collective, coût de remplacement, etc.)"
-            required
-          />
-        </div>
-
-        <div className={`${forms.field} ${styles.mt1}`}>
-          <label className={forms.label} htmlFor="vol-document">
-            Justificatif (optionnel)
-          </label>
-          <input
-            id="vol-document"
-            type="file"
-            className={forms.input}
-            accept="application/pdf,image/jpeg,image/png,image/webp"
-            onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
-          />
-          <p className={styles.hint}>Ex: feuille de temps, tableau récapitulatif, etc.</p>
-        </div>
-      </div>
-
-      <div className={`card ${styles.sectionCard} ${styles.detailCardStatic}`}>
-        <div className={styles.detailSectionIntro}>
-          <div className={styles.sectionIcon} aria-hidden="true">
-            <ListChecks size={18} />
-          </div>
-          <div>
-            <h2 className={styles.detailSectionHeading}>Décision de comptabilisation</h2>
-            <p className={styles.sectionDescription}>
-              Cochez selon l’article 211-2 et indiquez si la contribution est passée en classe 8.
+          <FormSection
+            icon={ListChecks}
+            title="Décision de comptabilisation"
+            description="Cochez selon l’article 211-2 et indiquez si la contribution est passée en classe 8."
+          >
+            <div className={forms.checkboxStack}>
+              <div className={forms.checkboxRow}>
+                <input
+                  id="essential"
+                  type="checkbox"
+                  checked={meetsEssential}
+                  onChange={(e) => setMeetsEssential(e.target.checked)}
+                />
+                <label htmlFor="essential">Essentiel à la compréhension de l’activité</label>
+              </div>
+              <div className={forms.checkboxRow}>
+                <input
+                  id="measurable"
+                  type="checkbox"
+                  checked={meetsMeasurable}
+                  onChange={(e) => setMeetsMeasurable(e.target.checked)}
+                />
+                <label htmlFor="measurable">Recensable et valorisable de manière fiable</label>
+              </div>
+              <div className={forms.checkboxRow}>
+                <input
+                  id="recorded"
+                  type="checkbox"
+                  checked={isRecorded}
+                  onChange={(e) => setIsRecorded(e.target.checked)}
+                />
+                <label htmlFor="recorded">Comptabiliser en classe 8 (864/875)</label>
+              </div>
+            </div>
+            <p className={forms.fieldHint}>
+              Si vous ne comptabilisez pas, l’information restera disponible pour l’annexe (nature, importance, méthode).
             </p>
-          </div>
+          </FormSection>
         </div>
-        <div className={styles.checkboxStack}>
-          <div className={styles.checkboxRow}>
-            <input
-              id="essential"
-              type="checkbox"
-              checked={meetsEssential}
-              onChange={(e) => setMeetsEssential(e.target.checked)}
-            />
-            <label htmlFor="essential">Essentiel à la compréhension de l’activité</label>
-          </div>
-          <div className={styles.checkboxRow}>
-            <input
-              id="measurable"
-              type="checkbox"
-              checked={meetsMeasurable}
-              onChange={(e) => setMeetsMeasurable(e.target.checked)}
-            />
-            <label htmlFor="measurable">Recensable et valorisable de manière fiable</label>
-          </div>
-          <div className={styles.checkboxRow}>
-            <input
-              id="recorded"
-              type="checkbox"
-              checked={isRecorded}
-              onChange={(e) => setIsRecorded(e.target.checked)}
-            />
-            <label htmlFor="recorded">Comptabiliser en classe 8 (864/875)</label>
-          </div>
+        <div className={forms.formActionsBar}>
+          <button type="button" className="btn" onClick={() => router.back()} disabled={loading}>
+            Annuler
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
         </div>
-        <p className={`${styles.hint} ${styles.mt1}`}>
-          Si vous ne comptabilisez pas, l’information restera disponible pour l’annexe (nature, importance, méthode).
-        </p>
-      </div>
-
-      <div className={styles.actions}>
-        <button type="button" className="btn" onClick={() => router.back()} disabled={loading}>
-          Annuler
-        </button>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Enregistrement…' : 'Enregistrer'}
-        </button>
-      </div>
-    </form>
+      </form>
+    </div>
   )
 }
-

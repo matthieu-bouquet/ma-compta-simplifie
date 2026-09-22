@@ -3,10 +3,10 @@ import { test, expect } from '@playwright/test'
 test('create fiscal year from exercises page', async ({ page }) => {
   // Create an entity first (UI; /parametres/associations redirects here)
   await page.goto('/parametres/entites')
-  await page.getByRole('button', { name: 'Nouvelle entité' }).click()
+  await page.getByRole('button', { name: 'Nouvelle association' }).click()
   await page.locator('input[name="nom"]').fill('Association FY E2E')
   await page.getByRole('button', { name: 'Créer' }).click()
-  await expect(page.getByText('Entité créée avec succès')).toBeVisible()
+  await expect(page.getByText('Association créée avec succès')).toBeVisible()
 
   // Extract the association id from the edit link in the entity row
   const row = page.locator('tr', { hasText: 'Association FY E2E' })
