@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { DOCUMENT_UPLOAD_SERVER_ACTION_BODY_SIZE_LIMIT } from "./src/lib/documentUploadLimits";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -6,10 +7,9 @@ const nextConfig: NextConfig = {
   // Allow running `next dev` concurrently (ex: dev + Playwright webServer)
   // by isolating Next's build/cache directory.
   distDir: process.env.NEXT_DIST_DIR || ".next",
-  // Document uploads use Server Actions; default Next limit is 1 MB (see documentsStorage 20 MB).
   experimental: {
     serverActions: {
-      bodySizeLimit: "21mb",
+      bodySizeLimit: DOCUMENT_UPLOAD_SERVER_ACTION_BODY_SIZE_LIMIT,
     },
   },
 };

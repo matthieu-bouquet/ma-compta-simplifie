@@ -6,8 +6,7 @@ import fs from 'fs'
 import fsp from 'fs/promises'
 import path from 'path'
 import { Readable } from 'stream'
-
-const DEFAULT_MAX_BYTES = 20 * 1024 * 1024
+import { DOCUMENT_UPLOAD_MAX_BYTES } from '@/lib/documentUploadLimits'
 
 const ALLOWED_MIME_TO_EXT: Record<string, string> = {
   'application/pdf': 'pdf',
@@ -104,7 +103,7 @@ export async function saveUploadedFile(opts: {
     throw new Error('Type de fichier non autorisé (PDF/images uniquement).')
   }
 
-  const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES
+  const maxBytes = opts.maxBytes ?? DOCUMENT_UPLOAD_MAX_BYTES
   if (opts.file.size > maxBytes) {
     throw new Error(`Fichier trop volumineux (max ${(maxBytes / (1024 * 1024)).toFixed(0)} Mo).`)
   }
@@ -151,7 +150,7 @@ export async function saveBufferToUpload(opts: {
     throw new Error('Type de fichier non autorisé (PDF/images uniquement).')
   }
 
-  const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES
+  const maxBytes = opts.maxBytes ?? DOCUMENT_UPLOAD_MAX_BYTES
   if (opts.buffer.byteLength > maxBytes) {
     throw new Error(`Fichier trop volumineux (max ${(maxBytes / (1024 * 1024)).toFixed(0)} Mo).`)
   }
@@ -192,7 +191,7 @@ export async function saveAssociationLogoFile(opts: {
     throw new Error('Logo : formats acceptés PNG, JPG ou WEBP.')
   }
 
-  const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES
+  const maxBytes = opts.maxBytes ?? DOCUMENT_UPLOAD_MAX_BYTES
   if (opts.file.size > maxBytes) {
     throw new Error(`Fichier trop volumineux (max ${(maxBytes / (1024 * 1024)).toFixed(0)} Mo).`)
   }
