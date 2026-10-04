@@ -6,7 +6,7 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { writeAuditEvent } from '@/lib/audit'
-import { assertLegalFormAllowedWithoutVatFeature, validateLegalForm } from '@/lib/legalForms'
+import { assertCreateAssociationLegalForm, assertLegalFormAllowedWithoutVatFeature, validateLegalForm } from '@/lib/legalForms'
 import { isVatLiableFeatureEnabled } from '@/lib/featureFlags'
 import { setCurrentAssociationId } from '@/actions/contextActions'
 import { syncTemplateWithDefault } from '@/actions/planComptableActions'
@@ -103,18 +103,19 @@ export async function createAssociation(formData: FormData) {
   }
 
   const validatedLegalForm = validateLegalForm({
-    legalFormCode: legalFormCode || null,
+    legalFormCode: legalFormCode || 'ASSOCIATION',
     legalFormOther: legalFormOther || null,
   })
+  assertCreateAssociationLegalForm(validatedLegalForm.legalFormCode)
   if (!isVatLiableFeatureEnabled()) {
     assertLegalFormAllowedWithoutVatFeature(validatedLegalForm.legalFormCode)
   }
 
-  const templateCode = inferTemplateCodeFromLegalForm(validatedLegalForm.legalFormCode)
+  const templateCode = 'ASSOCIATION' as const
   const template = await prisma.chartTemplate.upsert({
     where: { code: templateCode },
-    update: { name: templateCode === 'TPE' ? 'Entreprise / TPE (modèle)' : 'Association (modèle)' },
-    create: { code: templateCode, name: templateCode === 'TPE' ? 'Entreprise / TPE (modèle)' : 'Association (modèle)' },
+    update: { name: 'Association (modèle)' },
+    create: { code: templateCode, name: 'Association (modèle)' },
   })
 
   const association = await prisma.association.create({
@@ -159,6 +160,11 @@ export async function updateAssociation(id: string, formData: FormData) {
   const city = formData.get('ville') as string
   const email = formData.get('email') as string
   const phone = formData.get('telephone') as string
+  const rna = String(formData.get('rna') ?? '').trim()
+  const socialObject = String(formData.get('socialObject') ?? '').trim()
+  const receiptSignatoryName = String(formData.get('receiptSignatoryName') ?? '').trim()
+  const receiptSignatoryRole = String(formData.get('receiptSignatoryRole') ?? '').trim()
+  const taxReceiptEligibilityAttested = formData.get('taxReceiptEligibilityAttested') === 'on'
 
   if (!name) {
     throw new Error('Le nom de l\'association est requis')
@@ -211,6 +217,11 @@ export async function updateAssociation(id: string, formData: FormData) {
       legalFormOther: validatedLegalForm.legalFormOther,
       chartTemplateId: template.id,
       vatLiable,
+      rna: rna || null,
+      socialObject: socialObject || null,
+      receiptSignatoryName: receiptSignatoryName || null,
+      receiptSignatoryRole: receiptSignatoryRole || null,
+      taxReceiptEligibilityAttested,
     }
   })
 

@@ -22,10 +22,11 @@ describe('contextActions', () => {
     cookieDelete.mockClear()
   })
 
-  it('clears association and exercice cookies when association is null', async () => {
+  it('clears association, exercice and season cookies when association is null', async () => {
     await setCurrentAssociationId(null)
     expect(cookieDelete).toHaveBeenCalledWith('currentAssociationId')
     expect(cookieDelete).toHaveBeenCalledWith('currentExerciceId')
+    expect(cookieDelete).toHaveBeenCalledWith('currentSeasonId')
   })
 
   it('sets association and nearest fiscal year cookie', async () => {
@@ -47,6 +48,29 @@ describe('contextActions', () => {
 
       expect(cookieSet).toHaveBeenCalledWith('currentAssociationId', assoc.id, expect.any(Object))
       expect(cookieSet).toHaveBeenCalledWith('currentExerciceId', fy.id, expect.any(Object))
+    } finally {
+      await prisma.$disconnect()
+    }
+  })
+
+  it('sets the nearest season cookie when switching association', async () => {
+    const dbUrl = process.env.DATABASE_URL
+    const prisma = createPrismaClient(dbUrl)
+
+    try {
+      const assoc = await prisma.association.create({ data: { name: 'Context season pick' } })
+      const season = await prisma.membershipSeason.create({
+        data: {
+          associationId: assoc.id,
+          name: '2026-2027',
+          startDate: new Date('2026-09-01'),
+          endDate: new Date('2027-08-31'),
+        },
+      })
+
+      await setCurrentAssociationId(assoc.id)
+
+      expect(cookieSet).toHaveBeenCalledWith('currentSeasonId', season.id, expect.any(Object))
     } finally {
       await prisma.$disconnect()
     }

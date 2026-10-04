@@ -8,6 +8,7 @@ import { getCurrentAssociation } from '@/lib/currentAssociation'
 import { isAssociationLegalForm } from '@/lib/legalForms'
 import PageBackLink from '@/components/PageBackLink'
 import styles from './page.module.css'
+import vieAsso from '../../vie-asso.module.css'
 import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
 import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
 
@@ -96,10 +97,13 @@ export default async function NewVolunteeringPage() {
   }
 
   return (
-    <div className={styles.shell}>
-      <PageBackLink href="/benevolat" aria-label="Retour à la liste du bénévolat" />
-      <header className={styles.pageHeader}>
+    <div className={vieAsso.formPage}>
+      <header className={vieAsso.formHeader}>
+        <PageBackLink href="/benevolat" aria-label="Retour à la liste du bénévolat" />
         <h1 className="page-title no-topbar-pad">Ajouter du bénévolat</h1>
+        <p className={vieAsso.lead}>
+          Contribution volontaire en nature pour l’annexe et, le cas échéant, la comptabilité (classe 8).
+        </p>
       </header>
       <VolunteeringForm fiscalYearId={fiscalYear.id} />
     </div>

@@ -383,6 +383,34 @@ export async function POST(req: Request) {
   const counterpartySettlementAllocations = await getZipJsonOptional<
     BackupCounterpartySettlementAllocationJson[]
   >(zip, 'data/counterpartySettlementAllocations.json', [])
+  const membershipCategories = await getZipJsonOptional<Record<string, unknown>[]>(
+    zip,
+    'data/membershipCategories.json',
+    [],
+  )
+  const membershipSeasons = await getZipJsonOptional<Record<string, unknown>[]>(
+    zip,
+    'data/membershipSeasons.json',
+    [],
+  )
+  const membershipSeasonTariffs = await getZipJsonOptional<Record<string, unknown>[]>(
+    zip,
+    'data/membershipSeasonTariffs.json',
+    [],
+  )
+  const members = await getZipJsonOptional<Record<string, unknown>[]>(zip, 'data/members.json', [])
+  const membershipFees = await getZipJsonOptional<Record<string, unknown>[]>(
+    zip,
+    'data/membershipFees.json',
+    [],
+  )
+  const donations = await getZipJsonOptional<Record<string, unknown>[]>(zip, 'data/donations.json', [])
+  const taxReceiptSequences = await getZipJsonOptional<Record<string, unknown>[]>(
+    zip,
+    'data/taxReceiptSequences.json',
+    [],
+  )
+  const taxReceipts = await getZipJsonOptional<Record<string, unknown>[]>(zip, 'data/taxReceipts.json', [])
 
   // Upsert journals by code, and map backup journal IDs -> existing IDs
   const journalIdMap = new Map<string, string>()
@@ -431,6 +459,11 @@ export async function POST(req: Request) {
                   ? null
                   : String(a.chartTemplateId),
               isClosed: Boolean(a.isClosed),
+              rna: a.rna ? String(a.rna) : null,
+              socialObject: a.socialObject ? String(a.socialObject) : null,
+              receiptSignatoryName: a.receiptSignatoryName ? String(a.receiptSignatoryName) : null,
+              receiptSignatoryRole: a.receiptSignatoryRole ? String(a.receiptSignatoryRole) : null,
+              taxReceiptEligibilityAttested: Boolean(a.taxReceiptEligibilityAttested),
               createdAt: a.createdAt ? new Date(String(a.createdAt)) : undefined,
               updatedAt: a.updatedAt ? new Date(String(a.updatedAt)) : undefined,
             },
@@ -519,6 +552,285 @@ export async function POST(req: Request) {
         } catch (e) {
           if (!isUniqueConstraintError(e)) throw e
         }
+      }
+    }
+
+    for (const c of membershipCategories) {
+      try {
+        await tx.membershipCategory.create({
+          data: {
+            id: String(c.id),
+            associationId: String(c.associationId),
+            name: String(c.name),
+            amountCents: Number(c.amountCents),
+            duesAccountNumber: String(c.duesAccountNumber),
+          },
+        })
+      } catch (e) {
+        if (!isUniqueConstraintError(e)) throw e
+      }
+    }
+
+    for (const s of membershipSeasons) {
+      try {
+        await tx.membershipSeason.create({
+          data: {
+            id: String(s.id),
+            associationId: String(s.associationId),
+            name: String(s.name),
+            startDate: new Date(String(s.startDate)),
+            endDate: new Date(String(s.endDate)),
+            status: s.status ? String(s.status) : 'OPEN',
+            closedAt: s.closedAt ? new Date(String(s.closedAt)) : null,
+            createdAt: s.createdAt ? new Date(String(s.createdAt)) : undefined,
+            updatedAt: s.updatedAt ? new Date(String(s.updatedAt)) : undefined,
+          },
+        })
+      } catch (e) {
+        if (!isUniqueConstraintError(e)) throw e
+      }
+    }
+
+    // Legacy ZIPs keyed adhesions on fiscalYearId; migration reused that id as season id.
+    const seasonIdsFromZip = new Set(membershipSeasons.map((s) => String(s.id)))
+    for (const f of membershipFees) {
+      const seasonId = String(f.seasonId ?? f.fiscalYearId ?? '')
+      if (!seasonId || seasonIdsFromZip.has(seasonId)) continue
+      const fy = fiscalYears.find((year) => String(year.id) === seasonId)
+      if (!fy) continue
+      try {
+        await tx.membershipSeason.create({
+          data: {
+            id: seasonId,
+            associationId: String(fy.associationId),
+            name: `Saison ${String(fy.startDate).slice(0, 10)} – ${String(fy.endDate).slice(0, 10)}`,
+            startDate: new Date(String(fy.startDate)),
+            endDate: new Date(String(fy.endDate)),
+          },
+        })
+        seasonIdsFromZip.add(seasonId)
+      } catch (e) {
+        if (!isUniqueConstraintError(e)) throw e
+      }
+    }
+
+    for (const t of membershipSeasonTariffs) {
+      try {
+        await tx.membershipSeasonTariff.create({
+          data: {
+            id: String(t.id),
+            seasonId: String(t.seasonId),
+            categoryId: String(t.categoryId),
+            amountCents: Number(t.amountCents),
+            duesAccountNumber: String(t.duesAccountNumber),
+            createdAt: t.createdAt ? new Date(String(t.createdAt)) : undefined,
+            updatedAt: t.updatedAt ? new Date(String(t.updatedAt)) : undefined,
+          },
+        })
+      } catch (e) {
+        if (!isUniqueConstraintError(e)) throw e
+      }
+    }
+
+    for (const m of members) {
+      try {
+        await tx.member.create({
+          data: {
+            id: String(m.id),
+            associationId: String(m.associationId),
+            firstName: String(m.firstName),
+            lastName: String(m.lastName),
+            email: m.email ? String(m.email) : null,
+            phone: m.phone ? String(m.phone) : null,
+            address: m.address ? String(m.address) : null,
+            postalCode: m.postalCode ? String(m.postalCode) : null,
+            city: m.city ? String(m.city) : null,
+            licenseNumber: m.licenseNumber ? String(m.licenseNumber) : null,
+            birthDate: m.birthDate ? new Date(String(m.birthDate)) : null,
+            notes: m.notes ? String(m.notes) : null,
+            emergencyContactName: m.emergencyContactName ? String(m.emergencyContactName) : null,
+            emergencyContactPhone: m.emergencyContactPhone ? String(m.emergencyContactPhone) : null,
+            emergencyContactRelation: m.emergencyContactRelation ? String(m.emergencyContactRelation) : null,
+            categoryId: m.categoryId ? String(m.categoryId) : null,
+            counterpartyId: m.counterpartyId ? String(m.counterpartyId) : null,
+          },
+        })
+      } catch (e) {
+        if (!isUniqueConstraintError(e)) throw e
+      }
+    }
+
+    const membersById = new Map(members.map((m) => [String(m.id), m]))
+    const categoriesById = new Map(membershipCategories.map((c) => [String(c.id), c]))
+    async function resolveTariffId(opts: {
+      seasonId: string
+      tariffId: string | null
+      categoryId: string | null
+      amountCents: number
+      duesAccountNumber: string
+    }): Promise<string | null> {
+      if (opts.tariffId) {
+        const byId = await tx.membershipSeasonTariff.findUnique({ where: { id: opts.tariffId } })
+        if (byId) return byId.id
+      }
+      if (opts.categoryId) {
+        const byPair = await tx.membershipSeasonTariff.findUnique({
+          where: { seasonId_categoryId: { seasonId: opts.seasonId, categoryId: opts.categoryId } },
+        })
+        if (byPair) return byPair.id
+        const category = categoriesById.get(opts.categoryId)
+        if (category) {
+          const created = await tx.membershipSeasonTariff.upsert({
+            where: { seasonId_categoryId: { seasonId: opts.seasonId, categoryId: opts.categoryId } },
+            update: {},
+            create: {
+              seasonId: opts.seasonId,
+              categoryId: opts.categoryId,
+              amountCents: opts.amountCents || Number(category.amountCents),
+              duesAccountNumber: opts.duesAccountNumber || String(category.duesAccountNumber),
+            },
+          })
+          return created.id
+        }
+      }
+      const anyTariff = await tx.membershipSeasonTariff.findFirst({ where: { seasonId: opts.seasonId } })
+      return anyTariff?.id ?? null
+    }
+
+    for (const f of membershipFees) {
+      try {
+        const member = membersById.get(String(f.memberId))
+        const seasonId = String(f.seasonId ?? f.fiscalYearId ?? '')
+        const categoryId = f.categoryId
+          ? String(f.categoryId)
+          : member?.categoryId
+            ? String(member.categoryId)
+            : null
+        const tariffId = await resolveTariffId({
+          seasonId,
+          tariffId: f.tariffId ? String(f.tariffId) : null,
+          categoryId,
+          amountCents: Number(f.amountCents),
+          duesAccountNumber: String(f.duesAccountNumber),
+        })
+        if (!seasonId || !tariffId) continue
+        await tx.membershipFee.create({
+          data: {
+            id: String(f.id),
+            associationId: String(f.associationId),
+            memberId: String(f.memberId),
+            seasonId,
+            tariffId,
+            categoryId,
+            snapshotFirstName: f.snapshotFirstName
+              ? String(f.snapshotFirstName)
+              : String(member?.firstName ?? ''),
+            snapshotLastName: f.snapshotLastName
+              ? String(f.snapshotLastName)
+              : String(member?.lastName ?? ''),
+            snapshotEmail: f.snapshotEmail
+              ? String(f.snapshotEmail)
+              : member?.email
+                ? String(member.email)
+                : null,
+            snapshotPhone: f.snapshotPhone
+              ? String(f.snapshotPhone)
+              : member?.phone
+                ? String(member.phone)
+                : null,
+            snapshotAddress: f.snapshotAddress
+              ? String(f.snapshotAddress)
+              : member?.address
+                ? String(member.address)
+                : null,
+            snapshotPostalCode: f.snapshotPostalCode
+              ? String(f.snapshotPostalCode)
+              : member?.postalCode
+                ? String(member.postalCode)
+                : null,
+            snapshotCity: f.snapshotCity
+              ? String(f.snapshotCity)
+              : member?.city
+                ? String(member.city)
+                : null,
+            snapshotLicenseNumber: f.snapshotLicenseNumber
+              ? String(f.snapshotLicenseNumber)
+              : member?.licenseNumber
+                ? String(member.licenseNumber)
+                : null,
+            imageRightsConsent: Boolean(f.imageRightsConsent),
+            internalRulesAccepted: Boolean(f.internalRulesAccepted),
+            emailCommunicationsConsent: Boolean(f.emailCommunicationsConsent),
+            amountCents: Number(f.amountCents),
+            duesAccountNumber: String(f.duesAccountNumber),
+            status: String(f.status),
+            paidAt: f.paidAt ? new Date(String(f.paidAt)) : null,
+            treasuryAccountNumber: f.treasuryAccountNumber ? String(f.treasuryAccountNumber) : null,
+            entryId: f.entryId ? String(f.entryId) : null,
+          },
+        })
+      } catch (e) {
+        if (!isUniqueConstraintError(e)) throw e
+      }
+    }
+
+    for (const d of donations) {
+      try {
+        await tx.donation.create({
+          data: {
+            id: String(d.id),
+            associationId: String(d.associationId),
+            fiscalYearId: String(d.fiscalYearId),
+            donorName: String(d.donorName),
+            donorAddress: d.donorAddress ? String(d.donorAddress) : null,
+            donorPostalCode: d.donorPostalCode ? String(d.donorPostalCode) : null,
+            donorCity: d.donorCity ? String(d.donorCity) : null,
+            donorEmail: d.donorEmail ? String(d.donorEmail) : null,
+            amountCents: Number(d.amountCents),
+            date: new Date(String(d.date)),
+            paymentMethod: String(d.paymentMethod),
+            treasuryAccountNumber: String(d.treasuryAccountNumber),
+            eligibilityAttested: Boolean(d.eligibilityAttested),
+            entryId: d.entryId ? String(d.entryId) : null,
+          },
+        })
+      } catch (e) {
+        if (!isUniqueConstraintError(e)) throw e
+      }
+    }
+
+    for (const s of taxReceiptSequences) {
+      try {
+        await tx.taxReceiptSequence.create({
+          data: {
+            id: String(s.id),
+            associationId: String(s.associationId),
+            calendarYear: Number(s.calendarYear),
+            nextNumber: Number(s.nextNumber ?? 1),
+          },
+        })
+      } catch (e) {
+        if (!isUniqueConstraintError(e)) throw e
+      }
+    }
+
+    for (const r of taxReceipts) {
+      try {
+        await tx.taxReceipt.create({
+          data: {
+            id: String(r.id),
+            associationId: String(r.associationId),
+            donationId: String(r.donationId),
+            calendarYear: Number(r.calendarYear),
+            sequence: Number(r.sequence),
+            number: String(r.number),
+            issuedAt: r.issuedAt ? new Date(String(r.issuedAt)) : undefined,
+            cancelledAt: r.cancelledAt ? new Date(String(r.cancelledAt)) : null,
+            pdfDocumentId: r.pdfDocumentId ? String(r.pdfDocumentId) : null,
+          },
+        })
+      } catch (e) {
+        if (!isUniqueConstraintError(e)) throw e
       }
     }
 

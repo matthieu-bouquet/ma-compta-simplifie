@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  assertCreateAssociationLegalForm,
   isLegalFormCode,
   legalFormSelectOptions,
   showClass8CvnForLegalForm,
@@ -31,19 +32,24 @@ describe('isLegalFormCode', () => {
 })
 
 describe('legalFormSelectOptions', () => {
-  it('returns all forms when VAT feature is enabled', () => {
-    expect(legalFormSelectOptions(true)).toHaveLength(9)
-    expect(legalFormSelectOptions(true).some((o) => o.code === 'SAS')).toBe(true)
+  it('returns association only, including when VAT feature is enabled', () => {
+    expect(legalFormSelectOptions(true).map((o) => o.code)).toEqual(['ASSOCIATION'])
+    expect(legalFormSelectOptions(false).map((o) => o.code)).toEqual(['ASSOCIATION'])
   })
 
-  it('returns association and other only when VAT feature is disabled', () => {
-    const options = legalFormSelectOptions(false)
-    expect(options.map((o) => o.code)).toEqual(['ASSOCIATION', 'OTHER'])
-  })
-
-  it('keeps legacy commercial form on edit when VAT feature is disabled', () => {
+  it('keeps legacy commercial form on edit', () => {
     const options = legalFormSelectOptions(false, 'SAS')
-    expect(options.map((o) => o.code)).toEqual(['ASSOCIATION', 'OTHER', 'SAS'])
+    expect(options.map((o) => o.code)).toEqual(['ASSOCIATION', 'SAS'])
+  })
+})
+
+describe('assertCreateAssociationLegalForm', () => {
+  it('defaults empty to ASSOCIATION', () => {
+    expect(assertCreateAssociationLegalForm(null)).toBe('ASSOCIATION')
+  })
+
+  it('rejects non-association forms on create', () => {
+    expect(() => assertCreateAssociationLegalForm('SAS')).toThrow(/associations/)
   })
 })
 

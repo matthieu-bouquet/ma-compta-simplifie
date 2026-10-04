@@ -5,8 +5,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Image from "next/image";
 import { getValidatedCurrentAssociationId } from "@/lib/currentAssociationIdValidated";
-import { getCurrentAssociation } from "@/lib/currentAssociation";
-import { isAssociationLegalForm } from "@/lib/legalForms";
 import TopBar from "@/components/TopBar";
 import SidebarNav from "@/components/SidebarNav";
 import AppToaster from "@/components/AppToaster";
@@ -27,8 +25,6 @@ export default async function RootLayout({
 }>) {
   const currentAssociationId = await getValidatedCurrentAssociationId();
 
-  const currentAssociation = await getCurrentAssociation();
-  const canAccessVolunteering = currentAssociation ? isAssociationLegalForm(currentAssociation.legalFormCode) : false;
   return (
     <html lang="fr">
       <body>
@@ -45,7 +41,7 @@ export default async function RootLayout({
                 className="sidebar-logo-image"
               />
             </div>
-            <SidebarNav canAccessVolunteering={canAccessVolunteering} />
+            <SidebarNav />
           </aside>
           <main className="main-content">
             <TopBar currentAssociationId={currentAssociationId} />

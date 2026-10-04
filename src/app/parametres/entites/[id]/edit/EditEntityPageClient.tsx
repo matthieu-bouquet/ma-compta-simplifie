@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useState, startTransition } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Building2, Mail, MapPin, Phone } from 'lucide-react'
+import { Building2, FileText, Mail, MapPin, Phone } from 'lucide-react'
 import ParametreLayout from '@/components/ParametreLayout'
 import FormSection from '@/components/forms/FormSection'
 import forms from '@/components/forms/forms.module.css'
@@ -32,6 +32,11 @@ export default function EditEntityPageClient({ vatFeatureEnabled }: { vatFeature
     email: '',
     telephone: '',
     vatLiable: false,
+    rna: '',
+    socialObject: '',
+    receiptSignatoryName: '',
+    receiptSignatoryRole: '',
+    taxReceiptEligibilityAttested: false,
   })
 
   const load = useCallback(async (entityId: string) => {
@@ -53,6 +58,11 @@ export default function EditEntityPageClient({ vatFeatureEnabled }: { vatFeature
         email: a.email || '',
         telephone: a.telephone || '',
         vatLiable: Boolean(a.vatLiable),
+        rna: a.rna || '',
+        socialObject: a.socialObject || '',
+        receiptSignatoryName: a.receiptSignatoryName || '',
+        receiptSignatoryRole: a.receiptSignatoryRole || '',
+        taxReceiptEligibilityAttested: Boolean(a.taxReceiptEligibilityAttested),
       })
       setHasLogo(Boolean(a.logoRelativePath))
     } catch (err: unknown) {
@@ -69,7 +79,7 @@ export default function EditEntityPageClient({ vatFeatureEnabled }: { vatFeature
     })
   }, [id, load])
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     const { name, value } = e.target
     setFormData((prev) => {
       const next = { ...prev, [name]: value }
@@ -89,12 +99,13 @@ export default function EditEntityPageClient({ vatFeatureEnabled }: { vatFeature
     try {
       const form = new FormData()
       for (const [key, value] of Object.entries(formData)) {
-        if (key === 'vatLiable') continue
+        if (key === 'vatLiable' || key === 'taxReceiptEligibilityAttested') continue
         form.append(key, value as string)
       }
       if (vatFeatureEnabled) {
         form.append('vatLiable', formData.vatLiable ? 'on' : '')
       }
+      form.append('taxReceiptEligibilityAttested', formData.taxReceiptEligibilityAttested ? 'on' : '')
       await updateAssociation(id, form)
       appToast.success('Entité modifiée')
       router.push('/parametres/entites')
@@ -105,14 +116,14 @@ export default function EditEntityPageClient({ vatFeatureEnabled }: { vatFeature
 
   if (loading) {
     return (
-      <ParametreLayout title="Modifier l'entité">
+      <ParametreLayout title="Modifier l'association">
         <div>Chargement...</div>
       </ParametreLayout>
     )
   }
 
   return (
-    <ParametreLayout title="Modifier l'entité" description="Mettre à jour les informations">
+    <ParametreLayout title="Modifier l'association" description="Mettre à jour les informations">
       <div className="card">
         <form onSubmit={handleSubmit}>
           <div className={forms.sections}>
@@ -285,6 +296,83 @@ export default function EditEntityPageClient({ vatFeatureEnabled }: { vatFeature
                 </div>
 
                 <div />
+              </div>
+            </FormSection>
+
+            <FormSection
+              icon={FileText}
+              title="Reçus fiscaux"
+              description="Informations Cerfa 11580. Le logiciel n’atteste pas l’intérêt général : c’est la responsabilité de l’association."
+            >
+              <div className={forms.sectionGrid}>
+                <div>
+                  <label className={forms.label} htmlFor="entity-edit-rna">
+                    RNA
+                  </label>
+                  <input
+                    id="entity-edit-rna"
+                    name="rna"
+                    value={formData.rna}
+                    onChange={handleInputChange}
+                    className={forms.input}
+                  />
+                </div>
+                <div>
+                  <label className={forms.label} htmlFor="entity-edit-social-object">
+                    Objet social
+                  </label>
+                  <textarea
+                    id="entity-edit-social-object"
+                    name="socialObject"
+                    value={formData.socialObject}
+                    onChange={handleInputChange}
+                    className={forms.textarea}
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className={forms.label} htmlFor="entity-edit-signatory-name">
+                    Signataire (nom)
+                  </label>
+                  <input
+                    id="entity-edit-signatory-name"
+                    name="receiptSignatoryName"
+                    value={formData.receiptSignatoryName}
+                    onChange={handleInputChange}
+                    className={forms.input}
+                  />
+                </div>
+                <div>
+                  <label className={forms.label} htmlFor="entity-edit-signatory-role">
+                    Signataire (qualité)
+                  </label>
+                  <input
+                    id="entity-edit-signatory-role"
+                    name="receiptSignatoryRole"
+                    value={formData.receiptSignatoryRole}
+                    onChange={handleInputChange}
+                    className={forms.input}
+                    placeholder="Président, Trésorier…"
+                  />
+                </div>
+                <div className={forms.field}>
+                  <div className={styles.checkboxRow}>
+                    <input
+                      id="entity-edit-tax-receipt-eligibility"
+                      type="checkbox"
+                      checked={formData.taxReceiptEligibilityAttested}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          taxReceiptEligibilityAttested: e.target.checked,
+                        }))
+                      }
+                    />
+                    <label htmlFor="entity-edit-tax-receipt-eligibility">
+                      L’association atteste être un organisme d’intérêt général (art. 200 et 238 bis CGI)
+                    </label>
+                  </div>
+                </div>
               </div>
             </FormSection>
           </div>

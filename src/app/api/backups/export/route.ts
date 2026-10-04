@@ -63,6 +63,11 @@ export async function POST(req: Request) {
     logoRelativePath: true,
     logoMimeType: true,
     logoSizeBytes: true,
+    rna: true,
+    socialObject: true,
+    receiptSignatoryName: true,
+    receiptSignatoryRole: true,
+    taxReceiptEligibilityAttested: true,
     createdAt: true,
     updatedAt: true,
   } satisfies Prisma.AssociationSelect
@@ -140,6 +145,48 @@ export async function POST(req: Request) {
         })
       : []
 
+  const membershipCategories =
+    associationIds.length > 0
+      ? await prisma.membershipCategory.findMany({
+          where: { associationId: { in: associationIds } },
+        })
+      : []
+
+  const members =
+    associationIds.length > 0
+      ? await prisma.member.findMany({
+          where: { associationId: { in: associationIds } },
+        })
+      : []
+
+  const membershipSeasons =
+    associationIds.length > 0
+      ? await prisma.membershipSeason.findMany({
+          where: { associationId: { in: associationIds } },
+        })
+      : []
+
+  const membershipSeasonTariffs =
+    membershipSeasons.length > 0
+      ? await prisma.membershipSeasonTariff.findMany({
+          where: { seasonId: { in: membershipSeasons.map((s) => s.id) } },
+        })
+      : []
+
+  const membershipFees =
+    associationIds.length > 0
+      ? await prisma.membershipFee.findMany({
+          where: { associationId: { in: associationIds } },
+        })
+      : []
+
+  const taxReceiptSequences =
+    associationIds.length > 0
+      ? await prisma.taxReceiptSequence.findMany({
+          where: { associationId: { in: associationIds } },
+        })
+      : []
+
   let accounts: Awaited<ReturnType<typeof prisma.account.findMany>> = []
   let journalSequences: Awaited<ReturnType<typeof prisma.journalSequence.findMany>> = []
   let entries: Awaited<ReturnType<typeof prisma.entry.findMany>> = []
@@ -153,6 +200,8 @@ export async function POST(req: Request) {
   let invoices: Awaited<ReturnType<typeof prisma.invoice.findMany>> = []
   let invoiceLines: Awaited<ReturnType<typeof prisma.invoiceLine.findMany>> = []
   let invoiceSequences: Awaited<ReturnType<typeof prisma.invoiceSequence.findMany>> = []
+  let donations: Awaited<ReturnType<typeof prisma.donation.findMany>> = []
+  let taxReceipts: Awaited<ReturnType<typeof prisma.taxReceipt.findMany>> = []
 
   if (fiscalYearIds.length > 0) {
     ;[
@@ -167,6 +216,8 @@ export async function POST(req: Request) {
       invoices,
       invoiceLines,
       invoiceSequences,
+      donations,
+      taxReceipts,
     ] = await Promise.all([
       prisma.account.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
       prisma.journalSequence.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
@@ -190,6 +241,10 @@ export async function POST(req: Request) {
       prisma.invoice.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
       prisma.invoiceLine.findMany({ where: { invoice: { fiscalYearId: { in: fiscalYearIds } } } }),
       prisma.invoiceSequence.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
+      prisma.donation.findMany({ where: { fiscalYearId: { in: fiscalYearIds } } }),
+      prisma.taxReceipt.findMany({
+        where: { donation: { fiscalYearId: { in: fiscalYearIds } } },
+      }),
     ])
   }
 
@@ -240,6 +295,14 @@ export async function POST(req: Request) {
     jsonFile('data/invoices.json', invoices),
     jsonFile('data/invoiceLines.json', invoiceLines),
     jsonFile('data/invoiceSequences.json', invoiceSequences),
+    jsonFile('data/membershipCategories.json', membershipCategories),
+    jsonFile('data/membershipSeasons.json', membershipSeasons),
+    jsonFile('data/membershipSeasonTariffs.json', membershipSeasonTariffs),
+    jsonFile('data/members.json', members),
+    jsonFile('data/membershipFees.json', membershipFees),
+    jsonFile('data/donations.json', donations),
+    jsonFile('data/taxReceiptSequences.json', taxReceiptSequences),
+    jsonFile('data/taxReceipts.json', taxReceipts),
   ]
 
   await writeAuditEvent({

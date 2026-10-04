@@ -1,30 +1,28 @@
 import { test, expect } from '@playwright/test'
 import { createE2EPrisma } from './helpers/db'
 
-test("créer une entité avec 'Autre' et conserver à l'édition", async ({ page }) => {
+test("créer une association et conserver le nom à l'édition", async ({ page }) => {
   await page.goto('/parametres/entites')
 
-  await page.getByRole('button', { name: 'Nouvelle entité' }).click()
+  await page.getByRole('button', { name: 'Nouvelle association' }).click()
 
-  const entityName = 'Entité OTHER E2E'
+  const entityName = 'Association E2E récente'
   await page.getByLabel('Nom *').fill(entityName)
-  await page.getByLabel('Forme juridique').selectOption('OTHER')
-  await page.getByLabel('Autre (préciser) *').fill('Fondation')
 
   await page.getByRole('button', { name: 'Créer' }).click()
 
-  await expect(page.getByText('Entité créée avec succès')).toBeVisible()
+  await expect(page.getByText('Association créée avec succès')).toBeVisible()
 
   const row = page.locator('tr', { hasText: entityName })
   await expect(row).toBeVisible()
   await row.getByLabel('Modifier').click()
 
   await expect(page).toHaveURL(/\/parametres\/entites\/.+\/edit$/)
-  await expect(page.getByLabel('Forme juridique')).toHaveValue('OTHER')
-  await expect(page.getByLabel('Autre (préciser) *')).toHaveValue('Fondation')
+  await expect(page.getByLabel('Forme juridique')).toHaveValue('ASSOCIATION')
+  await expect(page.getByLabel('Nom *', { exact: true })).toHaveValue(entityName)
 })
 
-test("bénévolat n'est pas accessible pour une entité non-association", async ({ page }) => {
+test("bénévolat reste accessible même pour une entité legacy non-association", async ({ page }) => {
   const prisma = createE2EPrisma()
 
   let associationId: string
@@ -44,7 +42,10 @@ test("bénévolat n'est pas accessible pour une entité non-association", async 
   await page.context().addCookies([{ name: 'currentAssociationId', value: associationId!, path: '/', domain: '127.0.0.1' }])
 
   await page.goto('/')
-  await expect(page.getByLabel('Bénévolat')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Vie associative' }).hover()
+  await expect(page.getByRole('menuitem', { name: 'Bénévolat' })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: 'Adhésions' })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: 'Saisons' })).toBeVisible()
 
   await page.goto('/benevolat')
   await expect(page.getByText('Le bénévolat est disponible uniquement pour une entité de type association.')).toBeVisible()

@@ -4,11 +4,16 @@
 import { prisma } from '@/lib/prisma'
 import { getValidatedCurrentAssociationId } from '@/lib/currentAssociationIdValidated'
 import { getCurrentExerciceId } from '@/lib/exerciceContext'
+import { getCurrentSeasonId } from '@/lib/seasonContext'
 import { resolveSelectedFiscalYearId } from '@/lib/fiscalYearSelection'
+import { resolveSelectedSeasonId } from '@/lib/seasonSelection'
 import PaymentMethodsEvolutionChart from '@/components/PaymentMethodsEvolutionChart'
 import EntityRequiredEmptyState from '@/components/EntityRequiredEmptyState'
 import FiscalYearRequiredEmptyState from '@/components/FiscalYearRequiredEmptyState'
 import styles from './page.module.css'
+import { MEMBERSHIP_FEE_STATUS_DUE } from '@/lib/membership'
+import { formatEurosFromCents } from '@/lib/money'
+import Link from 'next/link'
 
 type DashboardEcriture = {
   date: Date
@@ -41,6 +46,7 @@ type TreasuryAccountRow = DashboardAccount & { soldeActuel: number }
 export default async function Dashboard() {
   const associationId = await getValidatedCurrentAssociationId()
   const currentExerciceId = await getCurrentExerciceId()
+  const currentSeasonId = await getCurrentSeasonId()
   const now = new Date()
 
   if (!associationId) {
@@ -121,6 +127,25 @@ export default async function Dashboard() {
     })
   }
 
+  const seasons = await prisma.membershipSeason.findMany({
+    where: { associationId },
+    orderBy: { startDate: 'desc' },
+    select: { id: true },
+  })
+  const selectedSeasonId = resolveSelectedSeasonId(seasons, { cookieSeasonId: currentSeasonId })
+  const unpaidDuesCount = selectedSeasonId
+    ? await prisma.membershipFee.count({
+        where: { associationId, seasonId: selectedSeasonId, status: MEMBERSHIP_FEE_STATUS_DUE },
+      })
+    : 0
+  const donationsAgg = selectedFiscalYearId
+    ? await prisma.donation.aggregate({
+        where: { associationId, fiscalYearId: selectedFiscalYearId },
+        _sum: { amountCents: true },
+      })
+    : { _sum: { amountCents: 0 } }
+  const donationsTotalCents = donationsAgg._sum.amountCents ?? 0
+
   return (
     <div className={styles.wrap}>
       <header className={styles.pageHeader}>
@@ -131,6 +156,16 @@ export default async function Dashboard() {
         <FiscalYearRequiredEmptyState />
       ) : (
         <>
+          <div className={styles.kpiGrid}>
+            <Link href="/adhesions" className={`card ${styles.kpiCard}`}>
+              <p className={styles.kpiLabel}>Cotisations impayées</p>
+              <p className={styles.kpiValue}>{unpaidDuesCount}</p>
+            </Link>
+            <Link href="/dons" className={`card ${styles.kpiCard}`}>
+              <p className={styles.kpiLabel}>Dons de l’exercice</p>
+              <p className={styles.kpiValue}>{formatEurosFromCents(donationsTotalCents)}</p>
+            </Link>
+          </div>
           <div className={styles.dashboardGrid}>
             <div className={`card ${styles.cardAccent}`}>
               <h2 className={styles.cardTitle}>Évolution des moyens de paiement</h2>

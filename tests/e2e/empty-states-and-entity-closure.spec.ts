@@ -1,17 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { createE2EPrisma } from './helpers/db'
+import { clearE2EAccountingData, createE2EPrisma } from './helpers/db'
 
 test('empty state: no entity exists shows CTA to create entity', async ({ page }) => {
   // Ensure DB is empty for this test.
   const prisma = createE2EPrisma()
   try {
-    await prisma.documentEntryLine.deleteMany({})
-    await prisma.document.deleteMany({})
-    await prisma.entryLine.deleteMany({})
-    await prisma.entry.deleteMany({})
-    await prisma.account.deleteMany({})
-    await prisma.fiscalYear.deleteMany({})
-    await prisma.association.deleteMany({})
+    await clearE2EAccountingData(prisma)
   } finally {
     await prisma.$disconnect()
   }
@@ -21,20 +15,14 @@ test('empty state: no entity exists shows CTA to create entity', async ({ page }
   await expect(page.getByRole('heading', { name: 'Aucune entité' })).toBeVisible()
   await page.getByRole('link', { name: 'Créer une entité' }).click()
   await expect(page).toHaveURL(/\/parametres\/entites\?create=1$/)
-  await expect(page.getByText('Créer une entité')).toBeVisible()
+  await expect(page.getByText('Créer une association')).toBeVisible()
 })
 
 test('empty state: stale entity cookie does not show fiscal year empty state', async ({ page }) => {
   // Ensure DB is empty for this test but cookie points to an entity id.
   const prisma = createE2EPrisma()
   try {
-    await prisma.documentEntryLine.deleteMany({})
-    await prisma.document.deleteMany({})
-    await prisma.entryLine.deleteMany({})
-    await prisma.entry.deleteMany({})
-    await prisma.account.deleteMany({})
-    await prisma.fiscalYear.deleteMany({})
-    await prisma.association.deleteMany({})
+    await clearE2EAccountingData(prisma)
   } finally {
     await prisma.$disconnect()
   }

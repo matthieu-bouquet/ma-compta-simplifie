@@ -27,16 +27,16 @@ export function formatEmitterSiretOrRnaLine(siret: string | null | undefined): s
 
 export function assertAssociationReadyForInvoice(association: AssociationInvoiceEmitterFields): void {
   if (!association.name?.trim()) {
-    throw new Error('Le nom de l’entité est requis pour émettre une facture.')
+    throw new Error('Le nom de l’association est requis pour émettre une facture.')
   }
   if (!association.address?.trim() || !association.postalCode?.trim() || !association.city?.trim()) {
     throw new Error(
-      'Complétez l’adresse de l’entité (Paramètres → Entités) avant d’émettre une facture conforme.',
+      'Complétez l’adresse de l’association (Paramètres → Associations) avant d’émettre une facture conforme.',
     )
   }
   if (!association.siret?.trim()) {
     throw new Error(
-      'Indiquez le SIRET ou le numéro RNA de l’entité (Paramètres → Entités) avant d’émettre une facture conforme.',
+      'Indiquez le SIRET ou le numéro RNA de l’association (Paramètres → Associations) avant d’émettre une facture conforme.',
     )
   }
 }

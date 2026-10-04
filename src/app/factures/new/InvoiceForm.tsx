@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ma Compta Simplifié
 
-import { forwardRef, useMemo, useState } from 'react'
+import { forwardRef, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
@@ -49,9 +49,9 @@ type LineDraft = {
   accountId: string | null
 }
 
-function newLineDraft(): LineDraft {
+function emptyLineDraft(key: string): LineDraft {
   return {
-    key: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    key,
     description: '',
     quantity: '',
     unitPriceEuros: '',
@@ -97,7 +97,8 @@ export default function InvoiceForm({
     return d
   })
   const [postToAccounting, setPostToAccounting] = useState(true)
-  const [lines, setLines] = useState<LineDraft[]>(() => [newLineDraft()])
+  const nextLineKeyRef = useRef(1)
+  const [lines, setLines] = useState<LineDraft[]>(() => [emptyLineDraft('line-1')])
   const [pending, setPending] = useState(false)
 
   const totalCents = useMemo(() => lines.reduce((sum, l) => sum + lineAmountCents(l), 0), [lines])
@@ -115,7 +116,9 @@ export default function InvoiceForm({
   }
 
   function addLine() {
-    setLines((prev) => [...prev, newLineDraft()])
+    nextLineKeyRef.current += 1
+    const key = `line-${nextLineKeyRef.current}`
+    setLines((prev) => [...prev, emptyLineDraft(key)])
   }
 
   function removeLine(key: string) {
@@ -183,7 +186,7 @@ export default function InvoiceForm({
         <h1 className="page-title no-topbar-pad">Nouvelle facture</h1>
         <p className={styles.lead}>
           Renseignez le destinataire et les lignes (montants TTC). L’émetteur (adresse, SIRET ou RNA, logo) doit être
-          complet dans Paramètres → Entités. La facture émise est définitive et non modifiable.
+          complet dans Paramètres → Associations. La facture émise est définitive et non modifiable.
         </p>
       </header>
 

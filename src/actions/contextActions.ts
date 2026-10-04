@@ -5,6 +5,8 @@
 
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
+import { pickNearestDateRangeItem } from '@/lib/dateRangeSelection'
+import { SEASON_COOKIE_NAME } from '@/lib/seasonContext'
 
 const COOKIE_NAME = 'currentAssociationId'
 const EXERCICE_COOKIE = 'currentExerciceId'
@@ -14,41 +16,35 @@ export async function setCurrentAssociationId(associationId: string | null) {
   if (!associationId) {
     store.delete(COOKIE_NAME)
     store.delete(EXERCICE_COOKIE)
+    store.delete(SEASON_COOKIE_NAME)
   } else {
     store.set(COOKIE_NAME, associationId, {
       path: '/',
       sameSite: 'lax',
     })
 
-    // Changement de contexte → pré-sélectionner l'exercice le plus proche d'aujourd'hui.
     const fiscalYears = await prisma.fiscalYear.findMany({
       where: { associationId },
       select: { id: true, startDate: true, endDate: true },
       orderBy: { startDate: 'desc' },
     })
-
-    const now = new Date()
-    const best = fiscalYears
-      .map((fy) => {
-        const start = fy.startDate.getTime()
-        const end = fy.endDate.getTime()
-        const t = now.getTime()
-        const distanceMs = t >= start && t <= end ? 0 : Math.min(Math.abs(t - start), Math.abs(t - end))
-        return { ...fy, distanceMs }
-      })
-      .sort((a, b) => {
-        if (a.distanceMs !== b.distanceMs) return a.distanceMs - b.distanceMs
-        // tie-breaker: most recent start date
-        return b.startDate.getTime() - a.startDate.getTime()
-      })[0]
-
-    if (best) {
-      store.set(EXERCICE_COOKIE, best.id, {
-        path: '/',
-        sameSite: 'lax',
-      })
+    const bestFy = pickNearestDateRangeItem(fiscalYears)
+    if (bestFy) {
+      store.set(EXERCICE_COOKIE, bestFy.id, { path: '/', sameSite: 'lax' })
     } else {
       store.delete(EXERCICE_COOKIE)
+    }
+
+    const seasons = await prisma.membershipSeason.findMany({
+      where: { associationId },
+      select: { id: true, startDate: true, endDate: true },
+      orderBy: { startDate: 'desc' },
+    })
+    const bestSeason = pickNearestDateRangeItem(seasons)
+    if (bestSeason) {
+      store.set(SEASON_COOKIE_NAME, bestSeason.id, { path: '/', sameSite: 'lax' })
+    } else {
+      store.delete(SEASON_COOKIE_NAME)
     }
   }
 }
@@ -65,3 +61,14 @@ export async function setCurrentExerciceId(exerciceId: string | null) {
   }
 }
 
+export async function setCurrentSeasonId(seasonId: string | null) {
+  const store = await cookies()
+  if (!seasonId) {
+    store.delete(SEASON_COOKIE_NAME)
+  } else {
+    store.set(SEASON_COOKIE_NAME, seasonId, {
+      path: '/',
+      sameSite: 'lax',
+    })
+  }
+}

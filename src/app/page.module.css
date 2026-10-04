@@ -19,6 +19,28 @@
   line-height: 1.55;
 }
 
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.kpiCard {
+  display: block;
+}
+
+.kpiLabel {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.kpiValue {
+  margin: 0.35rem 0 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
 .dashboardGrid {
   display: grid;
   grid-template-columns: minmax(300px, 1.15fr) minmax(300px, 0.85fr);

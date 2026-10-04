@@ -27,7 +27,7 @@ export default async function FacturesPage({
   if (!associationId) {
     return (
       <div className={styles.page}>
-        <h1 className="page-title no-topbar-pad">Factures</h1>
+        <h1 className="page-title no-topbar-pad">Facturation</h1>
         <EntityRequiredEmptyState purpose="default" />
       </div>
     )
@@ -41,7 +41,7 @@ export default async function FacturesPage({
   if (fiscalYears.length === 0) {
     return (
       <div className={styles.page}>
-        <h1 className="page-title no-topbar-pad">Factures</h1>
+        <h1 className="page-title no-topbar-pad">Facturation</h1>
         <FiscalYearRequiredEmptyState purpose="default" />
       </div>
     )
@@ -57,7 +57,7 @@ export default async function FacturesPage({
   if (!fiscalYear) {
     return (
       <div className={styles.page}>
-        <h1 className="page-title no-topbar-pad">Factures</h1>
+        <h1 className="page-title no-topbar-pad">Facturation</h1>
         <div className="card">
           <p className="text-warning">Impossible de charger l’exercice sélectionné.</p>
         </div>
@@ -77,7 +77,7 @@ export default async function FacturesPage({
   return (
     <div className={styles.page}>
       <div className={styles.headerRow}>
-        <h1 className={`page-title no-topbar-pad ${styles.pageTitle}`}>Factures</h1>
+        <h1 className={`page-title no-topbar-pad ${styles.pageTitle}`}>Facturation</h1>
         {canCreate ? (
           <div className={styles.headerActions}>
             <Link href="/factures/new" className={`btn btn-primary ${forms.btnWithLeadingIcon}`}>
@@ -91,7 +91,7 @@ export default async function FacturesPage({
       <div className="card">
         <p className={styles.lead}>
           Émettez des factures pour vos stages, démos ou prestations. Les informations de l’émetteur proviennent de
-          l’entité (Paramètres → Entités). Vous pouvez enregistrer une créance client (411) en compta à l’émission ou
+          l’association (Paramètres → Associations). Vous pouvez enregistrer une créance client (411) en compta à l’émission ou
           ensuite via l’icône sur la liste (client obligatoire).
         </p>
         <p className={styles.lead}>
