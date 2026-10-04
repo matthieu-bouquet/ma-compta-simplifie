@@ -5,6 +5,10 @@
   min-height: 0;
 }
 
+.viewerRootBare {
+  min-width: 0;
+}
+
 .viewerHeader {
   display: flex;
   align-items: center;
@@ -29,6 +33,7 @@
 }
 
 .frame {
+  position: relative;
   width: 100%;
   height: min(72vh, 820px);
   border: 1px solid var(--border-color);
@@ -38,9 +43,12 @@
 }
 
 .iframe {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: 0;
+  display: block;
 }
 
 .image {

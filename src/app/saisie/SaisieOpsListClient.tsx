@@ -212,23 +212,29 @@ export default function SaisieOpsListClient({
                   </td>
                   <td className={styles.tdCenter}>
                     <div className={styles.pieceActions}>
-                      {row.hasDocument && row.documentId ? (
+                      {row.documents.length > 0 ? (
                         <DocumentViewerDialog
-                          documentId={row.documentId}
-                          mimeType={row.documentMimeType}
-                          title={row.documentOriginalName ?? 'Document'}
-                          trigger={({ open }) => (
-                            <FloatingTooltipHost label="Voir le document">
-                              <button
-                                type="button"
-                                className={`btn ${styles.iconBtn}`}
-                                onClick={open}
-                                aria-label="Voir le document"
-                              >
-                                <Eye size={16} aria-hidden="true" />
-                              </button>
-                            </FloatingTooltipHost>
-                          )}
+                          documents={row.documents.map((document) => ({
+                            id: document.id,
+                            mimeType: document.mimeType,
+                            title: document.originalName,
+                          }))}
+                          trigger={({ open }) => {
+                            const viewLabel =
+                              row.documents.length > 1 ? 'Voir les documents' : 'Voir le document'
+                            return (
+                              <FloatingTooltipHost label={viewLabel}>
+                                <button
+                                  type="button"
+                                  className={`btn ${styles.iconBtn}`}
+                                  onClick={open}
+                                  aria-label={viewLabel}
+                                >
+                                  <Eye size={16} aria-hidden="true" />
+                                </button>
+                              </FloatingTooltipHost>
+                            )
+                          }}
                         />
                       ) : (
                         <AttachDocumentButton ligneId={row.id} ligneSummary={row.ligneSummary} />

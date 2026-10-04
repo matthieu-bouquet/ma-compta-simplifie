@@ -41,7 +41,6 @@ const OPS_ENTRY_INCLUDE = {
   },
   documents: {
     select: { document: { select: { id: true, mimeType: true, originalName: true } } },
-    take: 1,
   },
 } as const
 
