@@ -26,9 +26,10 @@ export default function DocumentViewer({
   showHeader?: boolean
 }) {
   const viewHref = `/api/documents/${encodeURIComponent(documentId)}/download?inline=1`
+  const pdfHref = `${viewHref}#zoom=page-width`
 
   return (
-    <div className={styles.viewerRoot}>
+    <div className={showHeader ? styles.viewerRoot : styles.viewerRootBare}>
       {showHeader ? (
         <div className={styles.viewerHeader}>
           <div className={styles.viewerTitle}>{title ?? 'Aperçu du document'}</div>
@@ -38,7 +39,7 @@ export default function DocumentViewer({
 
       {isPdf(mimeType) ? (
         <div className={styles.frame}>
-          <iframe className={styles.iframe} src={viewHref} title={title ?? 'Document'} />
+          <iframe className={styles.iframe} src={pdfHref} title={title ?? 'Document'} />
         </div>
       ) : isImage(mimeType) ? (
         <div className={styles.frame}>

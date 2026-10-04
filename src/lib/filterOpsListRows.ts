@@ -3,6 +3,12 @@
 
 import { toLocalYmd } from '@/lib/vatStatementPayload'
 
+export type OpsListDocument = {
+  id: string
+  mimeType: string
+  originalName: string
+}
+
 export type OpsListRow = {
   id: string
   dateIso: string
@@ -15,9 +21,7 @@ export type OpsListRow = {
   debitEuros: number | null
   creditEuros: number | null
   hasDocument: boolean
-  documentId: string | null
-  documentMimeType: string | null
-  documentOriginalName: string | null
+  documents: OpsListDocument[]
   ligneSummary: string
 }
 

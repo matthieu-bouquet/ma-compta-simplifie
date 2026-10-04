@@ -91,6 +91,24 @@ test('saisie avancée: plusieurs justificatifs globaux à l’écriture au submi
 
   await expect(page.getByText('Écriture enregistrée avec succès.')).toBeVisible()
 
+  const row = page.locator('[data-testid="saisie-ops-row"][data-entry-description="E2E multi docs écriture"]')
+  await expect(row.getByRole('button', { name: 'Voir les documents' })).toBeVisible()
+  await row.getByRole('button', { name: 'Voir les documents' }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'Pièces justificatives' })
+  await expect(dialog.getByRole('heading', { name: 'justif-1.pdf' })).toBeVisible()
+  const firstPreview = dialog.locator('iframe[title="justif-1.pdf"]')
+  await expect(firstPreview).toBeVisible()
+  const firstBox = await firstPreview.boundingBox()
+  expect(firstBox?.height ?? 0).toBeGreaterThanOrEqual(500)
+
+  const secondDocument = dialog.getByRole('heading', { name: 'justif-2.pdf' })
+  await secondDocument.scrollIntoViewIfNeeded()
+  await expect(secondDocument).toBeVisible()
+  const secondPreview = dialog.locator('iframe[title="justif-2.pdf"]')
+  const secondBox = await secondPreview.boundingBox()
+  expect(secondBox?.height ?? 0).toBeGreaterThanOrEqual(500)
+
   const prismaCheck = createE2EPrisma()
   try {
     const entry = await prismaCheck.entry.findFirst({

@@ -1,20 +1,40 @@
 .dialog {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  margin: auto;
+  transform: none;
   border: none;
   border-radius: 1rem;
   padding: 0;
   width: min(1100px, calc(100vw - 2rem));
+  height: fit-content;
   max-height: calc(100vh - 2rem);
-  overflow: hidden;
+  overflow: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
   background: white;
 }
 
 .dialogInner {
   padding: 1rem;
+}
+
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.documentBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.documentName {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 .dialogHeader {

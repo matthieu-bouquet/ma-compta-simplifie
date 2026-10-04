@@ -41,7 +41,7 @@ export function mapOpsEntryLineToRow(line: OpsEntryLineFromDb): OpsListRow {
   const libelle = line.entry.description
   const dateIso = toLocalYmd(new Date(line.entry.date))
   const accountLabel = `${line.accountNumber} - ${line.accountName}`
-  const document = line.documents[0]?.document ?? null
+  const documents = line.documents.map((link) => link.document)
 
   return {
     id: line.id,
@@ -57,10 +57,8 @@ export function mapOpsEntryLineToRow(line: OpsEntryLineFromDb): OpsListRow {
     }),
     debitEuros: line.debitCents > 0 ? line.debitCents / 100 : null,
     creditEuros: line.creditCents > 0 ? line.creditCents / 100 : null,
-    hasDocument: document != null,
-    documentId: document?.id ?? null,
-    documentMimeType: document?.mimeType ?? null,
-    documentOriginalName: document?.originalName ?? null,
+    hasDocument: documents.length > 0,
+    documents,
     ligneSummary: `${new Date(line.entry.date).toLocaleDateString('fr-FR')} · ${libelle} · ${accountLabel}`,
   }
 }
